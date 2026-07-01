@@ -28,8 +28,8 @@ Live on app `0EXRPAXB56` (gemini-2.5-pro), scoped via `searchParameters.filters`
 - `ACS-developer-neural` — `source:"ReactSpectrumS2"` (React code/API).
 Smoke-test PASSED: Designer gives grounded design guidance; routes code Qs → Developer ("hand you over"); Developer answers with real `onPress`/`@react-spectrum/s2/Button` code. Handoff = prompt doctrine (no native handoff tool). Artifacts: `scripts/agents/{_shared_grounding_acs,instructions_designer,instructions_developer}.md` + `build_acs_agents.mjs`. Clone-base = `ac2-developer-neural`.
 
-## NEURAL — seeded, flip PENDING
-`scripts/neural/seed_and_enable.mjs`: pushed **1,099 relevance-faithful events** (650/660 Spectrum queries hit). `PUT mode:neuralSearch` still returns **412 "SemanticSearch: no events"** — aggregation is async + slow. Two ways to finish (either works): (a) re-run `node scripts/neural/seed_and_enable.mjs enable` later once aggregation lands; (b) **dashboard Train NeuralSearch** (event source=`ACS_SPECTRUM_MULTI`, title attr, Blended, More Recall) — same manual flow AC2 used. Panel runs keyword until it flips, then auto-upgrades (same index/tool).
+## NEURAL — LIVE ✅
+`ACS_SPECTRUM_MULTI` `mode: neuralSearch` (enabled via dashboard Train after `seed_and_enable.mjs` pushed 1,099 events; aggregation took ~1 session to land). NL queries that returned 0 on keyword now work semantically: "let users pick a date"→DatePicker, "show a loading indicator"→Progress bar. Panel auto-upgraded (same index/tool). Verified end-to-end: Developer answers "date range in React"→`DateRangePicker` + real code + `@internationalized/date` (cross-source neural grounding).
 
 ## ▶ RESUME ACTION (next session)
 1. **Finish neural** — re-run `enable` (or dashboard Train). Verify `mode:neuralSearch`, then re-smoke the panel on NL queries ("how do I…") that currently fail on keyword.
