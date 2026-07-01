@@ -25,7 +25,7 @@ const INDEX = 'ACS_SPECTRUM_MULTI';
 const CLONE_BASE = 'ac2-developer-neural';
 const PERSONAS = [
   { name: 'ACS-designer-neural', prompt: 'instructions_designer.md', filters: 'source:"SpectrumDesignDocs"', desc: 'ACS_SPECTRUM_MULTI scoped to Spectrum design docs (SpectrumDesignDocs).' },
-  { name: 'ACS-developer-neural', prompt: 'instructions_developer.md', filters: 'source:"ReactSpectrumS2"', desc: 'ACS_SPECTRUM_MULTI scoped to React Spectrum code docs (ReactSpectrumS2).' },
+  { name: 'ACS-developer-neural', prompt: 'instructions_developer.md', filters: 'source:"ReactSpectrumS2" OR source:"ReactAria"', desc: 'ACS_SPECTRUM_MULTI scoped to React code docs (ReactSpectrumS2 + ReactAria/internationalized).' },
 ];
 
 function loadPrompt(file) { let s = readFileSync(join(__dirname, file), 'utf8'); if (s.includes('[[SHARED_GROUNDING]]')) s = s.replace('[[SHARED_GROUNDING]]', readFileSync(join(__dirname, '_shared_grounding_acs.md'), 'utf8').trim()); return s; }

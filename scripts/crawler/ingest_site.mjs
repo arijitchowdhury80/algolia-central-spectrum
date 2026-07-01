@@ -64,9 +64,13 @@ async function fetchRecord(item) {
     const raw = await fetch(item.mdUrl, { headers: UA }).then((r) => r.ok ? r.text() : '');
     if (!raw) return null;
     const path = new URL(item.canonicalUrl).pathname.replace(/^\//, '');
-    const body = mdToText(raw);
+    let body = mdToText(raw);
+    // Algolia hard record limit = 100,000 bytes. Cap body (leave headroom for other fields).
+    const CAP = 90000;
+    let truncated = false;
+    if (Buffer.byteLength(body) > CAP) { body = body.slice(0, CAP); truncated = true; }
     const title = item.title || (raw.match(/^#\s+(.+)$/m) || [])[1] || path;
-    return { objectID: `${A.source}/${path}`, url: item.canonicalUrl, source: A.source, section: A.source, title, description: item.description, body, bodyLen: body.length };
+    return { objectID: `${A.source}/${path}`, url: item.canonicalUrl, source: A.source, section: A.source, title, description: item.description, body, bodyLen: body.length, truncated };
   } catch { return null; }
 }
 async function pool(items, n, fn) {
@@ -91,8 +95,9 @@ async function aApi(method, path, body) {
   const r = await fetch(`https://${APP}.algolia.net${path}`, { method, headers: { 'X-Algolia-Application-Id': APP, 'X-Algolia-API-Key': AKEY, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
   return { status: r.status, json: await r.json().catch(() => ({})) };
 }
-for (let i = 0; i < records.length; i += 1000) {
-  const batch = records.slice(i, i + 1000).map((body) => ({ action: 'updateObject', body }));
+const CHUNK = 50; // deep-body corpora: keep batch request well under Algolia's payload cap (RUNBOOK)
+for (let i = 0; i < records.length; i += CHUNK) {
+  const batch = records.slice(i, i + CHUNK).map((body) => ({ action: 'updateObject', body }));
   const r = await aApi('POST', `/1/indexes/${A.index}/batch`, { requests: batch });
   console.log(`  batch ${i}-${i + batch.length} -> HTTP ${r.status}`);
 }
