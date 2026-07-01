@@ -6,10 +6,11 @@ _Created 2026-07-01 (session 1). Fork of Algolia-Central2 for Adobe as prospect.
 AC2 architecture (strictly-grounded neural agent panel) rebuilt on an **Adobe Spectrum** corpus. See `CLAUDE.md`. Base repo to port from: `~/Dropbox/AI-Development/RAG/Algolia-Central2`.
 
 ## STATUS (session 1)
-**Corpus INGESTED — both Adobe-Spectrum sources live in ONE federated index `ACS_SPECTRUM_MULTI`** (app `0EXRPAXB56`, keyword mode):
-- `SpectrumDesignDocs` = 103 recs — GitHub `adobe/spectrum-design-data/docs/s2-docs` (design guidance; median body 4,740ch). Cloned to `data/` (gitignored), ingested via `ingest_git_docs.mjs`.
-- `ReactSpectrumS2` = 104 recs — `react-spectrum.adobe.com` (code/API docs; median 4,866ch), self-fetched via `ingest_site.mjs` using the site's `llms.txt` + clean `.md` twins.
-- Total 207 recs. Cross-source keyword search works ("color swatch" → both sources). Facet `source`.
+**Corpus INGESTED — Adobe-Spectrum sources in ONE federated index `ACS_SPECTRUM_MULTI`** (app `0EXRPAXB56`). **357 recs**, facet `source`:
+- `SpectrumDesignDocs` = 103 — GitHub `adobe/spectrum-design-data/docs/s2-docs` (design guidance; median 4,740ch). `ingest_git_docs.mjs`.
+- `ReactSpectrumS2` = 104 — `react-spectrum.adobe.com` S2 (code/API; median 4,866ch) via `llms.txt` + `.md` twins. `ingest_site.mjs`.
+- `ReactAria` = 150 — `react-aria.adobe.com` (React Aria headless + internationalized + blog; median 10,025ch) via `llms.txt` + `.md`. `ingest_site.mjs` (body capped 90KB — Algolia 100KB record limit; batch chunk 50).
+- **REMAINING (not yet in):** React Spectrum **v3** (~96 pages, `/v3/*.html`) — no `.md` twins → needs an HTML self-fetch path (not built). It's the legacy version; decide if worth adding (overlaps S2).
 
 ## KEY LEARNING (drove the whole session)
 **Native Algolia Crawler CANNOT crawl a domain you don't own** — `internet.custom.domainAllowed` 400, no API to add a domain (dashboard-only ownership verify). So prospect corpora (adobe.com, github.com) MUST be **self-fetched + pushed via the indexing API** (no domain gate on indexing). This forked the tooling into 3 engines. [[feedback-crawler-domain-allowlist-gate]] · AC2 RUNBOOK #17.
