@@ -21,9 +21,18 @@ AC2 architecture (strictly-grounded neural agent panel) rebuilt on an **Adobe Sp
 - `ingest_site.mjs` — un-owned docs site self-fetch (prefers `llms.txt` + `.md` twins).
 Tested live on both Spectrum sources. Registered + discoverable.
 
+## 2-PERSONA PANEL — BUILT + VERIFIED (session 1)
+Live on app `0EXRPAXB56` (gemini-2.5-pro), scoped via `searchParameters.filters` on `source`:
+- `ACS-designer-neural` — `source:"SpectrumDesignDocs"` (design guidance).
+- `ACS-developer-neural` — `source:"ReactSpectrumS2"` (React code/API).
+Smoke-test PASSED: Designer gives grounded design guidance; routes code Qs → Developer ("hand you over"); Developer answers with real `onPress`/`@react-spectrum/s2/Button` code. Handoff = prompt doctrine (no native handoff tool). Artifacts: `scripts/agents/{_shared_grounding_acs,instructions_designer,instructions_developer}.md` + `build_acs_agents.mjs`. Clone-base = `ac2-developer-neural`.
+
+## NEURAL — seeded, flip PENDING
+`scripts/neural/seed_and_enable.mjs`: pushed **1,099 relevance-faithful events** (650/660 Spectrum queries hit). `PUT mode:neuralSearch` still returns **412 "SemanticSearch: no events"** — aggregation is async + slow. Two ways to finish (either works): (a) re-run `node scripts/neural/seed_and_enable.mjs enable` later once aggregation lands; (b) **dashboard Train NeuralSearch** (event source=`ACS_SPECTRUM_MULTI`, title attr, Blended, More Recall) — same manual flow AC2 used. Panel runs keyword until it flips, then auto-upgrades (same index/tool).
+
 ## ▶ RESUME ACTION (next session)
-1. **NEURAL activation** on `ACS_SPECTRUM_MULTI` (events replay, AC2 RUNBOOK #11) — keyword NL queries fail ("how do I…" → 0 hits); neural is the whole point vs AC2.
-2. **Persona panel** — port AC2's 3-agent build (`Algolia-Central2/scripts/setup/honed/build_three_agents.mjs`) with `ACS-` prefix. Only 2 sources → likely **2 personas**: `ACS-designer-neural` (SpectrumDesignDocs) + `ACS-developer-neural` (ReactSpectrumS2). Source-scope via `searchParameters.filters` on `source`.
+1. **Finish neural** — re-run `enable` (or dashboard Train). Verify `mode:neuralSearch`, then re-smoke the panel on NL queries ("how do I…") that currently fail on keyword.
+2. **Judge/eval** — port AC2's harness to score the ACS panel (P2b calibration gate carries over).
 3. Refresh cadence for both snapshots (design docs = Feb-2026 archive; react-spectrum live).
 4. Decide app/index isolation (currently shares CENTRAL `0EXRPAXB56`; open-q #1).
 
