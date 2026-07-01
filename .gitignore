@@ -4,3 +4,4 @@ data/
 crawler_ids.json
 army_ids.json
 *.log
+.DS_Store
