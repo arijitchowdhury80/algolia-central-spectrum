@@ -35,11 +35,16 @@ Smoke PASSED: Generic synthesizes design+availability, routes to Technical; Tech
 ## NEURAL — LIVE ✅
 `ACS_SPECTRUM_MULTI` `mode: neuralSearch` (enabled via dashboard Train after `seed_and_enable.mjs` pushed 1,099 events; aggregation took ~1 session to land). NL queries that returned 0 on keyword now work semantically: "let users pick a date"→DatePicker, "show a loading indicator"→Progress bar. Panel auto-upgraded (same index/tool). Verified end-to-end: Developer answers "date range in React"→`DateRangePicker` + real code + `@internationalized/date` (cross-source neural grounding).
 
-## ▶ RESUME ACTION (next session) — JUDGE PORT + UI
-1. **Judge eval harness port** (scoped, ready to build). AC2's `@lab/judge` is self-contained (one seam: injected `LlmComplete`). Port plan: copy `lab/judge` + `lab/server/src/{gemini,openai,agentRunner,streamParser}.ts` → ACS `lab/`; write an ACS eval runner (question set → `makeAgentStudioRunner(ACS agent)` → `judgeArtifact` w/ Gemini `LlmComplete`). **NEEDS: a judge LLM key in ACS `.env.local` (`GEMINI_API_KEY`)** — none present yet. **Judge output is INDICATIVE until P2b calibration** (the standing trust gate, carries from AC2).
-2. **UI** — routes through `frontend-builder` (per CLAUDE.md). AC2's `web/` is a full chat+judge Vite app; decide: adapt it (repoint to ACS agents/index) vs fresh minimal 2-agent chat demo. Needs aesthetic/shape direction.
-3. Refresh cadence for both snapshots (design docs = Feb-2026 archive; react-spectrum live).
-4. Decide app/index isolation (currently shares CENTRAL `0EXRPAXB56`; open-q #1).
+## JUDGE HARNESS — PORTED, runs e2e; scoring bug open (session 1)
+`lab/judge` (@lab/judge, unchanged from AC2) + `lab/eval` (ACS runner). Uses AC2's Gemini key (`GOOGLE_API_KEY`, copied). Runs end-to-end (askAgent captures retrieved body from tool frames → judge panel → gate → summary). **BUT scores uniformly ~1/10 = a scoring/parse-mapping BUG (not the agents): correct refusal scores 0.00; real-body vs title barely moved mean 1.15→1.04.** Next: debug pass (dump `judgments[].dimensions[].score` + raw judge output; probe must be ESM inside lab/eval w/ absolute env path). P2b calibration gates trust regardless. See `lab/eval/README.md`.
+
+## ▶ RESUME ACTION (next session) — UI (the one remaining ask)
+Build via `frontend-builder` (design-thinking first, per CLAUDE.md). Shape = **fresh minimal chat** (Arijit): 2-agent (Generic + Technical), streaming, grounded source cards, Generic→Technical handoff made visible.
+**BLOCKERS to clear first:**
+1. **Mint a browser-safe SEARCH-ONLY Algolia key** for `ACS_SPECTRUM_MULTI` — the browser must NEVER get the admin key currently in `.env.local`. Add as `ALGOLIA_SEARCH_API_KEY` (browser-shippable).
+2. Agent IDs: Generic `13809d4b-6b6d-4297-b95c-a934bceef0b4` · Technical `63ab0c86-3493-416b-a771-a820ab25d83d`.
+3. Reference: AC2 `web/` (Vite chat+judge app) for the Agent Studio streaming client pattern.
+Also open (non-blocking): judge scoring-bug debug pass; snapshot refresh cadence; app/index isolation.
 
 ## CONCERNS (logged)
 - Design-docs = point-in-time offline archive (drifts); citation URL = GitHub blob not a live doc page.
