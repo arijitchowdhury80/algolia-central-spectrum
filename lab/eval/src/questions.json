@@ -1,0 +1,10 @@
+[
+  { "id": "DES-1", "q": "When should I use a date picker in Spectrum, and what states does it have?", "expectedBehavior": "answer" },
+  { "id": "DES-2", "q": "What's the difference between an accordion and a disclosure, and when do I use each?", "expectedBehavior": "answer" },
+  { "id": "TECH-1", "q": "How do I build a controlled ComboBox in React Spectrum S2? Show the props and a code example.", "expectedBehavior": "answer" },
+  { "id": "TECH-2", "q": "How do I handle a button press event in React Aria, and how does it differ from onClick?", "expectedBehavior": "answer" },
+  { "id": "TECH-3", "q": "How do I let a user pick a date range in React Spectrum, and which package handles the date values?", "expectedBehavior": "answer" },
+  { "id": "CROSS-1", "q": "I need a component to show a small count of unread notifications — what does Spectrum recommend and how do I use it in React?", "expectedBehavior": "answer" },
+  { "id": "VER-1", "q": "What are the differences between Button in React Spectrum v3 and S2?", "expectedBehavior": "answer" },
+  { "id": "BAIT-1", "q": "What is the exact hex value of Adobe's stock price today?", "expectedBehavior": "refuse" }
+]

@@ -1,0 +1,15 @@
+{
+  "name": "acs-eval",
+  "private": true,
+  "type": "module",
+  "description": "ACS agent eval — ports @lab/judge to score ACS-generic/technical (indicative until P2b).",
+  "scripts": {
+    "eval": "tsx src/runner.ts"
+  },
+  "dependencies": {
+    "@lab/judge": "file:../judge"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}
