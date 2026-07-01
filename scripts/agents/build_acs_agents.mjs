@@ -22,14 +22,18 @@ async function call(method, path, body) { const r = await fetch(`${BASE}${path}`
 async function listAgents() { const r = await call('GET', '/agents?limit=100'); const arr = r.json.data ?? r.json.agents ?? r.json.items ?? []; const m = {}; for (const a of arr) { const id = a.id ?? a.objectID; if (a.name && id) m[a.name] = id; } return m; }
 
 const INDEX = 'ACS_SPECTRUM_MULTI';
-const CLONE_BASE = 'ac2-developer-neural';
+const CLONE_BASE = 'ACS-generic-neural'; // self-hosting; falls back below if the panel isn't built yet
+// Decision (Arijit 2026-07-01): 2 agents = Generic (all sources, front door) + Technical (React code).
+// filters:null → no source filter (sees the whole 502-record corpus).
 const PERSONAS = [
-  { name: 'ACS-designer-neural', prompt: 'instructions_designer.md', filters: 'source:"SpectrumDesignDocs"', desc: 'ACS_SPECTRUM_MULTI scoped to Spectrum design docs (SpectrumDesignDocs).' },
-  { name: 'ACS-developer-neural', prompt: 'instructions_developer.md', filters: 'source:"ReactSpectrumS2" OR source:"ReactAria"', desc: 'ACS_SPECTRUM_MULTI scoped to React code docs (ReactSpectrumS2 + ReactAria/internationalized).' },
+  { name: 'ACS-generic-neural', prompt: 'instructions_generic.md', filters: null, desc: 'ACS_SPECTRUM_MULTI — full Spectrum corpus (all sources).' },
+  { name: 'ACS-technical-neural', prompt: 'instructions_technical.md', filters: 'source:"ReactSpectrumS2" OR source:"ReactSpectrumV3" OR source:"ReactAria"', desc: 'ACS_SPECTRUM_MULTI scoped to React code docs (ReactSpectrumS2 + V3 + ReactAria).' },
 ];
+// retire the superseded designer/developer split
+const RETIRE = ['ACS-designer-neural', 'ACS-developer-neural'];
 
 function loadPrompt(file) { let s = readFileSync(join(__dirname, file), 'utf8'); if (s.includes('[[SHARED_GROUNDING]]')) s = s.replace('[[SHARED_GROUNDING]]', readFileSync(join(__dirname, '_shared_grounding_acs.md'), 'utf8').trim()); return s; }
-function scopeTools(tools, filters, desc) { const t = JSON.parse(JSON.stringify(tools)); for (const tool of t) { tool.description = desc; if (Array.isArray(tool.indices)) for (const ix of tool.indices) { ix.index = INDEX; ix.description = desc; ix.searchParameters = ix.searchParameters ?? {}; ix.searchParameters.filters = filters; } } return t; }
+function scopeTools(tools, filters, desc) { const t = JSON.parse(JSON.stringify(tools)); for (const tool of t) { tool.description = desc; if (Array.isArray(tool.indices)) for (const ix of tool.indices) { ix.index = INDEX; ix.description = desc; ix.searchParameters = ix.searchParameters ?? {}; if (filters) ix.searchParameters.filters = filters; else delete ix.searchParameters.filters; } } return t; }
 
 const mode = process.argv[2];
 const existing = await listAgents();
@@ -37,8 +41,12 @@ const names = PERSONAS.map((p) => p.name);
 if (mode === '--list') { for (const n of names) console.log(`  ${n} → ${existing[n] ?? '(none)'}`); process.exit(0); }
 if (mode === '--delete') { for (const n of names) { const id = existing[n]; if (!id) { console.log(`  ${n} — absent`); continue; } const d = await call('DELETE', `/agents/${id}`); console.log(`  DELETE ${n} → HTTP ${d.status}`); } process.exit(0); }
 
-const baseId = existing[CLONE_BASE];
-if (!baseId) { console.error(`clone-base ${CLONE_BASE} not found`); process.exit(1); }
+// retire superseded agents first
+for (const n of RETIRE) { if (existing[n]) { const d = await call('DELETE', `/agents/${existing[n]}`); console.log(`  RETIRE ${n} → HTTP ${d.status}`); } }
+
+// clone tool scaffold/model/provider from an existing published agent (self, else any ac2-*-neural)
+const baseId = existing[CLONE_BASE] ?? existing['ac2-developer-neural'] ?? Object.entries(existing).find(([n]) => /neural$/.test(n))?.[1];
+if (!baseId) { console.error('no clone-base agent found'); process.exit(1); }
 const base = (await call('GET', `/agents/${baseId}`)).json;
 for (const { name, prompt, filters, desc } of PERSONAS) {
   const instructions = loadPrompt(prompt);
