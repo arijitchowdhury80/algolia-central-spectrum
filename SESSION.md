@@ -22,18 +22,22 @@ AC2 architecture (strictly-grounded neural agent panel) rebuilt on an **Adobe Sp
 - `ingest_site.mjs` — un-owned docs site self-fetch (prefers `llms.txt` + `.md` twins).
 Tested live on both Spectrum sources. Registered + discoverable.
 
-## 2-PERSONA PANEL — BUILT + VERIFIED (session 1)
-Live on app `0EXRPAXB56` (gemini-2.5-pro), scoped via `searchParameters.filters` on `source`:
-- `ACS-designer-neural` — `source:"SpectrumDesignDocs"` (design guidance).
-- `ACS-developer-neural` — `source:"ReactSpectrumS2"` (React code/API).
-Smoke-test PASSED: Designer gives grounded design guidance; routes code Qs → Developer ("hand you over"); Developer answers with real `onPress`/`@react-spectrum/s2/Button` code. Handoff = prompt doctrine (no native handoff tool). Artifacts: `scripts/agents/{_shared_grounding_acs,instructions_designer,instructions_developer}.md` + `build_acs_agents.mjs`. Clone-base = `ac2-developer-neural`.
+## AGENTS — GENERIC + TECHNICAL, BUILT + VERIFIED (session 1)
+Decision (Arijit): 2 agents = **Generic** (front door, all sources) + **Technical** (React code). NOT designer/developer (that earlier split retired). Live on app `0EXRPAXB56` (gemini-2.5-pro):
+- `ACS-generic-neural` — NO source filter (sees all 502). Fronts, synthesizes design+code, routes deep code → Technical.
+- `ACS-technical-neural` — `source:"ReactSpectrumS2" OR "ReactSpectrumV3" OR "ReactAria"` (React code, version-aware S2 vs v3).
+Smoke PASSED: Generic synthesizes design+availability, routes to Technical; Technical gives real S2 code (controlled ComboBox, `@react-spectrum/s2/ComboBox`). Neural cross-source grounding verified. Artifacts: `scripts/agents/{_shared_grounding_acs,instructions_generic,instructions_technical}.md` + `build_acs_agents.mjs` (clone-base self-hosted = ACS-generic-neural).
+**Cleanup:** retired ACS-designer/developer + 4 AC2 leftovers (allsource/bruno/elena/maverick). AC2's live 3-panel (general/developer/marketer3) left intact.
+
+## HTML CRAWLER added
+`scripts/crawler/crawl_html.mjs` — BFS HTML self-fetch for un-owned sections with no `.md` twins (used for /v3/ + /releases/). Extracts `<main>`/`<article>`, caps 90KB, chunks 50.
 
 ## NEURAL — LIVE ✅
 `ACS_SPECTRUM_MULTI` `mode: neuralSearch` (enabled via dashboard Train after `seed_and_enable.mjs` pushed 1,099 events; aggregation took ~1 session to land). NL queries that returned 0 on keyword now work semantically: "let users pick a date"→DatePicker, "show a loading indicator"→Progress bar. Panel auto-upgraded (same index/tool). Verified end-to-end: Developer answers "date range in React"→`DateRangePicker` + real code + `@internationalized/date` (cross-source neural grounding).
 
-## ▶ RESUME ACTION (next session)
-1. **Finish neural** — re-run `enable` (or dashboard Train). Verify `mode:neuralSearch`, then re-smoke the panel on NL queries ("how do I…") that currently fail on keyword.
-2. **Judge/eval** — port AC2's harness to score the ACS panel (P2b calibration gate carries over).
+## ▶ RESUME ACTION (next session) — JUDGE PORT + UI
+1. **Judge eval harness port** (scoped, ready to build). AC2's `@lab/judge` is self-contained (one seam: injected `LlmComplete`). Port plan: copy `lab/judge` + `lab/server/src/{gemini,openai,agentRunner,streamParser}.ts` → ACS `lab/`; write an ACS eval runner (question set → `makeAgentStudioRunner(ACS agent)` → `judgeArtifact` w/ Gemini `LlmComplete`). **NEEDS: a judge LLM key in ACS `.env.local` (`GEMINI_API_KEY`)** — none present yet. **Judge output is INDICATIVE until P2b calibration** (the standing trust gate, carries from AC2).
+2. **UI** — routes through `frontend-builder` (per CLAUDE.md). AC2's `web/` is a full chat+judge Vite app; decide: adapt it (repoint to ACS agents/index) vs fresh minimal 2-agent chat demo. Needs aesthetic/shape direction.
 3. Refresh cadence for both snapshots (design docs = Feb-2026 archive; react-spectrum live).
 4. Decide app/index isolation (currently shares CENTRAL `0EXRPAXB56`; open-q #1).
 
