@@ -1,0 +1,6 @@
+.env.local
+node_modules/
+data/
+crawler_ids.json
+army_ids.json
+*.log
