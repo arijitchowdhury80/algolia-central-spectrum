@@ -33,7 +33,7 @@ flowchart LR
     TECH["Technical agent<br/>'code specialist'"]
   end
   IDX[("Algolia index<br/>ACS_SPECTRUM_MULTI<br/>358 records")]
-  JUDGE["Grounding judge<br/>lab/server :8788"]
+  JUDGE["Grounding judge (hosted, VPS)<br/>judge.contentengagement.info<br/>3-judge panel + grounding gate"]
   SCR["scripts/crawler<br/>ingest_site · crawl_html · ingest_git_docs"]
 
   U -->|query| APP
@@ -41,7 +41,7 @@ flowchart LR
   APP -->|on user consent| TECH
   GEN -->|neural + keyword retrieval| IDX
   TECH -->|retrieval| IDX
-  APP -.optional, on-demand.-> JUDGE
+  APP -->|"per answer<br/>(x-lab-key) → Confidence chip + drawer"| JUDGE
   SCR -.builds corpus.-> IDX
 ```
 
