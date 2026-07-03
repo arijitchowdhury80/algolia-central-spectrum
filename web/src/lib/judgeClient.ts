@@ -34,11 +34,14 @@ export interface JudgeDimension {
   score: number;
 }
 
-/** A claim the Skeptic flagged as unsupported by the sources. */
+/** A claim the Skeptic flagged as unsupported by the sources. The live backend
+ *  names the 0–1 score `confidence`; older/batch shapes use `certainty`. Read
+ *  whichever is present (see JudgeDrawer). */
 export interface JudgeFlaggedClaim {
   claim: string;
   reason: string;
-  certainty: number;
+  certainty?: number;
+  confidence?: number;
 }
 
 export interface JudgePerJudge {

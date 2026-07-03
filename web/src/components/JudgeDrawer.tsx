@@ -221,19 +221,37 @@ export function JudgeDrawer({ open, verdict, question, onClose }: JudgeDrawerPro
             {/* Composite + gate */}
             <div className="flex items-center justify-between gap-3">
               <div className="flex flex-col">
-                <span className="text-ac-xs font-ac-medium text-ac-text-muted">Overall · mean of 3 judges</span>
+                <span className="text-ac-xs font-ac-medium text-ac-text-muted">
+                  {verdict.gateTripped ? 'Overall · capped by grounding floor' : 'Overall · mean of 3 judges'}
+                </span>
                 <span className={`text-ac-2xl font-ac-bold ${TEXT_TONE[compTone]}`}>
                   {composite.toFixed(1)}
                   <span className="text-ac-sm font-ac-medium text-ac-text-muted">/10</span>
                 </span>
+                {verdict.gateTripped && (
+                  <span className="text-[11px] text-ac-text-muted">
+                    Panel mean was {verdict.preGateScore.toFixed(1)} — floored to {composite.toFixed(1)} because grounding wasn’t verified.
+                  </span>
+                )}
               </div>
               <GateBadge gateTripped={verdict.gateTripped} borderline={verdict.borderline} />
             </div>
 
             <p className="m-0 rounded-ac-sm bg-ac-surface-2 px-3 py-2 text-[11px] text-ac-text-muted">
-              3 blind judges (Skeptic · Referee · Advocate) score each dimension 1–10. The composite is
-              their mean; a verified grounding violation caps it via the hard floor — so a fluent-but-unsourced
-              answer can’t read green.
+              {verdict.gateTripped ? (
+                <>
+                  The dimension bars and per-judge scores below are the panel’s <strong>actual</strong> marks
+                  (mean {verdict.preGateScore.toFixed(1)}). The <strong>{composite.toFixed(1)}</strong> above is a
+                  hard-floor cap: the grounding gate trips independently of the numbers, so the answer reads
+                  UNSUPPORTED even when the judges scored it well.
+                </>
+              ) : (
+                <>
+                  3 blind judges (Skeptic · Referee · Advocate) score each dimension 1–10. The composite is
+                  their mean; a verified grounding violation caps it via the hard floor — so a fluent-but-unsourced
+                  answer can’t read green.
+                </>
+              )}
             </p>
 
             {/* Dimensions */}
@@ -261,11 +279,18 @@ export function JudgeDrawer({ open, verdict, question, onClose }: JudgeDrawerPro
                     <p className="m-0 mt-1 text-ac-xs text-ac-text-secondary">
                       {c.reason}{' '}
                       <span className="text-ac-text-muted">
-                        · {Math.round(Math.min(1, Math.max(0, c.certainty)) * 100)}% certainty
+                        · {Math.round(Math.min(1, Math.max(0, c.certainty ?? c.confidence ?? 0)) * 100)}% certainty
                       </span>
                     </p>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {verdict.gateTripped && verdict.flaggedClaims.length === 0 && (
+              <div className="rounded-ac-sm border border-ac-notice bg-ac-notice-bg px-3 py-2 text-ac-xs text-ac-notice">
+                Grounding floor tripped without a specific flagged claim — the Skeptic couldn’t map part of the
+                answer to the provided sources (often thin/partial sources rather than a clear fabrication).
               </div>
             )}
 
