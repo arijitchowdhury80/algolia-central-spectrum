@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { AppHeader } from './components/AppHeader';
 import { ChatPanel } from './components/ChatPanel';
 import { Composer } from './components/Composer';
-import { JudgePanel } from './components/JudgePanel';
+import { JudgeDrawer } from './components/JudgeDrawer';
 import { SampleQuestions } from './components/SampleQuestions';
-import { RightPanel } from './components/RightPanel';
 import { useChat } from './hooks/useChat';
 import { getEnvConfig } from './lib/agents';
+import type { JudgeVerdict } from './lib/judgeClient';
 
 /** Validates required env config once at startup. Returns the config error
  *  message (if any) so App can render a clear, actionable notice instead of
@@ -24,14 +24,15 @@ function useStartupEnvCheck(): string | null {
 }
 
 /**
- * Chat column (left, max-width `--ac-maxw`) + the live grounding-judge
- * RightPanel (right), laid out as a flex row. The judge panel always
- * reflects the most recent assistant answer (JudgePanel recomputes it from
- * `turns` on every render) — no separate wiring needed as new turns stream
- * in. The powered-by footer stays docked under the chat column only.
+ * Single centered chat column. The grounding judge is surfaced PER ANSWER: each
+ * finished answer card carries a Confidence chip (the composite judge score);
+ * clicking it opens the JudgeDrawer with the full 4-dimension + 3-judge (Skeptic
+ * / Referee / Advocate) breakdown. No passive side rail — the judge is on the
+ * answer, one click away, exactly where the score belongs.
  */
 function AppShell() {
   const { turns, isStreaming, sendMessage, retryTurn, runDeepDive, declineDeepDive, reset } = useChat();
+  const [judgeView, setJudgeView] = useState<{ verdict: JudgeVerdict; question: string } | null>(null);
 
   return (
     <div className="relative flex h-dvh min-h-screen flex-col font-ac-sans text-ac-text">
@@ -48,32 +49,34 @@ function AppShell() {
       />
       <AppHeader onReset={reset} />
 
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="mx-auto flex w-full max-w-ac-maxw flex-1 flex-col overflow-hidden px-4 sm:px-6">
-            <ChatPanel
-              turns={turns}
-              onPickSample={sendMessage}
-              onRetry={retryTurn}
-              onDeepDive={runDeepDive}
-              onDecline={declineDeepDive}
-              onPickFollowUp={sendMessage}
-              isStreaming={isStreaming}
-            />
-          </div>
-
-          <div className="shrink-0 border-t border-ac-border bg-ac-surface">
-            <div className="mx-auto flex w-full max-w-ac-maxw flex-col gap-2 px-4 py-3 sm:px-6">
-              <SampleQuestions onPick={sendMessage} disabled={isStreaming} />
-              <Composer disabled={isStreaming} onSend={sendMessage} />
-            </div>
-          </div>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="mx-auto flex w-full max-w-ac-maxw flex-1 flex-col overflow-hidden px-4 sm:px-6">
+          <ChatPanel
+            turns={turns}
+            onPickSample={sendMessage}
+            onRetry={retryTurn}
+            onDeepDive={runDeepDive}
+            onDecline={declineDeepDive}
+            onPickFollowUp={sendMessage}
+            onOpenJudge={(verdict, question) => setJudgeView({ verdict, question })}
+            isStreaming={isStreaming}
+          />
         </div>
 
-        <RightPanel>
-          <JudgePanel turns={turns} />
-        </RightPanel>
+        <div className="shrink-0 border-t border-ac-border bg-ac-surface">
+          <div className="mx-auto flex w-full max-w-ac-maxw flex-col gap-2 px-4 py-3 sm:px-6">
+            <SampleQuestions onPick={sendMessage} disabled={isStreaming} />
+            <Composer disabled={isStreaming} onSend={sendMessage} />
+          </div>
+        </div>
       </div>
+
+      <JudgeDrawer
+        open={judgeView !== null}
+        verdict={judgeView?.verdict ?? null}
+        question={judgeView?.question ?? ''}
+        onClose={() => setJudgeView(null)}
+      />
     </div>
   );
 }

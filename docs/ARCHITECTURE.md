@@ -15,7 +15,7 @@ A file-level map of the repo. For the big picture, see the [README](../README.md
 | Piece | Dir | Ships to browser? | Talks to |
 |---|---|---|---|
 | **Chat app** | `web/` | ✅ (static bundle) | Algolia Agent Studio directly (search-only key) |
-| **Grounding judge** | `lab/` | ❌ (local/optional service) | An LLM provider; called by the app on demand |
+| **Grounding judge** | `lab/` (source) | ❌ hosted on the VPS (`judge.contentengagement.info`) | An LLM provider; called per answer with `x-lab-key` auth |
 | **Corpus + agent tooling** | `scripts/` | ❌ (dev/ops scripts) | Algolia indexing + Agent Studio admin APIs |
 
 They are decoupled: the app runs without the judge, and the corpus is built out-of-band by the scripts.
@@ -28,7 +28,7 @@ They are decoupled: the app runs without the judge, and the corpus is built out-
 | File | Role |
 |---|---|
 | `src/main.tsx` | React entry point. |
-| `src/App.tsx` | App shell — validates env at startup (renders a "Configuration error" card on failure), lays out the chat column + right judge panel, wires `useChat` callbacks to the UI. |
+| `src/App.tsx` | App shell — validates env at startup (renders a "Configuration error" card on failure), lays out the single chat column, holds the open-judge state and renders the `JudgeDrawer` overlay, wires `useChat` callbacks to the UI. |
 | `src/types.ts` | Shared types: `ChatTurn`, `AnswerSegment`, `AnswerSource`, `HistoryEntry`. |
 | `index.html`, `vite.config.ts`, `tailwind.config.ts`, `postcss.config.js`, `tsconfig*.json` | Build/config. |
 
@@ -44,7 +44,7 @@ They are decoupled: the app runs without the judge, and the corpus is built out-
 | `agentStudio.ts` | Agent Studio HTTP client. Builds the completions URL (`https://{APP_ID}.algolia.net/agent-studio/1/agents/{AGENT_ID}/completions?compatibilityMode=ai-sdk-4`) and streams the response. |
 | `agents.ts` | Reads + validates the two required env vars (`VITE_ALGOLIA_APP_ID`, `VITE_ALGOLIA_SEARCH_API_KEY`); defines `HANDOFF_SENTINEL`; resolves per-agent `CompletionsConfig` from the active instance. |
 | `sources.ts` | `normalizeHit`, `groupSources`, `totalSources` — turns raw Agent Studio hits into deduped, facet-grouped `AnswerSource[]` for the source pills. |
-| `judgeClient.ts` | Thin client for the judge service (`POST /api/judge`, base URL from `VITE_JUDGE_URL` or `http://localhost:8788`). |
+| `judgeClient.ts` | Client for the judge service (`POST /api/judge`, base URL from `VITE_JUDGE_URL` or `http://localhost:8788`). Sends `x-lab-key` from `VITE_LAB_API_KEY`; types `JudgeDims` as `Record<string, number>` so it renders whatever rubric the backend returns. |
 
 ### `src/config/` — the instance contract (what makes it templatizable)
 | File | Role |
@@ -58,7 +58,7 @@ They are decoupled: the app runs without the judge, and the corpus is built out-
 |---|---|
 | `AppHeader.tsx` | Co-brand header (Adobe logo + "Search by Algolia"); logo click resets the session. |
 | `ChatPanel.tsx` | Scrolling list of turns; shows `EmptyState` when idle. |
-| `ChatMessage.tsx` | Renders one turn's answer segment(s) with its heading band. |
+| `ChatMessage.tsx` | Renders one turn's answer segment(s) with its heading band; runs `useJudge` per answer and shows the `ConfidenceChip` bottom-right of the sources. |
 | `Composer.tsx` | The input box + Send button. |
 | `SampleQuestions.tsx` | Grouped, sectioned sample-question popover above the composer. |
 | `EmptyState.tsx` | First-load hero (eyebrow + heading + one chip per section). |
@@ -68,8 +68,8 @@ They are decoupled: the app runs without the judge, and the corpus is built out-
 | `SourcePills.tsx` | Grouped source citations with per-facet count badges. |
 | `ThinkingIndicator.tsx` | Phased status animation during the pre-text dead-air. |
 | `ErrorCard.tsx` | Answer-level error / empty-answer fallback ("No response — try again"). |
-| `RightPanel.tsx` | Right column container; hosts the judge panel (collapsed by default). |
-| `JudgePanel.tsx` | Recomputes + shows the grounding verdict for the latest answer. |
+| `ConfidenceChip.tsx` | The composite judge score shown on each finished answer ("scoring…" → "Confidence N.N", "⚠ N flagged" when the grounding floor trips). Click → opens the drawer. |
+| `JudgeDrawer.tsx` | Right slide-over with the full verdict: composite + gate badge, dimension bars, the **3 judges as collapsed accordions** (Skeptic / Referee / Advocate), flagged claims, synthesis rationale. Dims render dynamically from whatever the backend returns. |
 | `MessageMarkdown.tsx` | Markdown renderer for answer text. |
 | `AgentBadge.tsx`, `PoweredByAlgolia.tsx` | Legacy/attribution atoms (see SESSION.md for current usage). |
 

@@ -13,7 +13,7 @@ It is one concrete instance of a reusable **`Algolia-Central-[Company]`** patter
 - **One grounded answer per question**, streamed live, with **source pills** citing the exact Spectrum docs used.
 - **Human-gated deep dive** — for code-heavy questions the assistant *offers* to bring in a "code specialist"; the specialist only runs when the user clicks **Yes**. No noisy auto-relay.
 - **Discovery follow-ups** — the assistant suggests a real next question you might ask (agent-generated, not canned).
-- **On-demand grounding judge** — a separate service can grade any answer for grounding/coverage/depth (collapsed by default; the app works without it).
+- **Per-answer grounding judge** — every answer carries a **Confidence chip** (the composite score from a blind 3-judge panel); click it to open a drawer with the full breakdown (dimension bars, the 3 judges, flagged claims, rationale). The judge runs on a hosted service; the app works without it.
 - **Refuses when it can't ground** — if the corpus doesn't cover it, the assistant says so instead of hallucinating.
 
 ---
@@ -114,7 +114,8 @@ npm run judge:serve    # → http://localhost:8788
 |---|---|---|---|
 | `VITE_ALGOLIA_APP_ID` | `web/.env.local` (build-time) | ✅ | Algolia app hosting the index + agents |
 | `VITE_ALGOLIA_SEARCH_API_KEY` | `web/.env.local` (build-time) | ✅ | **Search-only** key — inlined into the browser bundle |
-| `VITE_JUDGE_URL` | `web/.env.local` | ⬜ | Judge base URL; defaults to `http://localhost:8788` |
+| `VITE_JUDGE_URL` | `web/.env.local` | ⬜ | Hosted judge base URL (`https://judge.contentengagement.info`). Unset → `http://localhost:8788` (local judge). |
+| `VITE_LAB_API_KEY` | `web/.env.local` | ⬜ | Shared secret sent as `x-lab-key` to the hosted judge (browser-shipped + rate-limited). Without it the hosted judge returns 401. |
 
 The `web/` env vars are inlined at build time, so they must be **browser-safe**. The app validates both at startup and renders a clear "Configuration error" screen (not a blank page) if either is missing.
 
@@ -127,7 +128,7 @@ Algolia-Central-Spectrum/
 ├── vercel.json              # Vercel: build web/ → web/dist (fixes root-build 404)
 ├── web/                     # the chat app (Vite + React + TypeScript + Tailwind)
 │   ├── src/
-│   │   ├── App.tsx          # shell: chat column + right judge panel
+│   │   ├── App.tsx          # shell: chat column + JudgeDrawer overlay
 │   │   ├── components/      # presentational UI (see docs/ARCHITECTURE.md)
 │   │   ├── hooks/           # useChat (turn orchestration), useJudge
 │   │   ├── lib/             # agentStudio (API client), agents, sources, judgeClient
@@ -166,7 +167,9 @@ Full dir-by-dir breakdown: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**. Edi
 
 ## The grounding judge (`lab/`)
 
-An optional, provider-agnostic service that grades an answer against its cited sources on four dimensions (Grounding / Coverage / Depth / Relevance) with a **grounding hard-gate** — an answer that makes unsupported claims fails regardless of how good it reads. The app calls it on demand (`web/src/lib/judgeClient.ts` → `POST /api/judge`); the panel is collapsed by default and the app is fully functional without it.
+A provider-agnostic service that grades an answer against its cited sources with a blind **3-judge panel** (Skeptic / Referee / Advocate) across the backend's rubric dimensions, plus a **grounding hard-gate** — an answer that makes unsupported claims is capped regardless of how good it reads. The app calls it per answer (`web/src/lib/judgeClient.ts` → `POST /api/judge`, with `x-lab-key` auth) and surfaces the composite as the **Confidence chip** on each answer → **`JudgeDrawer`** on click. The judge is **hosted on the VPS** (`https://judge.contentengagement.info`); the app is fully functional without it.
+
+> The deployed service currently returns the 3-dimension rubric (Grounding / Confidence / Breadth & depth). The UI types dims as `Record<string, number>` and renders whatever the backend sends, so a rubric change never breaks it.
 
 ---
 
@@ -187,7 +190,12 @@ The app is a static Vite build. `vercel.json` (repo root) tells Vercel to build 
 - `VITE_ALGOLIA_APP_ID`
 - `VITE_ALGOLIA_SEARCH_API_KEY` (search-only — safe to expose)
 
-The grounding judge (`lab/server`) is **not** part of the static deploy; leave `VITE_JUDGE_URL` unset in production (the judge panel simply stays inactive).
+**The grounding judge runs on the VPS** — `https://judge.contentengagement.info` (Caddy on 443 → the `ac2-lab-backend` container; no extra port, CORS `*`) — not in this static deploy. To light up the per-answer Confidence chip + drawer on the deployed site, also set:
+
+- `VITE_JUDGE_URL=https://judge.contentengagement.info`
+- `VITE_LAB_API_KEY` = the judge's `LAB_API_KEY` (browser-shipped, rate-limited)
+
+Leave them unset and the app still works — the Confidence chip just stays inactive. Full turnkey contract: [`Algolia-Central-Artifacts/judge/README-artifact.md`](../Algolia-Central-Artifacts/judge/README-artifact.md).
 
 ---
 

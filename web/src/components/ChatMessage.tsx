@@ -4,19 +4,43 @@ import { ErrorCard } from './ErrorCard';
 import { DeepDivePrompt } from './DeepDivePrompt';
 import { DiscoveryCard } from './DiscoveryCard';
 import { ThinkingIndicator } from './ThinkingIndicator';
+import { ConfidenceChip } from './ConfidenceChip';
+import { useJudge, type JudgeTarget } from '../hooks/useJudge';
 import { activeInstance } from '../config/active';
+import type { JudgeVerdict } from '../lib/judgeClient';
 import type { AnswerSegment, ChatTurn } from '../types';
 
 /** One answer card. Borderless + soft shadow (floats, not boxy), with a titled
  *  heading band (accent bar + agent label) so each response reads as its own
- *  card — the default assistant answer and, on request, the specialist deep-dive
- *  are each self-titled rather than sharing a "which bot" chip. */
-function SegmentView({ segment, onRetry }: { segment: AnswerSegment; onRetry: () => void }) {
+ *  card. Each finished answer also carries its own **Confidence chip** — the
+ *  composite grounding-judge score — which opens the full breakdown drawer. */
+function SegmentView({
+  segment,
+  turnId,
+  question,
+  onRetry,
+  onOpenJudge,
+}: {
+  segment: AnswerSegment;
+  turnId: string;
+  question: string;
+  onRetry: () => void;
+  onOpenJudge: (verdict: JudgeVerdict, question: string) => void;
+}) {
   const busy = segment.status === 'loading' || segment.status === 'streaming';
   const hasText = !!segment.text.trim();
   const waiting = segment.status === 'loading' || (segment.status === 'streaming' && !hasText);
   const emptyResult = segment.status === 'success' && !hasText;
   const meta = activeInstance.agents[segment.agent];
+
+  // Judge THIS answer once it has streamed a real body. The hook is a no-op
+  // (idle) until the target is non-null, so it's safe to call every render.
+  const canJudge = segment.status === 'success' && hasText;
+  const target: JudgeTarget | null = canJudge
+    ? { id: `${turnId}:${segment.agent}`, question, segment }
+    : null;
+  const { status: judgeStatus, verdict } = useJudge(target);
+
   return (
     <div className="flex flex-col gap-3 rounded-ac-xl bg-ac-surface p-6 shadow-ac-2" aria-busy={busy}>
       <div className="flex items-center gap-2">
@@ -47,7 +71,20 @@ function SegmentView({ segment, onRetry }: { segment: AnswerSegment; onRetry: ()
 
       {segment.status === 'error' && <ErrorCard agent={segment.agent} onRetry={onRetry} />}
 
-      {segment.status === 'success' && segment.sources.length > 0 && <SourcePills sources={segment.sources} />}
+      {segment.status === 'success' && (segment.sources.length > 0 || canJudge) && (
+        <div className="flex items-end justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            {segment.sources.length > 0 && <SourcePills sources={segment.sources} />}
+          </div>
+          {canJudge && (
+            <ConfidenceChip
+              verdict={verdict}
+              scoring={judgeStatus === 'judging'}
+              onOpenJudge={verdict && !verdict.error ? () => onOpenJudge(verdict, question) : undefined}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -58,13 +95,14 @@ export interface ChatMessageProps {
   onDeepDive: (turnId: string) => void;
   onDecline: (turnId: string) => void;
   onPickFollowUp: (question: string) => void;
+  onOpenJudge: (verdict: JudgeVerdict, question: string) => void;
   isStreaming: boolean;
 }
 
-/** One full turn: the user's question bubble, the assistant answer card, and —
- *  only if the user accepts the offer — a specialist deep-dive card. The offer
- *  appears after the answer while awaiting the user's choice. */
-export function ChatMessage({ turn, onRetry, onDeepDive, onDecline, onPickFollowUp, isStreaming }: ChatMessageProps) {
+/** One full turn: the user's question bubble, the assistant answer card (with its
+ *  Confidence chip), and — only if the user accepts the offer — a specialist
+ *  deep-dive card. The offer appears after the answer while awaiting the choice. */
+export function ChatMessage({ turn, onRetry, onDeepDive, onDecline, onPickFollowUp, onOpenJudge, isStreaming }: ChatMessageProps) {
   const isStreamingTurn = turn.segments.some((s) => s.status === 'loading' || s.status === 'streaming');
   const showOffer = turn.deepDiveOffered && !turn.handoff && !turn.deepDiveDeclined;
   return (
@@ -74,7 +112,14 @@ export function ChatMessage({ turn, onRetry, onDeepDive, onDecline, onPickFollow
       </div>
       <div className="flex flex-col gap-3.5" aria-live="polite" aria-busy={isStreamingTurn}>
         {turn.segments.map((segment) => (
-          <SegmentView key={`${turn.id}-${segment.agent}`} segment={segment} onRetry={() => onRetry(turn.id)} />
+          <SegmentView
+            key={`${turn.id}-${segment.agent}`}
+            segment={segment}
+            turnId={turn.id}
+            question={turn.query}
+            onRetry={() => onRetry(turn.id)}
+            onOpenJudge={onOpenJudge}
+          />
         ))}
         {showOffer && (
           <DeepDivePrompt

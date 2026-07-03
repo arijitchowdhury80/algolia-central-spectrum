@@ -21,12 +21,12 @@
 
 export type JudgeRole = 'skeptic' | 'referee' | 'advocate';
 
-export interface JudgeDims {
-  grounding: number;
-  coverage: number;
-  depth: number;
-  relevance: number;
-}
+/** Per-dimension mean scores (0–10), keyed by the backend's dimension ids.
+ *  The hosted judge (judge.contentengagement.info) currently returns the
+ *  3-dimension rubric — `grounding` / `confidence` / `breadthDepth` — but this
+ *  is kept loose (Record) so a rubric change on the backend renders whatever it
+ *  sends instead of crashing on a missing key. */
+export type JudgeDims = Record<string, number>;
 
 export interface JudgeDimension {
   id: string;
@@ -99,6 +99,13 @@ interface LiveJudgeResultBody {
  *  and without the `?.` this throws before the fallback ever runs. */
 export function judgeServiceUrl(): string {
   return (import.meta.env?.VITE_JUDGE_URL as string | undefined) || 'http://localhost:8788';
+}
+
+/** The shared secret the hosted judge requires as `x-lab-key` (lab/server auth).
+ *  Undefined when unset — an unauthenticated local judge needs no header. */
+export function labApiKey(): string | undefined {
+  const k = import.meta.env?.VITE_LAB_API_KEY as string | undefined;
+  return k && k.trim() ? k : undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -205,11 +212,15 @@ export async function judgeAnswer(
     ],
   };
 
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const key = labApiKey();
+  if (key) headers['x-lab-key'] = key;
+
   let res: Response;
   try {
     res = await fetchImpl(`${judgeServiceUrl()}/api/judge`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(body),
     });
   } catch (err) {
