@@ -43,8 +43,8 @@ OPEN: (a) **judge scoring bug** — scores uniformly ~1/10, a parse/mapping bug 
 - Agent grounding: bait-query harness must show no leak (port AC2's `agent_admin.mjs bait` pattern to `ACS-` agents).
 - Judge/eval suites ported from AC2 (`lab/judge` unchanged, `lab/eval` = ACS runner) — fix scoring bug before trusting scores.
 
-## ▶ STATUS: DONE (2026-07-03) — see SESSION.md top block
-Parts 1–2 built + verified end-to-end (browser smoke passed). Corpus re-ingested Scout-native (309 recs). Framework artifacts in `Algolia-Central-Artifacts/`. Only optional polish remains (SESSION.md "NOT done"). The historical build brief below is kept for context.
+## ▶ STATUS (2026-07-03 night): DOCS SHIPPED + VERCEL LIVE. NEXT = optional polish only. — see SESSION.md top block
+Repo now has README + architecture/turn-flow diagrams + code map (`973add9`) + GitHub description/topics. **Public deploy live and verified:** `https://algolia-central-spectrum.vercel.app` returns HTTP 200 with env vars set (root cause was a missing `vercel.json` — Vercel was building repo root instead of `web/`). Design system unchanged (light Algolia, Sora/Nebula Blue, cobrand Adobe×Algolia). Corpus 358 recs (V3=144); front agent gemini-2.5-flash-lite. **Only unverified risk: Agent Studio CORS from the vercel.app origin — not yet proven by a real browser query.** Authoritative fix-log: `Algolia-Central-Artifacts/AUTONOMOUS-LAUNCH-PLAYBOOK.md` §7. The historical build brief below is kept for context.
 
 ## ▶ (historical) build the UX (design-system framework)
 Build via `frontend-builder` (design-thinking first, per global CLAUDE.md). Shape = **fresh minimal chat**: 2-agent (Generic + Technical), streaming, grounded source cards, Generic→Technical handoff made visible. Build it as the **templatizable Algolia-Central layout** (see DESIGN-SYSTEM MISSION).
