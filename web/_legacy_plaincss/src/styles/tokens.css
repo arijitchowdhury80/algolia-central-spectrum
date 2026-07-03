@@ -1,0 +1,99 @@
+/**
+ * Design tokens — theme-dashboard, dark-first. All colors live here as CSS
+ * custom properties; components never hardcode hex. A light token set is
+ * provided via prefers-color-scheme so "dark mode breaks" can't happen —
+ * there's no dark-mode toggle, the OS preference picks the set.
+ *
+ * Accent contrast: text-tone accents (--generic-accent / --technical-accent)
+ * are the lighter "400" shade of each hue specifically so they clear 4.5:1
+ * against the near-black surface; the deeper "500/600" shades are reserved
+ * for solid fills (chip backgrounds, buttons) where the foreground is white.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --surface-0: #0b0e14; /* app background */
+  --surface-1: #12161f; /* panel / card background */
+  --surface-2: #1a2029; /* raised element (composer, code block) */
+  --surface-border: #2a323f;
+
+  /* Text */
+  --text-primary: #eef1f6;
+  --text-secondary: #a8b1c2;
+  --text-muted: #6b7486;
+
+  /* Generic agent — indigo */
+  --generic-accent: #97a1fb; /* text-safe tint, ~8:1 on surface-0 */
+  --generic-accent-strong: #6366f1; /* solid fills */
+  --generic-accent-bg: rgba(99, 102, 241, 0.14);
+
+  /* Technical agent — teal */
+  --technical-accent: #5eead4; /* text-safe tint, ~11:1 on surface-0 */
+  --technical-accent-strong: #2dd4bf; /* solid fills */
+  --technical-accent-bg: rgba(45, 212, 191, 0.14);
+
+  /* Source facet accents (pill borders/tags) */
+  --source-design: #c4b5fd; /* violet */
+  --source-s2: #93c5fd; /* blue */
+  --source-v3: #67e8f9; /* cyan */
+  --source-aria: #fcd34d; /* amber */
+  --source-releases: #fda4af; /* rose */
+  --source-other: #b4bcc9; /* gray */
+
+  /* Status */
+  --error-bg: rgba(248, 113, 113, 0.12);
+  --error-border: #f87171;
+  --error-text: #fecaca;
+
+  /* Focus ring */
+  --focus-ring: #97a1fb;
+
+  /* Typography */
+  --font-ui: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Layout */
+  --content-max-width: 760px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --touch-target: 44px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+
+    --surface-0: #f7f8fb;
+    --surface-1: #ffffff;
+    --surface-2: #eef0f4;
+    --surface-border: #dde1e8;
+
+    --text-primary: #14181f;
+    --text-secondary: #454f5f;
+    --text-muted: #6b7486;
+
+    --generic-accent: #4338ca; /* text-safe on light: ~7.5:1 */
+    --generic-accent-strong: #4f46e5;
+    --generic-accent-bg: rgba(79, 70, 229, 0.08);
+
+    --technical-accent: #0f766e; /* text-safe on light: ~6.5:1 */
+    --technical-accent-strong: #0d9488;
+    --technical-accent-bg: rgba(13, 148, 136, 0.08);
+
+    --source-design: #6d28d9;
+    --source-s2: #1d4ed8;
+    --source-v3: #0e7490;
+    --source-aria: #b45309;
+    --source-releases: #be123c;
+    --source-other: #4b5563;
+
+    --error-bg: rgba(220, 38, 38, 0.08);
+    --error-border: #dc2626;
+    --error-text: #7f1d1d;
+
+    --focus-ring: #4338ca;
+  }
+}

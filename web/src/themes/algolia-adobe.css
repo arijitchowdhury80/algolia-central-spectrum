@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/**
+ * Algolia × Adobe cobrand skin — the Algolia Design System (LIGHT).
+ *
+ * Re-declares the frozen `--ac-*` contract (src/styles/tokens.css) with the
+ * Algolia design language: Sora type, Nebula Blue #003DFF, slate neutrals on a
+ * light canvas, crisp blue-tinted shadows. Values from the DS bundle
+ * (`colors_and_type.css`). Corpus/brand stays Adobe. Sora ships 300/400/600
+ * only → medium & bold map to 600. Google-Fonts delivery (no referrer lock).
+ */
+
+:root {
+  color-scheme: light;
+
+  /* ============================== COLOR ============================== */
+  --ac-bg: #f7f8fb;              /* Algolia canvas wash (gray-050) */
+  --ac-surface: #ffffff;
+  --ac-surface-2: #eef0f5;       /* inset (gray-100) */
+  --ac-surface-hover: #e6e9f0;
+  --ac-border: #e1e4ec;          /* border-subtle (gray-200) */
+  --ac-border-strong: #c7ccd8;   /* border-default (gray-300) */
+
+  --ac-text: #021046;            /* ink — headlines/primary */
+  --ac-text-secondary: #2f3447;  /* gray-700 — body */
+  --ac-text-muted: #6b7280;      /* gray-500 — muted/labels */
+  --ac-text-on-accent: #ffffff;
+
+  --ac-accent: #003dff;          /* Nebula Blue — primary brand */
+  --ac-accent-hover: #0031cc;    /* blue-700 */
+  --ac-accent-down: #0028a3;
+  --ac-accent-tint: #e6ecff;     /* blue-100 */
+
+  --ac-link: #003dff;
+  --ac-focus: #003dff;
+
+  --ac-positive: #1f9d55;
+  --ac-positive-bg: #e6f6ee;
+  --ac-notice: #d97706;
+  --ac-notice-bg: #fdf0dd;
+  --ac-negative: #e11d48;
+  --ac-negative-bg: #fde7ec;
+  --ac-informative: #003dff;
+  --ac-informative-bg: #e6ecff;
+
+  /* Assistant = Algolia blue, specialist = accent purple (DS accent set). */
+  --ac-agent-generic: #003dff;
+  --ac-agent-technical: #8a4fff;
+
+  /* ============================== TYPE ================================ */
+  --ac-font-sans: 'Sora', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ac-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --ac-fs-xs: 12px;
+  --ac-fs-sm: 14px;
+  --ac-fs-base: 16px;
+  --ac-fs-lg: 18px;
+  --ac-fs-xl: 22px;
+  --ac-fs-2xl: 28px;
+
+  --ac-fw-regular: 400;
+  --ac-fw-medium: 600;
+  --ac-fw-bold: 600;
+
+  --ac-lh-body: 1.5;
+  --ac-lh-heading: 1.2;
+
+  /* ============================== SPACE ================================ */
+  --ac-space-1: 4px;
+  --ac-space-2: 8px;
+  --ac-space-3: 12px;
+  --ac-space-4: 16px;
+  --ac-space-5: 20px;
+  --ac-space-6: 24px;
+  --ac-space-7: 32px;
+  --ac-space-8: 40px;
+  --ac-space-9: 48px;
+  --ac-space-10: 64px;
+
+  --ac-gutter: 24px;
+  --ac-measure: 72ch;
+  --ac-maxw: 1120px;
+
+  /* ============================== SHAPE ================================ */
+  --ac-radius-sm: 8px;
+  --ac-radius-md: 12px;
+  --ac-radius-lg: 18px;
+  --ac-radius-xl: 24px;           /* generous rounding — cured edges */
+  --ac-radius-full: 999px;
+
+  /* ============================= ELEVATION ============================= */
+  /* Crisp, low-spread, blue-tinted (ink rgba) — Algolia's card shadow feel. */
+  --ac-shadow-1: 0 2px 4px rgba(2, 16, 70, 0.06), 0 1px 2px rgba(2, 16, 70, 0.04);
+  --ac-shadow-2: 0 8px 24px rgba(2, 16, 70, 0.08), 0 2px 6px rgba(2, 16, 70, 0.05);
+  --ac-shadow-3: 0 18px 40px rgba(2, 16, 70, 0.10), 0 4px 12px rgba(2, 16, 70, 0.06);
+  --ac-shadow-focus: 0 0 0 2px #ffffff, 0 0 0 4px #003dff;
+
+  /* =============================== MOTION =============================== */
+  --ac-dur-fast: 120ms;
+  --ac-dur-base: 200ms;
+  --ac-dur-slow: 320ms;
+  --ac-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* =============================== LAYOUT ================================ */
+  --ac-header-h: 64px;
+  --ac-composer-h: 64px;
+}
+
+body {
+  font-family: var(--ac-font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle branded lift for primary CTAs / the user bubble (light-appropriate —
+   a soft blue shadow, not a neon glow). */
+.ac-glow-accent {
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--ac-accent) 18%, transparent);
+}

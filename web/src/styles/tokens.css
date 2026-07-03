@@ -1,0 +1,108 @@
+/**
+ * Algolia-Central token contract — the `--ac-*` vocabulary.
+ *
+ * This file is the FROZEN API. Structure components (src/components/*) consume
+ * ONLY these custom properties (via Tailwind theme.extend in tailwind.config.ts,
+ * or `var(--ac-*)` directly for dynamic cases) — never a raw hex value, never a
+ * skin-specific variable name. Grep proof: `grep -rE '#[0-9a-fA-F]{3,6}' src/components`
+ * must return nothing.
+ *
+ * The values below are NEUTRAL DEFAULTS ONLY — a look-less gray scaffold so the
+ * app is never unstyled if a skin fails to load. The actual brand look comes
+ * from a skin file (src/themes/spectrum.css or src/themes/algolia.css) that
+ * re-declares these same custom properties with real values. Skins MUST cover
+ * every token declared here — see src/themes/README (Part 2) for the contract
+ * when authoring a new client skin.
+ */
+
+:root {
+  /* ============================== COLOR ============================== */
+  --ac-bg: #f5f5f5;
+  --ac-surface: #ffffff;
+  --ac-surface-2: #f0f0f0;
+  --ac-surface-hover: #eaeaea;
+  --ac-border: #e0e0e0;
+  --ac-border-strong: #b0b0b0;
+
+  --ac-text: #1a1a1a;
+  --ac-text-secondary: #4d4d4d;
+  --ac-text-muted: #757575;
+  --ac-text-on-accent: #ffffff;
+
+  --ac-accent: #3a3a3a;
+  --ac-accent-hover: #2c2c2c;
+  --ac-accent-down: #1f1f1f;
+  --ac-accent-tint: #ececec;
+
+  --ac-link: #3a3a3a;
+  --ac-focus: #3a3a3a;
+
+  --ac-positive: #2e7d46;
+  --ac-positive-bg: #e6f4ea;
+  --ac-notice: #a15c00;
+  --ac-notice-bg: #fbeedd;
+  --ac-negative: #b3261e;
+  --ac-negative-bg: #fbe9e7;
+  --ac-informative: #3a3a3a;
+  --ac-informative-bg: #ececec;
+
+  --ac-agent-generic: #5c5c5c;
+  --ac-agent-technical: #707070;
+
+  /* ============================== TYPE ================================ */
+  --ac-font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ac-font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --ac-fs-xs: 12px;
+  --ac-fs-sm: 14px;
+  --ac-fs-base: 16px;
+  --ac-fs-lg: 18px;
+  --ac-fs-xl: 22px;
+  --ac-fs-2xl: 28px;
+
+  --ac-fw-regular: 400;
+  --ac-fw-medium: 500;
+  --ac-fw-bold: 700;
+
+  --ac-lh-body: 1.5;
+  --ac-lh-heading: 1.2;
+
+  /* ============================== SPACE ================================ */
+  --ac-space-1: 4px;
+  --ac-space-2: 8px;
+  --ac-space-3: 12px;
+  --ac-space-4: 16px;
+  --ac-space-5: 20px;
+  --ac-space-6: 24px;
+  --ac-space-7: 32px;
+  --ac-space-8: 40px;
+  --ac-space-9: 48px;
+  --ac-space-10: 64px;
+
+  --ac-gutter: 24px;
+  --ac-measure: 72ch;
+  --ac-maxw: 1120px;
+
+  /* ============================== SHAPE ================================ */
+  --ac-radius-sm: 4px;
+  --ac-radius-md: 8px;
+  --ac-radius-lg: 12px;
+  --ac-radius-xl: 16px;
+  --ac-radius-full: 9999px;
+
+  /* ============================= ELEVATION ============================= */
+  --ac-shadow-1: 0 1px 4px rgba(0, 0, 0, 0.08);
+  --ac-shadow-2: 0 3px 12px rgba(0, 0, 0, 0.1);
+  --ac-shadow-3: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --ac-shadow-focus: 0 0 0 2px #ffffff, 0 0 0 4px #3a3a3a;
+
+  /* =============================== MOTION =============================== */
+  --ac-dur-fast: 120ms;
+  --ac-dur-base: 190ms;
+  --ac-dur-slow: 320ms;
+  --ac-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* =============================== LAYOUT ================================ */
+  --ac-header-h: 64px;
+  --ac-composer-h: 64px;
+}

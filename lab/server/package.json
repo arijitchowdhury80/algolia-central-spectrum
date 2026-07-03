@@ -1,0 +1,23 @@
+{
+  "name": "@lab/server-acs",
+  "version": "0.1.0",
+  "description": "Minimal judge HTTP service for ACS: ports AC2 lab/server's judge slice (judgeService/judgeHandler/liveJudge + provider chain) decoupled from AC2's eval pipeline. Runs the live grounding judge for the ACS chat UI.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "judge:serve": "tsx src/judge/judgeService.ts",
+    "judge:cli": "tsx src/judge/judgeCli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lab/judge": "file:../judge"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.21",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

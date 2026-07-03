@@ -1,0 +1,103 @@
+/**
+ * Algolia skin — the FRAMEWORK DEFAULT/house skin.
+ *
+ * Used by any un-configured instance, and as the source of the "powered by
+ * Algolia" attribution mark on every instance regardless of active skin (the
+ * mark/logo asset, not this whole stylesheet, is what's invariant — see
+ * PoweredByAlgolia.tsx). Values lifted from the Algolia design-system
+ * extraction at algolia-ds/algolia-design-system/project/colors_and_type.css.
+ *
+ * Sora only has 300/400/600 weights (no 700+, no italics per the brand spec)
+ * — --ac-fw-bold is capped at 600 here, not 700.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ============================== COLOR ============================== */
+  --ac-bg: #f7f8fb;
+  --ac-surface: #ffffff;
+  --ac-surface-2: #eef0f5;
+  --ac-surface-hover: #eef0f5;
+  --ac-border: #e1e4ec;
+  --ac-border-strong: #9aa1b2;
+
+  --ac-text: #021046;
+  --ac-text-secondary: #2f3447;
+  --ac-text-muted: #6b7280;
+  --ac-text-on-accent: #ffffff;
+
+  /* Nebula Blue */
+  --ac-accent: #003dff;
+  --ac-accent-hover: #0031cc;
+  --ac-accent-down: #002499;
+  --ac-accent-tint: #e6ecff;
+
+  --ac-link: #003dff;
+  --ac-focus: #003dff;
+
+  --ac-positive: #1f9d55;
+  --ac-positive-bg: #e3f5ea;
+  --ac-notice: #d97706;
+  --ac-notice-bg: #fef3e2;
+  --ac-negative: #e11d48;
+  --ac-negative-bg: #fde3e9;
+  --ac-informative: #003dff;
+  --ac-informative-bg: #e6ecff;
+
+  --ac-agent-generic: #8a4fff; /* accent-purple */
+  --ac-agent-technical: #00b6ff; /* accent-cyan */
+
+  /* ============================== TYPE ================================ */
+  --ac-font-sans: 'Sora', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ac-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --ac-fs-xs: 12px;
+  --ac-fs-sm: 14px;
+  --ac-fs-base: 16px;
+  --ac-fs-lg: 18px;
+  --ac-fs-xl: 22px;
+  --ac-fs-2xl: 28px;
+
+  --ac-fw-regular: 400;
+  --ac-fw-medium: 600;
+  --ac-fw-bold: 600;
+
+  --ac-lh-body: 1.5;
+  --ac-lh-heading: 1.2;
+
+  /* ============================== SPACE ================================ */
+  /* 4px grid (s-1..s-16) */
+  --ac-space-1: 4px;
+  --ac-space-2: 8px;
+  --ac-space-3: 12px;
+  --ac-space-4: 16px;
+  --ac-space-5: 20px;
+  --ac-space-6: 24px;
+  --ac-space-7: 32px;
+  --ac-space-8: 40px;
+  --ac-space-9: 48px;
+  --ac-space-10: 64px;
+
+  --ac-gutter: 24px;
+  --ac-measure: 72ch;
+  --ac-maxw: 1120px;
+
+  /* ============================== SHAPE ================================ */
+  --ac-radius-sm: 6px;
+  --ac-radius-md: 8px;
+  --ac-radius-lg: 12px;
+  --ac-radius-full: 999px;
+
+  /* ============================= ELEVATION ============================= */
+  --ac-shadow-1: 0 2px 4px rgba(2, 16, 70, 0.06), 0 1px 2px rgba(2, 16, 70, 0.04);
+  --ac-shadow-2: 0 6px 16px rgba(2, 16, 70, 0.08), 0 2px 4px rgba(2, 16, 70, 0.04);
+  --ac-shadow-3: 0 18px 40px rgba(2, 16, 70, 0.1), 0 4px 12px rgba(2, 16, 70, 0.06);
+  --ac-shadow-focus: 0 0 0 2px #ffffff, 0 0 0 4px #003dff;
+
+  /* =============================== MOTION =============================== */
+  --ac-dur-fast: 120ms;
+  --ac-dur-base: 200ms;
+  --ac-dur-slow: 320ms;
+  --ac-ease: cubic-bezier(0.6, 0, 0.2, 1);
+}

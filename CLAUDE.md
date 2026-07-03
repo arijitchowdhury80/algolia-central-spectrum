@@ -2,15 +2,22 @@
 # Read at session start. Identity, rules, pointers. Detail lives in SESSION.md, memory, and the docs below.
 # Global ~/.claude/CLAUDE.md still applies. Keep this thin — a pointer, not a manual. A stale CLAUDE.md is a bug.
 
+## WORKING ROOT
+This folder is the working root: `~/Dropbox/AI-Development/RAG/Algolia-Central-Spectrum`. Launch `claude` from here so this file + this project's memory are authoritative every session (even after `/clear`). Remote: TBD.
+
 ## WHAT THIS IS
-A **fork of Algolia-Central2 (AC2)** — the same strictly-grounded, neural conversational agent architecture — but rebuilt for **Adobe as the prospect**. Corpus = Adobe / Spectrum content instead of Algolia's own. Purpose: a demo/sales instance that shows the AC2 grounded-agent panel running on a prospect's own docs.
-- **This repo:** `~/Dropbox/AI-Development/RAG/ALgolia-Central-Spectrum` (note dir has a capital-L typo `ALgolia`). Remote: TBD.
-- **Base repo it forks (read for architecture):** Algolia-Central2 at `~/Dropbox/AI-Development/RAG/Algolia-Central2`. Do not re-derive the AC2 patterns — port them.
-- **Corpus source (to confirm):** `https://algolia-central.vercel.app/docs` (Spectrum repos, per Arijit 2026-07-01) + Adobe/Spectrum documentation. Exact ingest target is an OPEN question — see SESSION.md.
+A **fork of Algolia-Central2 (AC2)** — the same strictly-grounded, neural conversational agent architecture — rebuilt with **Adobe (Spectrum) as the prospect**. Corpus = Adobe/Spectrum content instead of Algolia's own. Purpose: a demo/sales instance that shows the AC2 grounded-agent panel running on a prospect's own docs.
+- **Corpus is LIVE:** federated index `ACS_SPECTRUM_MULTI` on app `0EXRPAXB56`, **neural search on**, ~502 recs (SpectrumDesignDocs + ReactSpectrumS2 + ReactSpectrumV3 + ReactAria). Ingested by self-fetch (Algolia Crawler can't crawl un-owned domains — see SESSION.md KEY LEARNING).
+- **Base repo it forks (read for architecture, don't re-derive):** AC2 at `~/Dropbox/AI-Development/RAG/Algolia-Central2`. Port its patterns.
+
+## DESIGN-SYSTEM MISSION (Arijit, 2026-07-02)
+ACS is the **reference build for a reusable "Algolia-Central" design system** — a framework, not a one-off. Build the UX so the **layout / components / tokens are the templatized part** and the **company corpus + agents are the swappable inputs**. Every future `Algolia-Central-[company]` re-applies the same layout. Design for this from the first component; do not hardcode Adobe/Spectrum branding into the shell.
 
 ## AGENT NAMESPACE (hard)
-- **All agents in THIS project are prefixed `ACS-`** (Algolia-Central-Spectrum). Keeps them disjoint from AC2's `ac2-*` set in Agent Studio.
-- Mirror the AC2 3-agent panel: `ACS-general-neural` / `ACS-developer-neural` / `ACS-marketer-neural` (persona + disjoint source clubbing), unless the Adobe corpus dictates a different split.
+- **All agents in THIS project are prefixed `ACS-`** (keeps them disjoint from AC2's `ac2-*`/`*-neural` set in Agent Studio).
+- **Live panel = 2 agents** (the general/developer/marketer split is retired):
+  - `ACS-generic-neural` — front door, NO source filter (sees all), synthesizes design+code, routes deep code → Technical. ID `13809d4b-6b6d-4297-b95c-a934bceef0b4`.
+  - `ACS-technical-neural` — `source:"ReactSpectrumS2" OR "ReactSpectrumV3" OR "ReactAria"` (version-aware React code). ID `63ab0c86-3493-416b-a771-a820ab25d83d`.
 
 ## WHO ARIJIT IS (how to partner)
 Equal partner, never a yes-man. Challenge before agreeing; debate to the right answer.
@@ -28,17 +35,24 @@ Vault base: `~/Dropbox/AI-Development/Obsidian/Arijit-Second-Brain/`.
 - Judge stays uncalibrated until P2b passes (inherited gate) → running any loop in *trust* mode = Goodhart. Score only after calibration.
 - Never claim done without running verification and showing output. Evidence on every data point. Write decisions to disk.
 
-## OPEN QUESTIONS (decide before building agents — see SESSION.md)
-- **Algolia app/index:** reuse CENTRAL app `0EXRPAXB56` with an Adobe index + `ACS-` agents, or a fresh app? (namespace vs. isolation)
-- **Ingest path:** hand-built crawler-army (as AC2) over `algolia-central.vercel.app/docs`, OR **Algolia DocSearch MCP** (`mcp.algolia.com/1/docsearch/mcp`, NeuralSearch, curated DocSet) as the retrieval layer. DocSearch offloads crawl+index+retrieval; it does NOT replace the grounded-agent + judge layer. Pilot before committing.
-- Source clubbing / persona split for the Adobe corpus (may differ from AC2's 9 sources).
+## STATE (detail in SESSION.md)
+DONE + verified: corpus ingested & neural-live; 2 agents built, smoke-passed, cross-source grounding verified; `algolia-content-fetch` skill built; judge harness ported (runs e2e).
+OPEN: (a) **judge scoring bug** — scores uniformly ~1/10, a parse/mapping bug not the agents; P2b calibration gated regardless. (b) React Spectrum v3 legacy pages — decide if worth the overlap. (c) snapshot refresh cadence.
 
 ## VERIFICATION (fork of AC2 — confirm once ported)
 - Agent grounding: bait-query harness must show no leak (port AC2's `agent_admin.mjs bait` pattern to `ACS-` agents).
-- Any judge/eval suites ported from AC2 (`lab/server`, `web`).
+- Judge/eval suites ported from AC2 (`lab/judge` unchanged, `lab/eval` = ACS runner) — fix scoring bug before trusting scores.
+
+## ▶ STATUS: DONE (2026-07-03) — see SESSION.md top block
+Parts 1–2 built + verified end-to-end (browser smoke passed). Corpus re-ingested Scout-native (309 recs). Framework artifacts in `Algolia-Central-Artifacts/`. Only optional polish remains (SESSION.md "NOT done"). The historical build brief below is kept for context.
+
+## ▶ (historical) build the UX (design-system framework)
+Build via `frontend-builder` (design-thinking first, per global CLAUDE.md). Shape = **fresh minimal chat**: 2-agent (Generic + Technical), streaming, grounded source cards, Generic→Technical handoff made visible. Build it as the **templatizable Algolia-Central layout** (see DESIGN-SYSTEM MISSION).
+**Blockers to clear first:**
+1. Mint a browser-safe **SEARCH-ONLY** Algolia key for `ACS_SPECTRUM_MULTI` → add as `ALGOLIA_SEARCH_API_KEY`. Browser must NEVER get the admin key in `.env.local`.
+2. Reference: AC2 `web/` (Vite chat+judge app) for the Agent Studio streaming client pattern.
 
 ## KEY POINTERS
 - **`SESSION.md`** — this-session state, ▶ RESUME, exact stop point. Read first every session.
-- Memory: `~/.claude/projects/<this-slug>/memory/` (MEMORY.md index) once initialized.
-- **AC2 as reference:** `~/Dropbox/AI-Development/RAG/Algolia-Central2/` — its `CLAUDE.md`, `scripts/setup/honed/` (3-agent build: `build_three_agents.mjs`, `instructions_{general,developer,marketer3}.md`, `_shared_grounding.md`), and `docs/experiment/2026-07-01-adr-three-agent-rationalization.md`. Port, don't reinvent.
-- **THE NEXT STEP:** decide the OPEN QUESTIONS above (app/index, ingest path, persona split), then port the AC2 3-agent build with `ACS-` prefix onto the Adobe corpus.
+- Memory: `~/.claude/projects/<slug>/memory/` (MEMORY.md index).
+- **AC2 reference:** `~/Dropbox/AI-Development/RAG/Algolia-Central2/` — its `CLAUDE.md`, `scripts/setup/honed/`, `web/`. Port, don't reinvent.
