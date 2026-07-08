@@ -74,3 +74,51 @@
 - Honesty note: WebFetch summarizes/paraphrases the fetched page through a small model rather than returning raw HTML; multiple re-fetches of the same URL with narrower prompts were used to pull exact verbatim JSON/code blocks and cross-checked for consistency across fetches. No claim above is inferred from general LLM-platform conventions — everything is attributed to a specific Algolia doc URL.
 
 - Candidate schema saved: `docs/spikes/candidate-tool-schema.json` — a `"type": "function"` client-side tool adapted to this project's `ACS-generic-neural` agent (`13809d4b-6b6d-4297-b95c-a934bceef0b4`), plus the MCP-approval resume-request shape as the closest documented raw-HTTP analogy for Task 3 to test against.
+
+---
+
+## RESUMED 2026-07-08 (later same day): Tasks 3/5/6/10 actually run
+
+Arijit directed running the real empirical test rather than trusting the GO verdict on docs+vault inference alone. Also caught a bug: the first `candidate-tool-schema.json` (`get_technical_handoff_context`, zero params) couldn't carry a query to a specialist — it tested "ask client for local UI state," not "call another agent with a question." Fixed the candidate to `consult_technical_specialist(query: string)` before running anything.
+
+**Docs vs. live API — the docs schema was wrong.** Every "verbatim from docs" shape in Task 2 above turned out not to match the real admin API:
+- Docs say `{"type": "function", "function": {...}}`. Live API 422: `'function'` is not a valid discriminator. Valid tags: `client_side, algolia_search_index, algolia_recommend, algolia_display_results, mcp_tools, unknown`.
+- The real, API-accepted shape (found by iterating on the 422 validation messages, which is how all of the below was actually discovered — not from any doc page): **flat**, matching the flat pattern already seen on `algolia_search_index` in Task 1:
+  ```json
+  {
+    "name": "consult_technical_specialist",
+    "type": "client_side",
+    "description": "Hand the user question verbatim to the Technical specialist agent for deep React Spectrum code answers.",
+    "inputSchema": { "type": "object", "properties": { "query": { "type": "string", "description": "..." } }, "required": ["query"] }
+  }
+  ```
+  (`description` is capped at 200 chars; the field is `inputSchema`, not `parameters`.)
+- Creating an agent with `status: "published"` in the body silently returns `status: "draft"` — a separate `POST /agents/{id}/publish` call is required before `/completions` will work. Not documented anywhere checked in Task 2.
+
+### Task 3: Capability probe
+- Candidate schema tried: the corrected flat `client_side` shape above.
+- Result: **HTTP 201 created** (after 3 rejected attempts that mapped out the real shape via error messages). Agent id `88322ff2-ee45-401d-b5ed-d4320d55ec1e` (SPIKE-tool-probe), then published via `/publish` (confirmed `status: "published"`).
+- Verdict: **ACCEPTED.**
+
+### Task 5: Round-trip pause behavior — run 5 times (4 same query, 1 different query)
+- Frame prefixes observed: `f, 2, b, c, 9, e, d` (first call per unique query) or `f, 9, e, d` (repeat of an already-cached query — Agent Studio caches identical queries per the SESSION.md-documented lesson; same `toolCallId` came back byte-identical on repeats, expected, not a failure).
+- Tool call frame (`9:`) present? **YES, 5/5**, every time, with the user's query carried verbatim in `args.query`.
+- Stream ended after tool call with no final answer (paused)? **YES, 5/5.**
+- Verdict: **(a) genuine client-executed pause — deterministic across all 5 runs, including a fresh never-before-seen query** (rules out "it just happened to be cached that way").
+
+### Task 6: Resume with real tool result
+No shape is documented for plain `client_side` tool results (Task 2's honest gap). Probed candidates empirically the same way as Task 3, using the live 422 errors as ground truth over the docs:
+- **A** (`assistant.toolInvocations[]` top-level array, `state:"result"`) → HTTP 200 but **the agent just re-issued a brand-new tool call** instead of using the result — silently not recognized, would be a dangerous false-positive if not checked behaviorally.
+- **B** (OpenAI `role:"tool"` message) → HTTP 422, explicit: `role` must be `'user'` or `'assistant'` — no `'tool'` role in this wire protocol.
+- **C** (message `parts[0].type: "tool-result"`) → HTTP 422, revealing the real discriminated union of part types includes `step-start`, `reasoning`, `text`, and more (14 total) — pointed at Vercel AI-SDK v4's actual `UIPart` union.
+- **D** (`parts[0]: {type:"tool-invocation", toolInvocation:{state:"result", toolCallId, toolName, args, result}}`) → **HTTP 200, and the final `0:` text frames contained the real Technical-agent answer**, relayed correctly by the probe agent.
+- Resume HTTP status: 200 (candidate D).
+- Final answer contains specialist content? **YES** — verified on 2 independent full cycles (fresh query → pause → resume), both succeeded identically.
+- Verdict: **CONFIRMED full agent-to-agent round trip works, reliably and deterministically. Real resume wire shape (undocumented anywhere checked): an assistant message with a `parts` array containing `{"type": "tool-invocation", "toolInvocation": {"state": "result", "toolCallId": <from the 9: frame>, "toolName": <from the 9: frame>, "args": <from the 9: frame>, "result": <the specialist's answer>}}`.**
+
+### Task 10: Cleanup confirmation
+- Spike agents deleted: `SPIKE-tool-probe` (`88322ff2-ee45-401d-b5ed-d4320d55ec1e`) → HTTP 204.
+- Production agent drift check: **PASS** — `ACS-generic-neural` tools + instructions byte-identical to the Task 1 baseline dump after the spike.
+
+### What this changes about the original GO verdict
+The original GO (same day, earlier) leaned on the 2026-06-27 vault research, which proved there's **no native agent-to-agent primitive** (still true — `/handoffs`, `/teams`, `/orchestrators` are 404). But that research never actually tested whether a `client_side` **function tool** (as opposed to an `mcp_tools` approval) pauses and resumes correctly — it only inventoried tool *types*, not their runtime pause/resume behavior. This run closes that exact gap with real, repeated, verified evidence. The verdict itself doesn't change (still GO), but it's now grounded in a real round trip instead of an inference from a related-but-different finding.

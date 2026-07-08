@@ -1,0 +1,7 @@
+f:{"messageId": "alg_msg_oJEoXlk9CalzfXLZ"}
+2:[{"type": "message-metadata", "messageId": "alg_msg_oJEoXlk9CalzfXLZ", "messageMetadata": {}}]
+b:{"toolCallId": "1922108c-1998-4c65-ae5b-bcbdce37d988", "toolName": "consult_technical_specialist"}
+c:{"toolCallId": "1922108c-1998-4c65-ae5b-bcbdce37d988", "argsTextDelta": "{\"query\": \"How do I set default selected key on a React Spectrum Picker?\"}"}
+9:{"toolCallId": "1922108c-1998-4c65-ae5b-bcbdce37d988", "toolName": "consult_technical_specialist", "args": {"query": "How do I set default selected key on a React Spectrum Picker?"}}
+e:{"finishReason": "stop"}
+d:{"finishReason": "stop"}

@@ -1,0 +1,19 @@
+f:{"messageId": "msg_2"}
+2:[{"type": "message-metadata", "messageId": "msg_2", "messageMetadata": {}}]
+0:"To"
+0:" make a React Spectrum `TextField` required and handle validation, you should use the"
+0:" `isRequired` prop. When the `TextField` is placed within a `Form` component, this enables native HTML validation.\n\nHere is an example for **React Spectrum S2** (the current version):\n\nYou can import the `TextField"
+0:"`, `Button`, and `Form` components. By adding the `isRequired` prop to the `TextField`, the form will not submit and will display a validation message if the field is empty.\n\n"
+0:"```jsx\nimport {TextField} from '@"
+0:"react-spectrum/s2/TextField';\nimport {Button} from '@react-spectrum/s2/Button';\nimport {Form} from '@react-spectrum/s2/Form';\n\nfunction Example() {\n  "
+0:"return (\n    <Form>\n      <TextField\n        label=\"Email\"\n        placeholder=\"Enter your email\"\n        name=\"email\"\n        isRequired\n        type=\"email\"\n      />\n      <Button type=\"submit\">"
+0:"Submit</Button>\n    </Form>\n  );\n}\n"
+0:"```"
+0:"\n\n### Key Props for Validation\n\n*   `isRequired`: A boolean that marks the field as required for form submission.\n*   `type`: You can use types like `'"
+0:"email'`, `'password'`, or `'url'` for built-in browser validation.\n*   `pattern`: A string containing a regex pattern that the value must match.\n*   `minLength` / `maxLength`: Numbers to define the"
+0:" minimum and maximum length of the input.\n\nFor more advanced validation, including custom error messages, you can also use the `errorMessage` and `validationState` props.\n\nThis approach is documented in the React Spectrum S2 and v3 guides. The"
+0:" legacy **React Spectrum v3** version works similarly but uses a `validationBehavior=\"native\"` prop on the `Form` component to enable this behavior.\n\nFor more details, you can refer to the official documentation:\n*   **React"
+0:" Spectrum S2 TextField:** [https://react-spectrum.adobe.com/TextField.html](https://react-spectrum.adobe.com/TextField.html)\n*   **React Spectrum v3 TextField:** [https://react-spectrum.adobe."
+0:"com/v3/TextField.html](https://react-spectrum.adobe.com/v3/TextField.html)"
+e:{"finishReason": "stop"}
+d:{"finishReason": "stop"}

@@ -1,0 +1,4 @@
+f:{"messageId": "alg_msg_eCkBj2xniaVXQZGH"}
+9:{"toolCallId": "041fecfb-1ee0-49d5-b721-9e1f0da5ebd1", "toolName": "consult_technical_specialist", "args": {"query": "How do I use a React Spectrum ComboBox?"}, "providerOptions": {"thought_signature": "CiwBEU0yD7Uip5vGKObKE9k04jQAqsSMYvU1Wkq06zkX8Qohe17IVWA/7fRFIgp4ARFNMg8dZJg0oIw7ksWBXSUlNULXoHwQ7/p/o51f4oJrFaW/CJ/t6zS8vRZ9tDyN+ypHqSDQ6RlMnbSK4QSFrnprd1j+/XKEu0bJz0B8TQ1w6r0vKHssrrNJjLWYGJMb7OjpimKmy3+GOLVY+FF3BS4PIfYp8F8RCuEBARFNMg+59ASAR5r4zUgYxgUT8xKtvYU4nE3kqrwZX5jThD3s45ltaTD9+osRlgv9GC9pCkl7UaBsHkH0EqRcvgVAIZ40fqxuuGPCFrRHFn9l2+VRZuC4i957HMEELpngOspS+sRqOW7LrlUQaUg925LifMYvD9A7pX+4nE3kj1HPW9ck+eMMlwJ9tBpXgsQIXJY2RCdpCiF2AyOLjGZlqzg0OWe0JbKQg8jztUacjrbEknId+pq9hG+OlLfq3QW8mYyR4D4S1HYh5PO6A6j6BpLQ5nT3XPF7cjDJq1BzoRQV"}}
+e:{"finishReason": "stop"}
+d:{"finishReason": "stop"}

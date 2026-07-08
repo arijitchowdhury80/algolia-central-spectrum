@@ -1,45 +1,30 @@
 {
-  "_comment": "Candidate client-side tool definition for ACS-generic-neural (13809d4b-6b6d-4297-b95c-a934bceef0b4). Schema copied verbatim from https://www.algolia.com/doc/guides/algolia-ai/agent-studio/how-to/tools/client-side-tools (get_user_cart/add_to_cart examples), field names unchanged (OpenAI function-calling spec). Task 3 will attempt to add this tool to the agent config and drive a /completions round-trip to see whether the agent actually pauses and returns a tool-call for the caller to answer.",
+  "_comment": "CORRECTED 2026-07-08: prior version (get_technical_handoff_context, zero params) did not match the actual test — it couldn't carry a query to a specialist agent, so it could never prove agent-to-agent calling. This version defines the real candidate: a client-side function tool the Generic agent calls to hand a question to the Technical specialist. Schema shape (type:function, function.name/description/strict/parameters) copied verbatim from https://www.algolia.com/doc/guides/algolia-ai/agent-studio/how-to/tools/client-side-tools.",
   "type": "function",
   "function": {
-    "name": "get_technical_handoff_context",
-    "description": "Retrieves additional client-side context (e.g. which code panel/tab the user currently has open) before routing a deep technical question to ACS-technical-neural. Client (browser) is expected to answer this call, not the server.",
+    "name": "consult_technical_specialist",
+    "description": "Call this when the user's question requires deep React Spectrum implementation code or version-specific API details. Pass the user's full question verbatim as `query`. The caller (client) will get a real answer from the Technical specialist agent and return it as the tool result.",
     "strict": true,
     "parameters": {
       "type": "object",
-      "properties": {},
-      "required": [],
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "The user's question, verbatim, to hand to the Technical specialist agent."
+        }
+      },
+      "required": ["query"],
       "additionalProperties": false
     }
   },
-  "_resume_pattern_source": "https://www.algolia.com/doc/guides/algolia-ai/agent-studio/how-to/tools/mcp-tools (documents the wire-level pause/resume pattern for MCP tool approvals; client-side 'function' tools are documented to use the same conceptual round-trip via the InstantSearch addToolResult() helper, but the docs do not spell out the raw HTTP body for that specific case). There is NO separate endpoint -- the caller re-POSTs to the SAME /completions endpoint with the full message history plus the new tool result/approval field.",
-  "_example_resume_request_shape_from_docs": {
+  "_resume_pattern_source": "https://www.algolia.com/doc/guides/algolia-ai/agent-studio/how-to/tools/mcp-tools documents the wire-level pause/resume pattern for MCP tool approvals; client-side 'function' tools are documented to use the same conceptual round-trip via the InstantSearch addToolResult() helper, but the docs do not spell out the raw HTTP body for that specific case. There is NO separate endpoint -- the caller re-POSTs to the SAME /completions endpoint with the full message history plus the new tool result field. This spike empirically determines the exact shape for the client_side (function) case, since only the MCP approval shape is documented verbatim.",
+  "_example_resume_request_shape_from_docs_for_MCP_APPROVAL_not_function_tool": {
     "id": "alg_cnv_abc123",
     "messages": [
-      {
-        "id": "msg_1",
-        "role": "user",
-        "content": "List my indices",
-        "parts": [{ "type": "text", "text": "List my indices" }]
-      },
-      {
-        "id": "msg_2",
-        "role": "assistant",
-        "content": "",
-        "parts": [
-          {
-            "type": "tool-approval-request",
-            "toolCallId": "call_xyz",
-            "toolName": "search-listIndices",
-            "args": { "page": 0 },
-            "description": "List Algolia indices"
-          }
-        ]
-      }
+      { "id": "msg_1", "role": "user", "content": "List my indices", "parts": [{ "type": "text", "text": "List my indices" }] },
+      { "id": "msg_2", "role": "assistant", "content": "", "parts": [{ "type": "tool-approval-request", "toolCallId": "call_xyz", "toolName": "search-listIndices", "args": { "page": 0 }, "description": "List Algolia indices" }] }
     ],
-    "toolApprovals": {
-      "call_xyz": { "approved": true, "timestamp": "2026-01-13T10:00:00Z" }
-    },
-    "_note": "This exact shape is documented for MCP tool requiresApproval flows. Task 3 must verify empirically whether client-side function tools use an analogous 'toolApprovals'-like field, or a different field (e.g. a tool result content part), when re-POSTed."
+    "toolApprovals": { "call_xyz": { "approved": true, "timestamp": "2026-01-13T10:00:00Z" } },
+    "_note": "This is the MCP-approval shape, not the function-tool-result shape. Task 3/5/6 of this spike test candidate shapes empirically for the plain function-tool-result case (most likely a tool-result message part keyed by toolCallId, per the AI-SDK v4 convention already parsed client-side in web/src/lib/agentStudio.ts)."
   }
 }

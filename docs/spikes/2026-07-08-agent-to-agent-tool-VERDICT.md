@@ -25,6 +25,23 @@ GO on Architecture B. The client tool is real, its execution IS deferred to the 
 - Frontend still owns the human-gating UX moment: on seeing the tool-call frame, show the "consult a specialist?" offer; only on accept does the frontend execute the tool handler (call the target agent's own `/completions`) and re-POST the result back into the paused turn, following the resume shape Task 2 recorded in `docs/spikes/candidate-tool-schema.json`.
 - Scales to N: one tool registration per specialist instead of a hardcoded `.generic`/`.technical` field pair — adding specialist #3 is "register tool #3," not "rewrite the if-chain in `useChat.ts`."
 
-**Residual gap before implementation (small, not blocking the GO call):** the raw HTTP body for resuming a plain `client_side` function-tool turn (as opposed to an `mcp_tools` approval) isn't spelled out verbatim in Algolia's docs — only the SDK helper `addToolResult()` is shown. The real implementation plan should include one live empirical check (network-inspect what the InstantSearch/AI-SDK helper actually sends, or just try the `mcp_tools`-documented shape against a `client_side` tool and see if it's accepted) as its first task, rather than assuming the exact JSON shape blind. This is now a normal implementation-plan task, not a reason to keep spiking.
-
 **Process note:** this spike duplicated ~40% of prior research that already existed in the vault (`Projects/Algolia-Central/v2/`, named as ACS's sibling in this project's own CLAUDE.md) and should have been checked before writing the spike plan. Logged as a standing fix: `check-sibling-vault-before-spike` memory entry.
+
+---
+
+## UPDATE 2026-07-08 (same day): residual gap closed — Tasks 3/5/6/10 actually run live
+
+The "residual gap" above was NOT small — it was the actual test Arijit's architecture question depended on (does a `client_side` function tool *really* pause and resume, deterministically, or does the platform silently execute/ignore it despite accepting the schema). The June 27 vault research answered a related-but-different question (no *native agent-to-agent primitive* exists) and this spike's Task 2 only re-confirmed that same fact from docs — neither actually drove a live tool-call/resume cycle. Ran it live. Also caught and fixed a bug: `candidate-tool-schema.json` originally defined a zero-argument tool that couldn't carry a question to a specialist at all.
+
+**Result: CONFIRMED, GO stands, on hard evidence.** Full detail + every candidate tried in `docs/spikes/2026-07-08-agent-to-agent-tool-findings.md` ("RESUMED" section). Headline facts:
+
+1. **Algolia's docs are wrong about the wire shape.** `{"type":"function","function":{...}}` (verbatim from the docs) is rejected by the live admin API (422: invalid discriminator). The real, live-API-accepted create shape is **flat**: `{name, type:"client_side", description (≤200 chars), inputSchema}`. Found by iterating on validation error messages, not by reading more docs.
+2. **Publishing needs an extra step.** `status:"published"` in the create body is silently ignored (comes back `"draft"`); a separate `POST /agents/{id}/publish` call is required. Undocumented anywhere checked.
+3. **The pause is real and deterministic.** 5/5 live completions calls against a real published agent with this tool produced a genuine pause: a `9:` tool-call frame carrying the user's question verbatim, then the stream ends with zero final-answer text. Confirmed on repeat identical queries (same cached `toolCallId`, expected) and a fresh never-seen query (new `toolCallId`, ruling out a cache artifact).
+4. **The resume shape is also undocumented and also had to be found empirically.** Neither the docs' MCP-approval shape, an OpenAI `role:"tool"` message, nor a naive `tool-result` part type work (all rejected with explicit schema errors). The one that works: an assistant message with `parts: [{"type":"tool-invocation","toolInvocation":{"state":"result","toolCallId","toolName","args","result"}}]` — this is Vercel AI-SDK v4's internal `UIPart` union, reverse-engineered from the platform's own validation errors.
+5. **Full round trip confirmed twice, independently, with real specialist content** (calling the actual `ACS-technical-neural` agent, not a canned string) both times.
+6. **Zero production impact** — `ACS-generic-neural` verified byte-identical before/after; the one disposable `SPIKE-tool-probe` agent was deleted.
+
+This closes the gap the original GO call was missing: the platform doesn't just *accept* a client-side tool schema, it *actually implements the pause/resume protocol correctly and repeatably* for the plain function-tool case, not just the MCP-approval case. Implementation can proceed without a blind first-task guess at the wire shape — it's now known and documented in the findings log.
+
+See the reply in-session for the follow-on architecture design (what payload the orchestrator passes to the specialist, how conversation memory threads through the tool-call boundary, and how the separate `[[FOLLOWUP:...]]` engagement mechanism relates to this).

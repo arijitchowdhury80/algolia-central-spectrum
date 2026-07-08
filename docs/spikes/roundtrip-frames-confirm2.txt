@@ -1,0 +1,7 @@
+f:{"messageId": "alg_msg_NKOFAVXfQPcjC1GI"}
+2:[{"type": "message-metadata", "messageId": "alg_msg_NKOFAVXfQPcjC1GI", "messageMetadata": {}}]
+b:{"toolCallId": "976fe6e7-621f-41e5-b97f-31d78e3c257b", "toolName": "consult_technical_specialist"}
+c:{"toolCallId": "976fe6e7-621f-41e5-b97f-31d78e3c257b", "argsTextDelta": "{\"query\": \"How do I make a React Spectrum TextField required with validation?\"}"}
+9:{"toolCallId": "976fe6e7-621f-41e5-b97f-31d78e3c257b", "toolName": "consult_technical_specialist", "args": {"query": "How do I make a React Spectrum TextField required with validation?"}}
+e:{"finishReason": "stop"}
+d:{"finishReason": "stop"}

@@ -1,0 +1,7 @@
+f:{"messageId": "alg_msg_7Lnl20MMgIqSGuso"}
+2:[{"type": "message-metadata", "messageId": "alg_msg_7Lnl20MMgIqSGuso", "messageMetadata": {}}]
+b:{"toolCallId": "e8b3cbd1-9353-4b74-9db0-634cc6ac650d", "toolName": "consult_technical_specialist"}
+c:{"toolCallId": "e8b3cbd1-9353-4b74-9db0-634cc6ac650d", "argsTextDelta": "{\"query\": \"What theming tokens control the Spectrum ComboBox focus ring color?\"}"}
+9:{"toolCallId": "e8b3cbd1-9353-4b74-9db0-634cc6ac650d", "toolName": "consult_technical_specialist", "args": {"query": "What theming tokens control the Spectrum ComboBox focus ring color?"}}
+e:{"finishReason": "stop"}
+d:{"finishReason": "stop"}
