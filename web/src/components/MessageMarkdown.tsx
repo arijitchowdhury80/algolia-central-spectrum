@@ -85,18 +85,45 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
   return nodes;
 }
 
+const LIST_ITEM_RE = /^[*-]\s+(.*)$/;
+
+/** A "block" is a paragraph or a run of consecutive `* `/`- ` list-item lines. */
+function splitBlocks(text: string): string[] {
+  return text.split(/\n{2,}/).filter((b) => b.trim().length > 0);
+}
+
 function renderParagraphs(text: string, keyPrefix: string): ReactNode {
-  return text
-    .split(/\n{2,}/)
-    .filter((p) => p.trim().length > 0)
-    .map((para, pi) => (
+  return splitBlocks(text).map((block, pi) => {
+    const lines = block.split('\n');
+    const isList = lines.every((line) => LIST_ITEM_RE.test(line.trim()) || line.trim().length === 0);
+
+    if (isList) {
+      return (
+        <ul
+          key={`${keyPrefix}-l-${pi}`}
+          className="m-0 list-disc space-y-1 pl-5 text-ac-sm leading-ac-body text-ac-text"
+        >
+          {lines
+            .filter((line) => line.trim().length > 0)
+            .map((line, li) => {
+              const itemText = line.trim().replace(LIST_ITEM_RE, '$1');
+              return (
+                <li key={`${keyPrefix}-l-${pi}-${li}`}>{renderInline(itemText, `${keyPrefix}-l-${pi}-${li}`)}</li>
+              );
+            })}
+        </ul>
+      );
+    }
+
+    return (
       <p
         key={`${keyPrefix}-p-${pi}`}
         className="m-0 whitespace-pre-wrap break-words text-ac-sm leading-ac-body text-ac-text"
       >
-        {renderInline(para, `${keyPrefix}-p-${pi}`)}
+        {renderInline(block, `${keyPrefix}-p-${pi}`)}
       </p>
-    ));
+    );
+  });
 }
 
 export function MessageMarkdown({ text }: MessageMarkdownProps) {

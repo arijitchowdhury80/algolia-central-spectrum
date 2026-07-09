@@ -26,11 +26,12 @@ function SourcePill({ s }: { s: AnswerSource }) {
   );
 }
 
-/** One facet group. The count badge is a toggle when the group has collapsed
- *  (release-note) sources: clicking it — or the "+N release notes" pill —
- *  expands every source in the group as a clickable link so the user can open
- *  and verify each one. */
+/** One facet group. The count badge always toggles the whole group's pills
+ *  open/closed. When the group also has collapsed (release-note) sources,
+ *  the separate "+N release notes" pill expands just those into view without
+ *  folding the rest. */
 function SourceGroup({ group }: { group: ReturnType<typeof groupSources>[number] }) {
+  const [open, setOpen] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const primary = group.sources.filter((s) => !isReleaseNote(s));
   const releaseList = group.sources.filter((s) => isReleaseNote(s));
@@ -39,17 +40,8 @@ function SourceGroup({ group }: { group: ReturnType<typeof groupSources>[number]
 
   const hasHidden = releases > 0;
   const shown = expanded ? [...primary, ...releaseList] : primary;
-  const toggle = () => setExpanded((v) => !v);
-
-  const countBadge = (
-    <span
-      className={`inline-flex min-w-[18px] items-center justify-center rounded-ac-full bg-ac-accent-tint px-1.5 text-[10px] font-ac-bold text-ac-accent ${
-        hasHidden ? 'cursor-pointer hover:bg-ac-accent hover:text-ac-text-on-accent' : ''
-      }`}
-    >
-      {group.sources.length}
-    </span>
-  );
+  const toggleOpen = () => setOpen((v) => !v);
+  const toggleExpanded = () => setExpanded((v) => !v);
 
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
@@ -57,34 +49,36 @@ function SourceGroup({ group }: { group: ReturnType<typeof groupSources>[number]
         <span className="text-[10px] font-ac-bold uppercase tracking-[0.1em] text-ac-text-secondary">
           {group.label}
         </span>
-        {hasHidden ? (
-          <button
-            type="button"
-            onClick={toggle}
-            aria-expanded={expanded}
-            aria-label={`${group.label}: ${group.sources.length} sources — ${expanded ? 'collapse' : 'expand to view and verify each'}`}
-          >
-            {countBadge}
-          </button>
-        ) : (
-          countBadge
-        )}
-      </span>
-
-      {shown.map((s) => (
-        <SourcePill key={s.id} s={s} />
-      ))}
-
-      {hasHidden && (
         <button
           type="button"
-          onClick={toggle}
-          aria-expanded={expanded}
-          className="inline-flex items-center gap-0.5 rounded-ac-full px-1 text-ac-xs text-ac-text-muted transition-colors hover:text-ac-accent"
+          onClick={toggleOpen}
+          aria-expanded={open}
+          aria-label={`${group.label}: ${group.sources.length} sources — ${open ? 'collapse' : 'expand'} this group`}
         >
-          <span aria-hidden="true">{expanded ? '▾' : '▸'}</span>
-          {expanded ? 'show less' : `+${releases} release note${releases > 1 ? 's' : ''}`}
+          <span className="inline-flex min-w-[18px] cursor-pointer items-center justify-center rounded-ac-full bg-ac-accent-tint px-1.5 text-[10px] font-ac-bold text-ac-accent hover:bg-ac-accent hover:text-ac-text-on-accent">
+            {group.sources.length}
+          </span>
         </button>
+      </span>
+
+      {open && (
+        <>
+          {shown.map((s) => (
+            <SourcePill key={s.id} s={s} />
+          ))}
+
+          {hasHidden && (
+            <button
+              type="button"
+              onClick={toggleExpanded}
+              aria-expanded={expanded}
+              className="inline-flex items-center gap-0.5 rounded-ac-full px-1 text-ac-xs text-ac-text-muted transition-colors hover:text-ac-accent"
+            >
+              <span aria-hidden="true">{expanded ? '▾' : '▸'}</span>
+              {expanded ? 'show less' : `+${releases} release note${releases > 1 ? 's' : ''}`}
+            </button>
+          )}
+        </>
       )}
     </div>
   );
