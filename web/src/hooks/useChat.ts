@@ -155,6 +155,20 @@ export function useChat(): UseChatResult {
               updateSegment(turnId, 0, { status: 'streaming', text: display });
             },
           );
+          // Same known flake as Technical's leg — but a real tool-call pause
+          // can legitimately have empty/near-empty text (Generic sometimes
+          // calls the tool with no acknowledgment first), so only retry when
+          // there's truly nothing: no text AND no tool call.
+          if (!genericResult.error && !genericResult.content.trim() && genericResult.toolInvocations.length === 0) {
+            genericResult = await callCompletions(
+              getAgentConfig(activeInstance.agents.generic.id),
+              { history: priorHistory, query },
+              (accumulated) => {
+                const { display } = parseAgentText(accumulated);
+                updateSegment(turnId, 0, { status: 'streaming', text: display });
+              },
+            );
+          }
         } catch (err) {
           updateSegment(turnId, 0, { status: 'error', error: toErrorMessage(err) });
           return;
@@ -232,6 +246,19 @@ export function useChat(): UseChatResult {
               updateSegment(turnId, 1, { status: 'streaming', text: accumulated });
             },
           );
+          // Known Agent Studio flake (SESSION.md, ~1-in-8 baseline): an
+          // occasional empty completion with no error — manual "Try again"
+          // already proves a retry usually works, so try once automatically
+          // before surfacing the empty-result UI to the user.
+          if (!technicalResult.error && !technicalResult.content.trim()) {
+            technicalResult = await callCompletions(
+              getAgentConfig(activeInstance.agents.technical.id),
+              { history: technicalHistory, query },
+              (accumulated) => {
+                updateSegment(turnId, 1, { status: 'streaming', text: accumulated });
+              },
+            );
+          }
         } catch (err) {
           updateSegment(turnId, 1, { status: 'error', error: toErrorMessage(err) });
           return;
