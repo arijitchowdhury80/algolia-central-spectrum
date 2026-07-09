@@ -58,7 +58,7 @@ export const spectrumInstance: InstanceConfig = {
     {
       section: 'Building in React',
       questions: [
-        'How do I create a controlled ComboBox in React Spectrum?',
+        'What is the process for making a ComboBox controlled in React Spectrum?',
         'How do I add a date range picker in React?',
         'How do I build a form with validation in React Spectrum?',
       ],
