@@ -1,10 +1,12 @@
 /**
  * ACS (Algolia-Central-Spectrum) instance config — Adobe Spectrum docs.
  *
- * Agent IDs verified 2026-07-01 against SESSION.md + web/docs/workspace/
- * acs-chat-ui/02-handoff-protocol.md (both agree — see lib/agents.ts header
- * for the same note). If these ever drift, SESSION.md's "Agent IDs:" line is
- * the source of truth.
+ * Agent IDs updated 2026-07-09: the 2026-07-01 IDs were deleted server-side
+ * during spike-branch redeploys of `scripts/agents/build_acs_agents.mjs`
+ * (that script used to delete+recreate agents by name on every run — fixed
+ * to PATCH in place, see that file's history). IDs below are the live,
+ * currently-published `ACS-generic-neural` / `ACS-technical-neural` agents,
+ * confirmed via `GET /agent-studio/1/agents` on 2026-07-09.
  */
 import type { InstanceConfig } from '../instance';
 
@@ -25,12 +27,12 @@ export const spectrumInstance: InstanceConfig = {
   theme: 'spectrum',
   agents: {
     generic: {
-      id: '13809d4b-6b6d-4297-b95c-a934bceef0b4',
+      id: '95826da6-d1b6-4b81-b061-bfb52b881356',
       label: 'Assistant',
       accentToken: '--ac-agent-generic',
     },
     technical: {
-      id: '63ab0c86-3493-416b-a771-a820ab25d83d',
+      id: 'ae127977-c728-4b7c-bc15-6502a77873d1',
       label: 'code specialist',
       accentToken: '--ac-agent-technical',
     },
