@@ -5,9 +5,11 @@ export interface DiscoveryCardProps {
 }
 
 /**
- * Discovery follow-up card. The front agent generates one contextual next
- * question per turn (its `[[FOLLOWUP: …]]` token, grounded in the conversation
- * history it already receives); we render it as a one-click card so the user
+ * Discovery follow-up card. `question` is `turn.followUp` — an ordinary
+ * (non-`SPECIALIST:`) native suggestion emitted by Agent Studio's
+ * `config.suggestions` mechanism, surfaced as `rest[0]` of
+ * `extractDeepDiveOffer(genericResult.suggestions)` (or Technical's
+ * `technicalRest[0]`) in useChat. We render it as a one-click card so the user
  * can keep exploring. Clicking asks it as the next turn.
  */
 export function DiscoveryCard({ question, onAsk, disabled }: DiscoveryCardProps) {
@@ -29,7 +31,7 @@ export function DiscoveryCard({ question, onAsk, disabled }: DiscoveryCardProps)
         <span className="text-[10px] font-ac-bold uppercase tracking-[0.14em] text-ac-text-muted">
           You might also ask
         </span>
-        <span className="truncate text-ac-sm font-ac-medium text-ac-text">{question}</span>
+        <span className="text-ac-sm font-ac-medium text-ac-text">{question}</span>
       </span>
       <span
         className="ml-auto shrink-0 text-ac-text-muted transition-colors duration-ac-fast ease-ac-ease group-hover:text-ac-accent"

@@ -1,12 +1,13 @@
 /**
  * ACS (Algolia-Central-Spectrum) instance config — Adobe Spectrum docs.
  *
- * Agent IDs updated 2026-07-09: the 2026-07-01 IDs were deleted server-side
- * during spike-branch redeploys of `scripts/agents/build_acs_agents.mjs`
- * (that script used to delete+recreate agents by name on every run — fixed
- * to PATCH in place, see that file's history). IDs below are the live,
- * currently-published `ACS-generic-neural` / `ACS-technical-neural` agents,
- * confirmed via `GET /agent-studio/1/agents` on 2026-07-09.
+ * Agent IDs are patched in place by `scripts/agents/build_acs_agents.mjs`
+ * (PATCH, never delete+recreate) — so these IDs are stable across rebuilds.
+ * The 2026-07-09 rebuild removed Generic's `consult_technical_specialist`
+ * client-side tool and moved the deep-dive handoff to a native
+ * `config.suggestions` offer (a `SPECIALIST:`-prefixed suggestion), without
+ * changing either ID. If these ever drift, SESSION.md's "Agent IDs:" line is
+ * the source of truth.
  */
 import type { InstanceConfig } from '../instance';
 

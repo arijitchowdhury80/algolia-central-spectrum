@@ -16,8 +16,8 @@ ACS is the **reference build for a reusable "Algolia-Central" design system** �
 ## AGENT NAMESPACE (hard)
 - **All agents in THIS project are prefixed `ACS-`** (keeps them disjoint from AC2's `ac2-*`/`*-neural` set in Agent Studio).
 - **Live panel = 2 agents** (the general/developer/marketer split is retired):
-  - `ACS-generic-neural` — front door, NO source filter (sees all), synthesizes design+code, routes deep code → Technical. ID `13809d4b-6b6d-4297-b95c-a934bceef0b4`.
-  - `ACS-technical-neural` — `source:"ReactSpectrumS2" OR "ReactSpectrumV3" OR "ReactAria"` (version-aware React code). ID `63ab0c86-3493-416b-a771-a820ab25d83d`.
+  - `ACS-generic-neural` — front door, NO source filter (sees all), synthesizes design+code, routes deep code → Technical. ID `95826da6-d1b6-4b81-b061-bfb52b881356` (updated 2026-07-09 — prior ID was deleted server-side by a since-fixed script bug; PATCH-in-place now keeps this stable).
+  - `ACS-technical-neural` — `source:"ReactSpectrumS2" OR "ReactSpectrumV3" OR "ReactAria"` (version-aware React code). ID `ae127977-c728-4b7c-bc15-6502a77873d1` (updated 2026-07-09, same reason).
 
 ## WHO ARIJIT IS (how to partner)
 Equal partner, never a yes-man. Challenge before agreeing; debate to the right answer.
@@ -43,8 +43,8 @@ OPEN: (a) **judge scoring bug** — scores uniformly ~1/10, a parse/mapping bug 
 - Agent grounding: bait-query harness must show no leak (port AC2's `agent_admin.mjs bait` pattern to `ACS-` agents).
 - Judge/eval suites ported from AC2 (`lab/judge` unchanged, `lab/eval` = ACS runner) — fix scoring bug before trusting scores.
 
-## ▶ STATUS (2026-07-03 late-night): JUDGE LIVE IN CHAT + GATE FIXED. NEXT = optional polish only. — see SESSION.md top block
-Grounding judge is surfaced per-answer (Confidence chip → JudgeDrawer, 3-judge accordions + dynamic dims), wired to the **hosted VPS judge** (`ac2-lab-backend` → judge.contentengagement.info, `x-lab-key`). **Fixed the grounding hard-gate falsely capping live scores to 3.0** at the backend source (caps only on a real shown contradiction, not the 1-round recurrence artifact). Browser-verified live: ComboBox answer 3.0→8.9. SourcePills expandable. Base template + judge docs patched for turnkey reuse. Public deploy `https://algolia-central-spectrum.vercel.app`, GitHub `main` @ `fabbd07` (v0.3.0). Design system unchanged. Authoritative fix-log: `Algolia-Central-Artifacts/AUTONOMOUS-LAUNCH-PLAYBOOK.md` §7 (+ `judge/README-artifact.md` for the judge integration). Historical build brief below.
+## ▶ STATUS (2026-07-08): real tool-call handoff shipped + live-tested, engagement redesigned. NEXT = react-instantsearch <Chat> swap. — see SESSION.md top block
+`[[HANDOFF:technical]]` text sentinel replaced with a real, live-tested Agent Studio `client_side` tool call (`docs/spikes/2026-07-08-agent-to-agent-tool-VERDICT.md`). **The entire chat client is still hand-built** (`web/src/lib/agentStudio.ts` = manual SSE parsing) — zero `react-instantsearch`/`algoliasearch` usage until this session installed the packages (not yet wired). This is the top open item — Arijit's explicit standing instruction: use native Algolia frontend tech, not custom equivalents. On branch `spike/agent-to-agent-tool` (NOT merged to main). Older 2026-07-03 judge-in-chat status below, still accurate for the judge feature itself.
 
 ## ▶ (historical) build the UX (design-system framework)
 Build via `frontend-builder` (design-thinking first, per global CLAUDE.md). Shape = **fresh minimal chat**: 2-agent (Generic + Technical), streaming, grounded source cards, Generic→Technical handoff made visible. Build it as the **templatizable Algolia-Central layout** (see DESIGN-SYSTEM MISSION).

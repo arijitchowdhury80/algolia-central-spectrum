@@ -13,7 +13,8 @@
  *   Headers: Content-Type: application/json, X-Algolia-Application-Id, X-Algolia-API-Key (search-only)
  *   Body: { messages: [...history, {role:'user', content}] }
  *   Returns: AI-SDK-v4-shaped data stream — 0:text deltas, 9:tool calls,
- *            a:tool results/hits, 3:error. Ignore b,e,d,f,2,c.
+ *            a:tool results/hits, 2:suggestions (overloaded, see below),
+ *            3:error. Ignore b,e,d,f,c.
  *
  * Browsers FORBID setting a custom User-Agent header (the fetch spec treats it
  * as a forbidden header and silently drops/errors it) — so unlike the Node/CLI
@@ -36,11 +37,46 @@ export interface ParsedCompletion {
   content: string;
   toolInvocations: ToolInvocation[];
   hits: Record<string, unknown>[];
+  suggestions: string[];
   error?: string;
 }
 
-/** Metadata frame prefixes that carry no answer/hit/error content. */
+/**
+ * Metadata frame prefixes that carry no answer/hit/error content.
+ *
+ * NOTE: prefix `2` is OVERLOADED (verified empirically — see
+ * docs/spikes/2026-07-09-suggestions-frame-findings.md). It carries BOTH a
+ * `message-metadata` payload (ignored) AND the native `config.suggestions`
+ * payload we DO want. It stays in this set so metadata frames are still
+ * dropped; the suggestion payload is pulled out by content-shape check below,
+ * before this ignore guard is reached.
+ */
 const IGNORED_PREFIXES = new Set(['b', 'e', 'd', 'f', '2', 'c']);
+
+/**
+ * Pull suggestion strings out of a parsed prefix-2 payload IFF it is a
+ * suggestions frame — i.e. a JSON array containing at least one object with a
+ * `suggestions` array. Any other prefix-2 payload (e.g. `message-metadata`)
+ * yields nothing. Prefix `2` is overloaded, so discrimination is by payload
+ * content, never by prefix alone.
+ */
+function collectSuggestions(payload: string, sink: string[]): void {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(payload);
+  } catch {
+    return; // malformed frame — skip silently, per existing discipline
+  }
+  if (!Array.isArray(parsed)) return;
+  for (const entry of parsed) {
+    if (!entry || typeof entry !== 'object') continue;
+    const list = (entry as Record<string, unknown>).suggestions;
+    if (!Array.isArray(list)) continue;
+    for (const s of list) {
+      if (typeof s === 'string') sink.push(s);
+    }
+  }
+}
 
 /**
  * Split an SSE line into `<prefix>:<payload>` on the FIRST colon only —
@@ -88,6 +124,7 @@ export function parseCompletionStream(
   let content = '';
   const toolInvocations: ToolInvocation[] = [];
   const hits: Record<string, unknown>[] = [];
+  const suggestions: string[] = [];
   let error: string | undefined;
 
   for (const rawLine of lines) {
@@ -136,12 +173,16 @@ export function parseCompletionStream(
       } catch {
         error = payload;
       }
+    } else if (prefix === '2') {
+      // Overloaded prefix: metadata OR native suggestions. Only a payload whose
+      // shape is a suggestions frame contributes; metadata yields nothing.
+      collectSuggestions(payload, suggestions);
     } else if (!IGNORED_PREFIXES.has(prefix)) {
       // Unknown prefix — ignore but don't crash.
     }
   }
 
-  return { content, toolInvocations, hits, error };
+  return { content, toolInvocations, hits, suggestions, error };
 }
 
 // ---------------------------------------------------------------------------

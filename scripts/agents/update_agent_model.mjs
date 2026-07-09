@@ -1,13 +1,13 @@
 /**
  * In-place change of an Agent Studio agent's MODEL (PATCH → publish), preserving
- * its ID + instructions + tools. Same proven pattern as update_generic_prompt.mjs
- * (AC2 agent_admin.mjs: Update Agent = PATCH partial body, publish is separate).
+ * its ID + instructions + tools. Same PATCH-in-place pattern build_acs_agents.mjs
+ * uses (AC2 agent_admin.mjs: Update Agent = PATCH partial body, publish is separate).
  *
  *   node update_agent_model.mjs --id <agentId> --model gemini-2.5-flash-lite
  *   node update_agent_model.mjs --model gemini-2.5-flash-lite      # defaults to ACS-generic-neural
  *
  * Read receipt: field name `model` from build_acs_agents.mjs:54 (create body);
- * PATCH+publish endpoints from update_generic_prompt.mjs:36-40.
+ * PATCH+publish endpoints from build_acs_agents.mjs.
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -16,7 +16,7 @@ import { dirname, join } from 'node:path';
 const A = {};
 { const a = process.argv.slice(2); for (let i = 0; i < a.length; i++) if (a[i].startsWith('--')) { const k = a[i].slice(2); A[k] = (i + 1 < a.length && !a[i + 1].startsWith('--')) ? a[++i] : true; } }
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const AGENT_ID = A.id || '13809d4b-6b6d-4297-b95c-a934bceef0b4'; // default ACS-generic-neural
+const AGENT_ID = A.id || '95826da6-d1b6-4b81-b061-bfb52b881356'; // default ACS-generic-neural (rebuilt 2026-07-08)
 const MODEL = A.model;
 if (!MODEL || MODEL === true) { console.error('required: --model <modelId>  (e.g. gemini-2.5-flash-lite)'); process.exit(1); }
 

@@ -27,11 +27,11 @@ export interface AnswerSource {
 export type SegmentStatus = 'loading' | 'streaming' | 'success' | 'error';
 
 /** One agent's answer segment. A turn has one Generic segment, and a second
- *  Technical segment only when the handoff sentinel fired. */
+ *  Technical segment only when the user accepts the deep-dive offer. */
 export interface AnswerSegment {
   agent: AgentKind;
   status: SegmentStatus;
-  /** Streamed text, sentinel already stripped. */
+  /** Streamed answer text (already clean — no in-band sentinel to strip). */
   text: string;
   sources: AnswerSource[];
   /** Count of tool-result frames (`a:`) seen — drives the "searched · N sources"
@@ -51,9 +51,10 @@ export interface AnswerSegment {
 /** One full user turn: the question plus the assistant answer, and — only if
  *  the user opts into a deeper dive — a second specialist segment.
  *
- *  Deep-dive is HUMAN-GATED (matches the RC2 reference): the front agent may
- *  *offer* a specialist deep-dive (via the handoff sentinel), but the
- *  specialist NEVER runs until the user clicks "yes". State machine:
+ *  Deep-dive is HUMAN-GATED (matches the RC2 reference): Generic *offers* a
+ *  specialist deep-dive when its native `config.suggestions` completion emits a
+ *  `SPECIALIST:`-prefixed suggestion, but the specialist NEVER runs until the
+ *  user clicks "yes". State machine:
  *    deepDiveOffered=false                        → no offer (nothing to do)
  *    deepDiveOffered=true,  handoff=false          → offer shown, awaiting user
  *    deepDiveOffered=false, deepDiveDeclined=true  → user declined the offer
@@ -69,7 +70,13 @@ export interface ChatTurn {
   deepDiveOffered: boolean;
   /** The user dismissed the deep-dive offer for this turn. */
   deepDiveDeclined?: boolean;
-  /** A contextual next question the front agent suggested via its
-   *  `[[FOLLOWUP: …]]` token — rendered as a one-click discovery card. */
+  /** A contextual next question — `rest[0]` of the native suggestions after the
+   *  `SPECIALIST:` offer (if any) is pulled out — rendered as a one-click
+   *  discovery card. */
   followUp?: string;
+  /** Query to send the specialist when the user accepts the deep-dive: always
+   *  `turn.query` verbatim, set only when `deepDiveOffered` is true. NEVER a
+   *  concatenation with Generic's answer (architecture-review Critical #1) —
+   *  Generic's answer flows separately as `genericText`. */
+  deepDiveQuery?: string;
 }

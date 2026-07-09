@@ -1,0 +1,7 @@
+f:{"messageId": "alg_msg_SzxA12gwON8OKIJD"}
+2:[{"type": "message-metadata", "messageId": "alg_msg_SzxA12gwON8OKIJD", "messageMetadata": {}}]
+b:{"toolCallId": "fc18671c-ef8d-4964-81ce-267db22e2c2c", "toolName": "consult_technical_specialist"}
+c:{"toolCallId": "fc18671c-ef8d-4964-81ce-267db22e2c2c", "argsTextDelta": "{\"query\": \"What's the difference between v3 and S2 Button components?\"}"}
+9:{"toolCallId": "fc18671c-ef8d-4964-81ce-267db22e2c2c", "toolName": "consult_technical_specialist", "args": {"query": "What's the difference between v3 and S2 Button components?"}}
+e:{"finishReason": "stop"}
+d:{"finishReason": "stop"}

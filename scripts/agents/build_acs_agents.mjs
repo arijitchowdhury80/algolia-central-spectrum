@@ -11,6 +11,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { PERSONAS, INDEX, CLONE_BASE, RETIRE, buildAgentName, buildSuggestionsConfig, buildAgentBody, assertSuggestionsEnabled } from './agentConfig.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const envPath = [process.env.ACS_ENV, join(process.cwd(), '.env.local'), join(__dirname, '..', '..', '.env.local')].filter(Boolean).find((p) => existsSync(p));
@@ -21,23 +22,26 @@ const H = { 'X-Algolia-Application-Id': APP, 'X-Algolia-API-Key': KEY, 'Content-
 async function call(method, path, body) { const r = await fetch(`${BASE}${path}`, { method, headers: H, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) }); const t = await r.text(); let j; try { j = JSON.parse(t); } catch { j = { raw: t.slice(0, 400) }; } return { status: r.status, json: j }; }
 async function listAgents() { const r = await call('GET', '/agents?limit=100'); const arr = r.json.data ?? r.json.agents ?? r.json.items ?? []; const m = {}; for (const a of arr) { const id = a.id ?? a.objectID; if (a.name && id) m[a.name] = id; } return m; }
 
-const INDEX = 'ACS_SPECTRUM_MULTI';
-const CLONE_BASE = 'ACS-generic-neural'; // self-hosting; falls back below if the panel isn't built yet
-// Decision (Arijit 2026-07-01): 2 agents = Generic (all sources, front door) + Technical (React code).
-// filters:null → no source filter (sees the whole 502-record corpus).
-const PERSONAS = [
-  { name: 'ACS-generic-neural', prompt: 'instructions_generic.md', filters: null, desc: 'ACS_SPECTRUM_MULTI — full Spectrum corpus (all sources).' },
-  { name: 'ACS-technical-neural', prompt: 'instructions_technical.md', filters: 'source:"ReactSpectrumS2" OR source:"ReactSpectrumV3" OR source:"ReactAria"', desc: 'ACS_SPECTRUM_MULTI scoped to React code docs (ReactSpectrumS2 + V3 + ReactAria).' },
-];
-// retire the superseded designer/developer split
-const RETIRE = ['ACS-designer-neural', 'ACS-developer-neural'];
+// Dry-run mechanism: prefix every live-agent name lookup/create/patch with
+// this suffix so a test run never touches the production agents. Empty →
+// backward-compatible default (the real live names).
+const SUFFIX = process.env.ACS_AGENT_SUFFIX ?? '';
 
 function loadPrompt(file) { let s = readFileSync(join(__dirname, file), 'utf8'); if (s.includes('[[SHARED_GROUNDING]]')) s = s.replace('[[SHARED_GROUNDING]]', readFileSync(join(__dirname, '_shared_grounding_acs.md'), 'utf8').trim()); return s; }
-function scopeTools(tools, filters, desc) { const t = JSON.parse(JSON.stringify(tools)); for (const tool of t) { tool.description = desc; if (Array.isArray(tool.indices)) for (const ix of tool.indices) { ix.index = INDEX; ix.description = desc; ix.searchParameters = ix.searchParameters ?? {}; if (filters) ix.searchParameters.filters = filters; else delete ix.searchParameters.filters; } } return t; }
+// Only scopes algolia_search_index tools (indices/searchParameters) — other
+// tool types (e.g. client_side) pass through build_acs_agents untouched via
+// extraTools instead, so this must never touch them or it'd stamp the wrong
+// description/index onto a non-search tool.
+function scopeTools(tools, filters, desc) {
+  const searchTools = tools.filter((t) => t.type === 'algolia_search_index');
+  const t = JSON.parse(JSON.stringify(searchTools));
+  for (const tool of t) { tool.description = desc; if (Array.isArray(tool.indices)) for (const ix of tool.indices) { ix.index = INDEX; ix.description = desc; ix.searchParameters = ix.searchParameters ?? {}; if (filters) ix.searchParameters.filters = filters; else delete ix.searchParameters.filters; } }
+  return t;
+}
 
 const mode = process.argv[2];
 const existing = await listAgents();
-const names = PERSONAS.map((p) => p.name);
+const names = PERSONAS.map((p) => buildAgentName(p.name, SUFFIX));
 if (mode === '--list') { for (const n of names) console.log(`  ${n} → ${existing[n] ?? '(none)'}`); process.exit(0); }
 if (mode === '--delete') { for (const n of names) { const id = existing[n]; if (!id) { console.log(`  ${n} — absent`); continue; } const d = await call('DELETE', `/agents/${id}`); console.log(`  DELETE ${n} → HTTP ${d.status}`); } process.exit(0); }
 
@@ -48,17 +52,44 @@ for (const n of RETIRE) { if (existing[n]) { const d = await call('DELETE', `/ag
 const baseId = existing[CLONE_BASE] ?? existing['ac2-developer-neural'] ?? Object.entries(existing).find(([n]) => /neural$/.test(n))?.[1];
 if (!baseId) { console.error('no clone-base agent found'); process.exit(1); }
 const base = (await call('GET', `/agents/${baseId}`)).json;
-for (const { name, prompt, filters, desc } of PERSONAS) {
+
+// Native suggestions system_prompt per persona (B1). Keyed by bare persona
+// name so it survives any ACS_AGENT_SUFFIX dry-run rename.
+const SUGGESTIONS_PROMPT = {
+  'ACS-generic-neural': loadPrompt('suggestions_generic.md'),
+  'ACS-technical-neural': loadPrompt('suggestions_technical.md'),
+};
+
+for (const { name, prompt, filters, desc, extraTools } of PERSONAS) {
+  const agentName = buildAgentName(name, SUFFIX);
   const instructions = loadPrompt(prompt);
-  const tools = scopeTools(base.tools, filters, desc);
-  const body = { name, instructions, model: base.model, providerId: base.providerId ?? base.provider_id, tools, status: 'published' };
-  if (existing[name]) await call('DELETE', `/agents/${existing[name]}`);
-  const c = await call('POST', '/agents', body);
-  if (![200, 201].includes(c.status)) { console.error(`create ${name} → ${c.status}: ${JSON.stringify(c.json).slice(0, 400)}`); process.exit(1); }
-  const id = c.json.id ?? c.json.objectID;
-  await call('POST', `/agents/${id}/publish`, {});
+  const tools = [...scopeTools(base.tools, filters, desc), ...extraTools];
+  const providerId = base.providerId ?? base.provider_id;
+  const suggestionsConfig = buildSuggestionsConfig(SUGGESTIONS_PROMPT[name]);
+  const existingId = existing[agentName];
+  let id;
+  if (existingId) {
+    // PATCH in place — confirmed live 2026-07-09 (HTTP 200, ID unchanged,
+    // status stays "published"). Never delete+recreate a live agent: this
+    // project's frontend (and production's deployed bundle) hardcode agent
+    // IDs, so a churned ID silently 404s anyone still pointing at the old
+    // one. See docs/spikes/2026-07-08-agent-to-agent-tool-VERDICT.md for the
+    // incident this replaced.
+    const body = buildAgentBody({ instructions, model: base.model, providerId, tools, suggestionsConfig });
+    const p = await call('PATCH', `/agents/${existingId}`, body);
+    if (p.status !== 200) { console.error(`patch ${agentName} → ${p.status}: ${JSON.stringify(p.json).slice(0, 400)}`); process.exit(1); }
+    id = existingId;
+  } else {
+    const body = buildAgentBody({ name: agentName, status: 'published', instructions, model: base.model, providerId, tools, suggestionsConfig });
+    const c = await call('POST', '/agents', body);
+    if (![200, 201].includes(c.status)) { console.error(`create ${agentName} → ${c.status}: ${JSON.stringify(c.json).slice(0, 400)}`); process.exit(1); }
+    id = c.json.id ?? c.json.objectID;
+    await call('POST', `/agents/${id}/publish`, {});
+  }
   const v = await call('GET', `/agents/${id}`);
-  console.log(`  ${name} → ${id}`);
-  console.log(`      index=${v.json.tools?.[0]?.indices?.[0]?.index}  filter=${v.json.tools?.[0]?.indices?.[0]?.searchParameters?.filters}  prompt=${instructions.length}ch  model=${body.model}`);
+  const suggestions = assertSuggestionsEnabled(v.json) ? 'on' : 'MISSING';
+  console.log(`  ${agentName} → ${id}${existingId ? ' (patched in place, ID unchanged)' : ' (created)'}`);
+  console.log(`      index=${v.json.tools?.[0]?.indices?.[0]?.index}  filter=${v.json.tools?.[0]?.indices?.[0]?.searchParameters?.filters}  tools=${v.json.tools?.map((t) => t.type).join('+')}  prompt=${instructions.length}ch  model=${base.model}  suggestions=${suggestions}`);
+  if (suggestions === 'MISSING') { console.error(`  ${agentName}: config.suggestions did not round-trip enabled — hard gate failed.`); process.exit(1); }
 }
 console.log('[build_acs_agents] done.');

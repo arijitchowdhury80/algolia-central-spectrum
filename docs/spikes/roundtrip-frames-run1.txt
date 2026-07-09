@@ -1,0 +1,7 @@
+f:{"messageId": "alg_msg_eCkBj2xniaVXQZGH"}
+2:[{"type": "message-metadata", "messageId": "alg_msg_eCkBj2xniaVXQZGH", "messageMetadata": {}}]
+b:{"toolCallId": "041fecfb-1ee0-49d5-b721-9e1f0da5ebd1", "toolName": "consult_technical_specialist"}
+c:{"toolCallId": "041fecfb-1ee0-49d5-b721-9e1f0da5ebd1", "argsTextDelta": "{\"query\": \"How do I use a React Spectrum ComboBox?\"}"}
+9:{"toolCallId": "041fecfb-1ee0-49d5-b721-9e1f0da5ebd1", "toolName": "consult_technical_specialist", "args": {"query": "How do I use a React Spectrum ComboBox?"}}
+e:{"finishReason": "stop"}
+d:{"finishReason": "stop"}

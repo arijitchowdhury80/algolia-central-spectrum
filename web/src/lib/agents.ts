@@ -10,10 +10,6 @@
  */
 import type { CompletionsConfig } from './agentStudio';
 
-/** Sentinel token the Generic agent appends on its own final line when a
- *  question needs the Technical agent's deep-code handling. */
-export const HANDOFF_SENTINEL = '[[HANDOFF:technical]]';
-
 interface EnvConfig {
   appId: string;
   searchKey: string;

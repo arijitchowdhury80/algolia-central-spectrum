@@ -5,6 +5,14 @@
  * INDICATIVE ONLY until P2b judge calibration (the standing trust gate carried from
  * AC2). Reads ../../.env.local (ALGOLIA_APP_ID, ALGOLIA_ADMIN_API_KEY, GOOGLE_API_KEY).
  *
+ * KNOWN STALE (found 2026-07-08, not fixed here — out of scope of that day's
+ * work): the `Artifact` passed to `judgeArtifact` below uses `{question,
+ * answer, sources:{id,url,text}}`, but the current @lab/judge `Artifact` type
+ * is `{prompt, content, sources:{id,text,label}}` — this file predates that
+ * schema and its scores are unlikely to reflect real judge output as-is. See
+ * `orchestratorRunner.ts` for the corrected shape and hardcoded agent IDs
+ * that also postdate this file (rebuilt with the client_side tool schema).
+ *
  *   npx tsx src/runner.ts               # both agents, all questions
  *   npx tsx src/runner.ts ACS-technical-neural
  */
@@ -23,7 +31,17 @@ async function askAgent(appId: string, key: string, agentId: string, question: s
     method: "POST", headers: { "X-Algolia-Application-Id": appId, "X-Algolia-API-Key": key, "Content-Type": "application/json", "User-Agent": "curl/8.4.0" },
     body: JSON.stringify({ messages: [{ role: "user", content: question }] }),
   });
-  const raw = await res.text();
+  // never res.text() on this streaming endpoint — it intermittently truncates
+  // the SSE body to empty, and Agent Studio caches that empty answer keyed on
+  // the exact query (SESSION.md "KEY DEBUG LESSON"). Read via a reader.
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let raw = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    raw += decoder.decode(value, { stream: true });
+  }
   let answer = ""; const sources: Hit[] = []; let n = 0;
   for (const line of raw.split("\n")) {
     const t = line.trim(); if (!t) continue;

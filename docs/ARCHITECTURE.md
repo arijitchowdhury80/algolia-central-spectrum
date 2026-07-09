@@ -126,7 +126,6 @@ Batch scoring of answers (`runner.ts`, `agentRunner.ts`, `panels.ts`, `streamPar
 |---|---|
 | `build_acs_agents.mjs` | Create the Generic + Technical Agent Studio agents. |
 | `update_agent_model.mjs` | Swap an agent's model (e.g. → `gemini-2.5-flash-lite`). |
-| `update_generic_prompt.mjs` | Push updated Generic instructions (adds the HANDOFF + FOLLOWUP rules). |
 | `instructions_generic.md`, `instructions_technical.md`, `instructions_designer.md`, `instructions_developer.md`, `_shared_grounding_acs.md` | The agents' system instructions (grounding rules live in the shared file). |
 
 ### `scripts/neural/`

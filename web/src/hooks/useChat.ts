@@ -1,38 +1,82 @@
 /**
  * useChat — the client baton orchestration (the app's core feature).
  *
- * Ported from _legacy_plaincss/src/hooks/useChat.ts. Owns the turn list and
- * drives the Generic -> [sentinel? -> Technical] flow:
- *   1. Call Generic with running history. Stream text live.
- *   2. Watch the accumulated Generic text for HANDOFF_SENTINEL. If present,
- *      strip it, mark the turn as a handoff, and call Technical with
- *      history = [...priorHistory, user turn, Generic's stripped answer].
- *   3. Persist each turn's final assistant content (Generic, +Technical if
- *      handed off) into `turns` so the NEXT call's history is correct.
+ * Drives the Generic -> [offer? -> Technical] flow off Agent Studio's native
+ * `config.suggestions` mechanism (no tool call, no pause, no text sentinel):
+ *   1. Call Generic with running history. Stream its full answer live — the
+ *      answer text is already clean, there is nothing to strip.
+ *   2. After the answer, Generic's native suggestions fire. The frontend reads
+ *      `genericResult.suggestions`. A suggestion prefixed `SPECIALIST:` is a
+ *      deep-dive offer; any other suggestion is an ordinary follow-up. Both are
+ *      derived in one shot by `deriveOfferState`, so `deepDiveOffered` and
+ *      `deepDiveQuery` can never disagree.
+ *   3. Deep-dive stays human-gated: only on `runDeepDive` do we call Technical,
+ *      passing `turn.deepDiveQuery` (the user's original turn text, verbatim)
+ *      plus Generic's answer as separate context — never concatenated.
+ *   4. Persist each turn's final assistant content (Generic, +Technical if the
+ *      user accepted) into `turns` so the NEXT call's history is correct.
  *
  * Agent IDs now come from the active instance config (not hardcoded) — see
  * lib/agents.ts header for why.
  */
 import { useState, useCallback, useRef } from 'react';
 import { callCompletions } from '../lib/agentStudio';
-import { getAgentConfig, HANDOFF_SENTINEL } from '../lib/agents';
+import { getAgentConfig } from '../lib/agents';
 import { normalizeHit, groupSources, totalSources } from '../lib/sources';
 import { activeInstance } from '../config/active';
 import type { AnswerSegment, AnswerSource, ChatTurn, HistoryEntry } from '../types';
 
-const FOLLOWUP_RE = /\[\[FOLLOWUP:\s*([^\]]+?)\]\]/i;
+/** Pull the first `SPECIALIST:`-prefixed deep-dive offer out of a turn's native
+ *  suggestions. Returns its trimmed remainder as `offer` and the remaining
+ *  suggestions as `rest` (the matched entry removed so it never also renders as
+ *  an ordinary follow-up). If none is prefixed, returns `{ rest: suggestions }`
+ *  unchanged. */
+export function extractDeepDiveOffer(
+  suggestions: string[],
+): { offer?: string; rest: string[] } {
+  // Normalize (trim + uppercase) before matching to tolerate the whitespace/case
+  // drift a live LLM completion can emit (' SPECIALIST:', 'Specialist:'), but
+  // slice the prefix off the trimmed ORIGINAL so the offer text keeps its casing.
+  const idx = suggestions.findIndex((s) => s.trim().toUpperCase().startsWith('SPECIALIST:'));
+  if (idx === -1) return { rest: suggestions };
+  return {
+    offer: suggestions[idx].trim().slice('SPECIALIST:'.length).trim(),
+    rest: suggestions.filter((_, i) => i !== idx),
+  };
+}
 
-/** Parse accumulated agent text into displayable text + control signals,
- *  stripping the machine-readable tokens: `[[HANDOFF:technical]]` (deep-dive
- *  offer) and `[[FOLLOWUP: <question>]]` (discovery card). */
-function parseAgentText(text: string): { display: string; handoff: boolean; followUp?: string } {
-  const fu = text.match(FOLLOWUP_RE);
-  const followUp = fu ? fu[1].trim() : undefined;
-  let display = text.replace(FOLLOWUP_RE, '');
-  const idx = display.indexOf(HANDOFF_SENTINEL);
-  const handoff = idx !== -1;
-  if (handoff) display = display.slice(0, idx);
-  return { display: display.replace(/\s+$/, ''), handoff, followUp };
+/** Derive the turn's offer state from its suggestions in ONE place, so
+ *  `deepDiveOffered` and `deepDiveQuery` are always sourced from the same
+ *  `offer` value and can never disagree (architecture-review Critical #2).
+ *  `deepDiveQuery` is `turnQuery` verbatim when an offer exists — never a
+ *  concatenation with Generic's answer (Critical #1). */
+export function deriveOfferState(
+  suggestions: string[],
+  turnQuery: string,
+): { deepDiveOffered: boolean; followUp?: string; deepDiveQuery?: string } {
+  const { offer, rest } = extractDeepDiveOffer(suggestions);
+  return {
+    deepDiveOffered: !!offer,
+    followUp: rest[0],
+    deepDiveQuery: offer ? turnQuery : undefined,
+  };
+}
+
+/** Build the specialist's prior-history array. The `user` entry is `query`
+ *  ALONE (verbatim) and Generic's answer is a SEPARATE `assistant` entry —
+ *  pulled out as a pure function so the double-user-turn regression (Critical
+ *  #1: `query` must never be concatenated with `genericText`) is directly
+ *  testable. */
+export function buildTechnicalHistory(
+  priorHistory: HistoryEntry[],
+  query: string,
+  genericText: string,
+): HistoryEntry[] {
+  return [
+    ...priorHistory,
+    { role: 'user', content: query },
+    { role: 'assistant', content: genericText },
+  ];
 }
 
 /** Normalize + dedupe raw Agent Studio hits into AnswerSource[]. */
@@ -47,16 +91,59 @@ function normalizeSources(hits: Record<string, unknown>[]): AnswerSource[] {
   return groups.flatMap((g) => g.sources);
 }
 
+/** Deterministically shrink an earlier turn's answer for replay as history
+ *  (R11). No LLM call — an agent-emitted summary would be untrusted content
+ *  compounding into future turns' premises, and a second per-turn call besides.
+ *  Passthrough when `text.length <= maxLen`; otherwise cut back to the last
+ *  whitespace boundary (never mid-word) and append ' …'. The ellipsis budget is
+ *  reserved inside `maxLen`, so the result is always `<= maxLen`. A pathological
+ *  single long token with no whitespace is hard-truncated with a trailing '…'. */
+export function summarizeForHistory(text: string, maxLen = 240): string {
+  if (text.length <= maxLen) return text;
+  const slice = text.slice(0, maxLen - 2);
+  const atBoundary = slice.replace(/\S*$/, '').trimEnd();
+  if (atBoundary.length === 0) return text.slice(0, maxLen - 1) + '…';
+  return atBoundary + ' …';
+}
+
+/** Summarize a multi-segment answer for replay as history, giving each segment
+ *  its OWN budget rather than end-truncating the flat concatenation. A flat
+ *  end-truncation drops the LAST segment entirely once the first fills `maxLen`
+ *  — which silently deletes the Technical (deep-dive) answer, the most specific
+ *  and whole-point-of-the-feature content, from every subsequent turn's context
+ *  (WR-01). The last segment is always the most specific, so it gets a double
+ *  share of the budget; earlier segments split the remainder evenly. The join
+ *  separators ('\n\n') are reserved out of `maxLen` so the result is `<= maxLen`. */
+export function summarizeSegmentsForHistory(texts: string[], maxLen = 240): string {
+  if (texts.length === 0) return '';
+  if (texts.length === 1) return summarizeForHistory(texts[0], maxLen);
+  const sepBudget = (texts.length - 1) * 2; // reserve for '\n\n' joins
+  const budget = maxLen - sepBudget;
+  const totalWeight = texts.length - 1 + 2; // last segment weighted x2
+  const unit = Math.floor(budget / totalWeight);
+  return texts
+    .map((t, i) => {
+      const isLast = i === texts.length - 1;
+      const segBudget = isLast ? budget - unit * (texts.length - 1) : unit;
+      return summarizeForHistory(t, segBudget);
+    })
+    .join('\n\n');
+}
+
 /** Turn a completed turn into the {role,content} pairs Agent Studio expects
  *  as prior history. Turns with no successful segment are skipped entirely
- *  (an unanswered question shouldn't be replayed as context). */
-function turnToHistory(t: ChatTurn): HistoryEntry[] {
+ *  (an unanswered question shouldn't be replayed as context). The assistant
+ *  answer is summarized (R11) because `turnToHistory` only ever runs on turns
+ *  strictly before the current one (via `historyBefore`'s `slice(0, idx)`), so
+ *  every answer it emits is an earlier round — the current round's own answer
+ *  flows separately (`genericText`) and is never touched. The question stays
+ *  verbatim. Exported for the R11 integration test. */
+export function turnToHistory(t: ChatTurn): HistoryEntry[] {
   const answered = t.segments.filter((s) => s.status === 'success' && s.text.trim());
   if (answered.length === 0) return [];
-  const combined = answered.map((s) => s.text).join('\n\n');
   return [
     { role: 'user', content: t.query },
-    { role: 'assistant', content: combined },
+    { role: 'assistant', content: summarizeSegmentsForHistory(answered.map((s) => s.text)) },
   ];
 }
 
@@ -119,7 +206,7 @@ export function useChat(): UseChatResult {
     );
   }, []);
 
-  /** Run one full turn (Generic, then Technical if the sentinel fires).
+  /** Run one full turn (Generic; Technical only on later user consent).
    *  `priorHistory` is the conversation context as of just before this turn. */
   const runTurn = useCallback(
     async (turnId: string, query: string, priorHistory: HistoryEntry[]) => {
@@ -132,16 +219,27 @@ export function useChat(): UseChatResult {
             getAgentConfig(activeInstance.agents.generic.id),
             { history: priorHistory, query },
             (accumulated) => {
-              const { display } = parseAgentText(accumulated);
-              updateSegment(turnId, 0, { status: 'streaming', text: display });
+              updateSegment(turnId, 0, { status: 'streaming', text: accumulated });
             },
           );
+          // Known Agent Studio flake (SESSION.md, ~1-in-8 baseline): an
+          // occasional empty completion with no error — retry once before
+          // surfacing the empty-result UI.
+          if (!genericResult.error && !genericResult.content.trim()) {
+            genericResult = await callCompletions(
+              getAgentConfig(activeInstance.agents.generic.id),
+              { history: priorHistory, query },
+              (accumulated) => {
+                updateSegment(turnId, 0, { status: 'streaming', text: accumulated });
+              },
+            );
+          }
         } catch (err) {
           updateSegment(turnId, 0, { status: 'error', error: toErrorMessage(err) });
           return;
         }
 
-        const { display: genericText, handoff, followUp } = parseAgentText(genericResult.content);
+        const genericText = genericResult.content;
         const genericSources = normalizeSources(genericResult.hits);
 
         if (genericResult.error) {
@@ -164,11 +262,14 @@ export function useChat(): UseChatResult {
           rawHits: genericResult.hits,
         });
 
-        // Deep-dive is HUMAN-GATED: on the handoff sentinel we only OFFER the
-        // specialist (never auto-run). Also stash the agent's suggested
-        // follow-up question for the discovery card. One state update for both.
+        // Deep-dive is HUMAN-GATED: a `SPECIALIST:`-prefixed native suggestion
+        // only OFFERS the specialist (never auto-runs). `deriveOfferState`
+        // derives deepDiveOffered / followUp / deepDiveQuery from the same
+        // `offer` value in one shot, so they can never disagree. `query` here
+        // is runTurn's own parameter, always equal to turn.query.
+        const patch = deriveOfferState(genericResult.suggestions, query);
         setTurns((prev) =>
-          prev.map((t) => (t.id === turnId ? { ...t, deepDiveOffered: handoff, followUp } : t)),
+          prev.map((t) => (t.id === turnId ? { ...t, ...patch } : t)),
         );
       } finally {
         setIsStreaming(false);
@@ -193,31 +294,41 @@ export function useChat(): UseChatResult {
         };
         appendSegment(turnId, technicalSegment);
 
-        const technicalHistory: HistoryEntry[] = [
-          ...priorHistory,
-          { role: 'user', content: query },
-          { role: 'assistant', content: genericText },
-        ];
+        const technicalHistory = buildTechnicalHistory(priorHistory, query, genericText);
+
+        const onTechToken = (accumulated: string) =>
+          updateSegment(turnId, 1, { status: 'streaming', text: accumulated });
 
         let technicalResult;
         try {
           technicalResult = await callCompletions(
             getAgentConfig(activeInstance.agents.technical.id),
             { history: technicalHistory, query },
-            (accumulated) => {
-              updateSegment(turnId, 1, { status: 'streaming', text: accumulated });
-            },
+            onTechToken,
           );
+          // Known Agent Studio flake (SESSION.md, ~1-in-8 baseline): an
+          // occasional empty completion with no error — manual "Try again"
+          // already proves a retry usually works, so try once automatically
+          // before surfacing the empty-result UI to the user.
+          if (!technicalResult.error && !technicalResult.content.trim()) {
+            technicalResult = await callCompletions(
+              getAgentConfig(activeInstance.agents.technical.id),
+              { history: technicalHistory, query },
+              onTechToken,
+            );
+          }
         } catch (err) {
           updateSegment(turnId, 1, { status: 'error', error: toErrorMessage(err) });
           return;
         }
 
+        const technicalText = technicalResult.content;
+        const { rest: technicalRest } = extractDeepDiveOffer(technicalResult.suggestions);
         const technicalSources = normalizeSources(technicalResult.hits);
         if (technicalResult.error) {
           updateSegment(turnId, 1, {
             status: 'error',
-            text: technicalResult.content,
+            text: technicalText,
             sources: technicalSources,
             searchCount: totalSources(groupSources(technicalSources)),
             error: technicalResult.error,
@@ -228,11 +339,19 @@ export function useChat(): UseChatResult {
 
         updateSegment(turnId, 1, {
           status: 'success',
-          text: technicalResult.content,
+          text: technicalText,
           sources: technicalSources,
           searchCount: totalSources(groupSources(technicalSources)),
           rawHits: technicalResult.hits,
         });
+        // Technical's answer is the deepest, most specific point in the
+        // conversation — its own follow-up (if it gave one) replaces
+        // Generic's earlier, less-specific one as the turn's discovery card.
+        if (technicalRest[0]) {
+          setTurns((prev) =>
+            prev.map((t) => (t.id === turnId ? { ...t, followUp: technicalRest[0] } : t)),
+          );
+        }
       } finally {
         setIsStreaming(false);
       }
@@ -240,7 +359,9 @@ export function useChat(): UseChatResult {
     [appendSegment, updateSegment],
   );
 
-  /** User accepted the deep-dive offer → run the specialist leg. */
+  /** User accepted the deep-dive offer → run the specialist leg. Uses
+   *  `turn.deepDiveQuery` (the user's original turn text, verbatim, set when the
+   *  offer was made), falling back to `turn.query` defensively. */
   const runDeepDive = useCallback(
     async (turnId: string) => {
       if (isStreaming) return;
@@ -248,7 +369,8 @@ export function useChat(): UseChatResult {
       if (!turn || !turn.deepDiveOffered || turn.handoff) return;
       const genericText = turn.segments[0]?.text ?? '';
       const priorHistory = historyBefore(turnsRef.current, turnId);
-      await runTechnicalLeg(turnId, turn.query, priorHistory, genericText);
+      const resolvedQuery = turn.deepDiveQuery ?? turn.query;
+      await runTechnicalLeg(turnId, resolvedQuery, priorHistory, genericText);
     },
     [isStreaming, runTechnicalLeg],
   );
@@ -299,6 +421,7 @@ export function useChat(): UseChatResult {
                 deepDiveOffered: false,
                 deepDiveDeclined: false,
                 followUp: undefined,
+                deepDiveQuery: undefined,
                 segments: [{ agent: 'generic', status: 'loading', text: '', sources: [], searchCount: 0 }],
               }
             : t,
