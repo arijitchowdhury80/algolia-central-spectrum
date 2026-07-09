@@ -1,5 +1,41 @@
 # SESSION.md — Algolia-Central-Spectrum (ACS)
 
+## ═══ STATUS (2026-07-08): Real tool-call handoff shipped + live-tested. Bug fixed. Engagement redesigned. NEXT = react-instantsearch <Chat> swap + full 100-Q eval. ═══
+
+**Status (one line):** Generic→Technical handoff moved from a `[[HANDOFF:technical]]` text sentinel to a real, live-tested Agent Studio `client_side` tool call; deployed, bug-fixed, and the follow-up-question engagement layer was redesigned — but the entire chat client is still hand-built (zero `react-instantsearch`/`algoliasearch` usage) and that's the next real job.
+
+### ▶▶ RESUME ACTION (do FIRST next session):
+1. Read this block, then `docs/spikes/2026-07-08-agent-to-agent-tool-VERDICT.md` for the tool-call architecture proof.
+2. **Job 1 — scope + execute the `react-instantsearch` `<Chat>` swap.** Packages are already installed (`web/package.json`: `algoliasearch`, `react-instantsearch`). `<Chat>` takes one `agentId` (no native multi-agent routing — confirmed via WebFetch of the real API, not assumed). Its `tools` prop (`{inputSchema, onToolCall, layoutComponent}`) maps closely onto today's hand-built tool-call mechanism — plan: Technical stops being a separate UI "agent identity" and becomes the tool's `layoutComponent` result. This needs a `frontend-builder` design pass per this repo's own CLAUDE.md (design-thinking before any UI build) — don't just start hacking.
+3. **Job 2 — run the full 100-question eval.** `lab/eval/src/orchestratorRunner.ts <limit>` (default 100) against the 120-question bank (`lab/eval/src/questions-orchestrator.json`). Only 20-question pilots ran this session (mean 8.02→8.61/10 after 3 bug fixes). Judge is UNCALIBRATED (P2b never run, standing CLAUDE.md gate) — every score is directional, not authoritative; Arijit's explicit call was to proceed anyway.
+4. **Job 3 — verify the auto-retry actually helps.** Added a one-shot silent retry in `useChat.ts` for the known empty-completion flake (SESSION.md-documented since 2026-07-03). Not yet observed in real multi-turn browser use, only unit-tested logically.
+5. Current live agent IDs (churn every redeploy — `build_acs_agents.mjs` deletes+recreates by name): generic `95826da6-d1b6-4b81-b061-bfb52b881356`, technical `ae127977-c728-4b7c-bc15-6502a77873d1`. Source of truth: `web/src/config/instances/spectrum.ts`.
+
+### What has NOT been done (read before claiming anything is finished):
+- The `<Chat>` swap: only researched + deps installed, zero code written.
+- The full 100-question eval: never run to completion. Only 20-Q pilots.
+- The auto-retry fix: not yet observed catching a real empty-completion in live browser use.
+- Generic's minor prose quirk (sometimes asks a redundant question in its own text before the FOLLOWUP token) — noticed, not fixed.
+- Judge calibration (P2b): still never run. All eval scores in this session are directional only.
+
+### ▷ SESSION 2026-07-08 — Real tool-call architecture, live bug fix, engagement redesign
+Full detail in commits `8b65334`..`fac01d5` on `origin/spike/agent-to-agent-tool` (NOT merged to main — main is untouched, zero deploy risk).
+
+1. **Agent-to-agent client-tool spike, run for real.** An earlier pass in this same session leaned on 2026-06-27 vault research and stopped short of empirical proof; Arijit caught this and had it re-run live. Found the real live-API tool schema empirically (Algolia's own docs shape — `{type:"function"}` — is rejected by the live API; the real shape is flat: `{name, type:"client_side", description, inputSchema}`). Confirmed deterministic pause/resume across 5+2 independent live cycles. Zero production drift. Full writeup: `docs/spikes/2026-07-08-agent-to-agent-tool-VERDICT.md` + `-findings.md`.
+2. **Implemented + deployed.** Replaced `[[HANDOFF:technical]]` sentinel-scanning with real tool-call interception in `useChat.ts`/`agents.ts`; updated `build_acs_agents.mjs` to register the tool on Generic only; rewrote `instructions_generic.md`'s handoff section. `npm run build` clean throughout.
+3. **Eval loop, 3 real bugs found and fixed** (not just harness noise — verified with live judge transcripts each time): (a) test harness fed the judge YAML frontmatter instead of real `SpectrumDesignDocs` body content; (b) Generic genuinely under-searched on "X vs Y" comparison questions (searched one side, answered the other from general knowledge) — fixed via a new hard rule in `_shared_grounding_acs.md`; (c) harness used `res.text()` on the streaming endpoint — the EXACT bug this same SESSION.md already documented on 2026-07-03, missed because it wasn't checked before writing new code (logged as a standing lesson in memory: `recheck-known-lessons-before-new-harness`).
+4. **Arijit's own first live test caught a real bug**: "No response came back this time" on Technical's leg. Root-caused as the pre-existing ~1-in-8 empty-completion flake (not a new defect from the architecture change — reproduced fresh, worked fine). Fixed with a silent one-shot auto-retry on both legs.
+5. **Arijit re-flagged the UI architecture, hard**: the entire chat client is hand-built (fetch + manual SSE parsing), zero Algolia frontend library usage. Installed `algoliasearch` + `react-instantsearch`; researched `<Chat>`'s real API rather than assuming (see Resume Action above for findings).
+6. **Engagement/discovery redesigned.** The `[[FOLLOWUP:...]]` mechanism was a rigid ~12-word generic template ("How do I make it accessible?" — could follow any answer about anything); Technical never had one at all. Rewrote both agents' instructions to require naming a real, specific prop/component from the actual retrieved hits, dropped the word cap, added the mechanism to Technical. Verified live: Technical's follow-up on a ComboBox question correctly asked about the real `defaultItems`/`items` prop distinction visible in its own code example.
+
+### Reference files
+- `docs/spikes/2026-07-08-agent-to-agent-tool-VERDICT.md` / `-findings.md` — the tool-call architecture proof.
+- `lab/eval/src/orchestratorRunner.ts` + `questions-orchestrator.json` — the eval harness + bank.
+- `scripts/agents/_shared_grounding_acs.md`, `instructions_generic.md`, `instructions_technical.md` — current agent prompts.
+- Vault: `Projects/Algolia-Central/spectrum/index.md` (compiled truth + timeline).
+
+---
+
 ## ═══ STATUS (2026-07-03 late-night): ✅ JUDGE LIVE IN CHAT + GATE FIXED AT SOURCE + everything shipped. NEXT = optional polish only. ═══
 **The grounding judge is now surfaced per-answer and the false-cap bug is fixed at the backend source.** Every answer shows a **Confidence chip** (composite score) bottom-right of its sources; clicking opens a **JudgeDrawer** (3-judge accordions Skeptic/Referee/Advocate + dynamic dimension bars + synthesis rationale). Judge runs on the **hosted VPS** (`ac2-lab-backend` container → `https://judge.contentengagement.info`, Caddy 443, `x-lab-key` auth). **Browser-verified live**: the ComboBox answer that used to read `3.0 UNSUPPORTED` now reads **8.9 GROUNDED** (= panel mean); a fabricated answer still caps to 0 with the fake claims listed. Public app: `https://algolia-central-spectrum.vercel.app`. GitHub `main` @ **`fabbd07`** (v0.3.0). Design system unchanged (Algolia LIGHT: Sora, Nebula Blue `#003DFF`, cobrand Adobe × Algolia). Corpus `ACS_SPECTRUM_MULTI` = 358 recs. Front agent = gemini-2.5-flash-lite.
 
