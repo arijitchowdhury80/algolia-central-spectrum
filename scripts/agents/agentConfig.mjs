@@ -8,6 +8,16 @@
 export const INDEX = 'ACS_SPECTRUM_MULTI';
 export const CLONE_BASE = 'ACS-generic-neural'; // self-hosting; falls back below if the panel isn't built yet
 
+// Explicit model for both personas' main completions — NOT cloned from
+// whatever the live agent's own `model` field currently is. Previously
+// build_acs_agents.mjs read `base.model` off the self-clone target, which
+// meant a dead/deprecated model on the live agent would perpetuate itself
+// forever (every refresh re-reads the same broken value). Confirmed live
+// 2026-07-09 that gemini-2.5-flash-lite was deprecated by the provider
+// mid-session (404 "no longer available") — every agent + the suggestions
+// config were pinned to it. gemini-2.5-flash is confirmed live and working.
+export const MAIN_MODEL = 'gemini-2.5-flash';
+
 // Decision (Arijit 2026-07-01): 2 agents = Generic (all sources, front door) + Technical (React code).
 // filters:null → no source filter (sees the whole 502-record corpus).
 // extraTools: neither agent carries a client_side tool — the Generic→Technical
@@ -28,9 +38,19 @@ export function buildAgentName(baseName, suffix) {
 }
 
 // Native platform suggestions config. Fields locked by the approved spec
-// (04-spec.md). A gemini-2.5-flash-lite completion emits exactly one follow-up
+// (04-spec.md). A gemini-2.5-flash completion emits exactly one follow-up
 // per turn, with the turn's tool outputs (retrieved hits) in context so it can
 // name real content.
+// MODEL NOTE (2026-07-09, same day, mid-session): gemini-2.5-flash-lite was
+// deprecated by the provider WHILE this build was live — confirmed via the
+// literal 404 from the completions endpoint ("This model
+// models/gemini-2.5-flash-lite is no longer available"), not a local guess.
+// Every agent + this suggestions config were pinned to it; all broke at once.
+// Switched to gemini-2.5-flash (confirmed live 2026-07-09) — same tier
+// intent (fast/cheap, not the heavier -pro), ~4x cheaper than gemini-2.5-pro
+// per Google's public pricing ($0.30/$2.50 vs $1.25/$10.00 per 1M tokens
+// in/out). If this ever 404s again, check the provider's model list before
+// assuming a code regression — this exact failure mode already happened once.
 // NOTE: generation carries ONLY max_count. `max_words` is accepted by the
 // agent write-path (PATCH/GET round-trips clean) but 500s the completions
 // endpoint at runtime on every call (confirmed live 2026-07-09) — the classic
@@ -38,7 +58,7 @@ export function buildAgentName(baseName, suffix) {
 export function buildSuggestionsConfig(systemPrompt) {
   return {
     enabled: true,
-    model: 'gemini-2.5-flash-lite',
+    model: 'gemini-2.5-flash',
     system_prompt: systemPrompt,
     generation: { max_count: 1 },
     context: { include_tool_outputs: true },

@@ -11,7 +11,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { PERSONAS, INDEX, CLONE_BASE, RETIRE, buildAgentName, buildSuggestionsConfig, buildAgentBody, assertSuggestionsEnabled } from './agentConfig.mjs';
+import { PERSONAS, INDEX, CLONE_BASE, RETIRE, MAIN_MODEL, buildAgentName, buildSuggestionsConfig, buildAgentBody, assertSuggestionsEnabled } from './agentConfig.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const envPath = [process.env.ACS_ENV, join(process.cwd(), '.env.local'), join(__dirname, '..', '..', '.env.local')].filter(Boolean).find((p) => existsSync(p));
@@ -75,12 +75,12 @@ for (const { name, prompt, filters, desc, extraTools } of PERSONAS) {
     // IDs, so a churned ID silently 404s anyone still pointing at the old
     // one. See docs/spikes/2026-07-08-agent-to-agent-tool-VERDICT.md for the
     // incident this replaced.
-    const body = buildAgentBody({ instructions, model: base.model, providerId, tools, suggestionsConfig });
+    const body = buildAgentBody({ instructions, model: MAIN_MODEL, providerId, tools, suggestionsConfig });
     const p = await call('PATCH', `/agents/${existingId}`, body);
     if (p.status !== 200) { console.error(`patch ${agentName} → ${p.status}: ${JSON.stringify(p.json).slice(0, 400)}`); process.exit(1); }
     id = existingId;
   } else {
-    const body = buildAgentBody({ name: agentName, status: 'published', instructions, model: base.model, providerId, tools, suggestionsConfig });
+    const body = buildAgentBody({ name: agentName, status: 'published', instructions, model: MAIN_MODEL, providerId, tools, suggestionsConfig });
     const c = await call('POST', '/agents', body);
     if (![200, 201].includes(c.status)) { console.error(`create ${agentName} → ${c.status}: ${JSON.stringify(c.json).slice(0, 400)}`); process.exit(1); }
     id = c.json.id ?? c.json.objectID;
@@ -89,7 +89,7 @@ for (const { name, prompt, filters, desc, extraTools } of PERSONAS) {
   const v = await call('GET', `/agents/${id}`);
   const suggestions = assertSuggestionsEnabled(v.json) ? 'on' : 'MISSING';
   console.log(`  ${agentName} → ${id}${existingId ? ' (patched in place, ID unchanged)' : ' (created)'}`);
-  console.log(`      index=${v.json.tools?.[0]?.indices?.[0]?.index}  filter=${v.json.tools?.[0]?.indices?.[0]?.searchParameters?.filters}  tools=${v.json.tools?.map((t) => t.type).join('+')}  prompt=${instructions.length}ch  model=${base.model}  suggestions=${suggestions}`);
+  console.log(`      index=${v.json.tools?.[0]?.indices?.[0]?.index}  filter=${v.json.tools?.[0]?.indices?.[0]?.searchParameters?.filters}  tools=${v.json.tools?.map((t) => t.type).join('+')}  prompt=${instructions.length}ch  model=${v.json.model}  suggestions=${suggestions}`);
   if (suggestions === 'MISSING') { console.error(`  ${agentName}: config.suggestions did not round-trip enabled — hard gate failed.`); process.exit(1); }
 }
 console.log('[build_acs_agents] done.');

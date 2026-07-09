@@ -19,7 +19,7 @@ test('buildAgentName with empty suffix is unchanged (backward-compatible default
 test('buildSuggestionsConfig returns the locked spec shape', () => {
   const c = buildSuggestionsConfig('test prompt');
   assert.equal(c.enabled, true);
-  assert.equal(c.model, 'gemini-2.5-flash-lite');
+  assert.equal(c.model, 'gemini-2.5-flash');
   assert.equal(c.system_prompt, 'test prompt');
   assert.deepEqual(c.generation, { max_count: 1 });
   assert.deepEqual(c.context, { include_tool_outputs: true });
