@@ -16,7 +16,7 @@ import { dirname, join } from 'node:path';
 const A = {};
 { const a = process.argv.slice(2); for (let i = 0; i < a.length; i++) if (a[i].startsWith('--')) { const k = a[i].slice(2); A[k] = (i + 1 < a.length && !a[i + 1].startsWith('--')) ? a[++i] : true; } }
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const AGENT_ID = A.id || 'a94ee722-f8c0-40e5-8610-6bc1c250f72a'; // default ACS-generic-neural (rebuilt 2026-07-08)
+const AGENT_ID = A.id || '95826da6-d1b6-4b81-b061-bfb52b881356'; // default ACS-generic-neural (rebuilt 2026-07-08)
 const MODEL = A.model;
 if (!MODEL || MODEL === true) { console.error('required: --model <modelId>  (e.g. gemini-2.5-flash-lite)'); process.exit(1); }
 

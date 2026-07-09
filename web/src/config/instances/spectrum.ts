@@ -26,12 +26,12 @@ export const spectrumInstance: InstanceConfig = {
   theme: 'spectrum',
   agents: {
     generic: {
-      id: 'a94ee722-f8c0-40e5-8610-6bc1c250f72a',
+      id: '95826da6-d1b6-4b81-b061-bfb52b881356',
       label: 'Assistant',
       accentToken: '--ac-agent-generic',
     },
     technical: {
-      id: 'a15c8b8c-cd5c-4222-ad80-d840b1c8cd2e',
+      id: 'ae127977-c728-4b7c-bc15-6502a77873d1',
       label: 'code specialist',
       accentToken: '--ac-agent-technical',
     },

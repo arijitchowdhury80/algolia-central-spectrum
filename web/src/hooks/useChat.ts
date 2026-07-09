@@ -237,14 +237,17 @@ export function useChat(): UseChatResult {
           { role: 'assistant', content: genericText },
         ];
 
+        const onTechToken = (accumulated: string) => {
+          const { display } = parseAgentText(accumulated);
+          updateSegment(turnId, 1, { status: 'streaming', text: display });
+        };
+
         let technicalResult;
         try {
           technicalResult = await callCompletions(
             getAgentConfig(activeInstance.agents.technical.id),
             { history: technicalHistory, query },
-            (accumulated) => {
-              updateSegment(turnId, 1, { status: 'streaming', text: accumulated });
-            },
+            onTechToken,
           );
           // Known Agent Studio flake (SESSION.md, ~1-in-8 baseline): an
           // occasional empty completion with no error — manual "Try again"
@@ -254,9 +257,7 @@ export function useChat(): UseChatResult {
             technicalResult = await callCompletions(
               getAgentConfig(activeInstance.agents.technical.id),
               { history: technicalHistory, query },
-              (accumulated) => {
-                updateSegment(turnId, 1, { status: 'streaming', text: accumulated });
-              },
+              onTechToken,
             );
           }
         } catch (err) {
@@ -264,11 +265,12 @@ export function useChat(): UseChatResult {
           return;
         }
 
+        const { display: technicalText, followUp: technicalFollowUp } = parseAgentText(technicalResult.content);
         const technicalSources = normalizeSources(technicalResult.hits);
         if (technicalResult.error) {
           updateSegment(turnId, 1, {
             status: 'error',
-            text: technicalResult.content,
+            text: technicalText,
             sources: technicalSources,
             searchCount: totalSources(groupSources(technicalSources)),
             error: technicalResult.error,
@@ -279,11 +281,19 @@ export function useChat(): UseChatResult {
 
         updateSegment(turnId, 1, {
           status: 'success',
-          text: technicalResult.content,
+          text: technicalText,
           sources: technicalSources,
           searchCount: totalSources(groupSources(technicalSources)),
           rawHits: technicalResult.hits,
         });
+        // Technical's answer is the deepest, most specific point in the
+        // conversation — its own follow-up (if it gave one) replaces
+        // Generic's earlier, less-specific one as the turn's discovery card.
+        if (technicalFollowUp) {
+          setTurns((prev) =>
+            prev.map((t) => (t.id === turnId ? { ...t, followUp: technicalFollowUp } : t)),
+          );
+        }
       } finally {
         setIsStreaming(false);
       }

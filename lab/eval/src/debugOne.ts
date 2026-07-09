@@ -17,7 +17,7 @@ for (const l of readFileSync(join(ROOT, ".env.local"), "utf8").split("\n")) {
   ENV[t.slice(0, i).trim()] = t.slice(i + 1).trim();
 }
 const APP = ENV.ALGOLIA_APP_ID, AKEY = ENV.ALGOLIA_ADMIN_API_KEY, GKEY = ENV.GOOGLE_API_KEY;
-const GENERIC_ID = "a94ee722-f8c0-40e5-8610-6bc1c250f72a";
+const GENERIC_ID = "95826da6-d1b6-4b81-b061-bfb52b881356";
 
 async function callAgent(agentId: string, question: string) {
   const res = await fetch(`https://${APP}.algolia.net/agent-studio/1/agents/${agentId}/completions?compatibilityMode=ai-sdk-4`, {

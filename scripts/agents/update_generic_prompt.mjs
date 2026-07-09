@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const AGENT_ID = 'a94ee722-f8c0-40e5-8610-6bc1c250f72a'; // ACS-generic-neural (source of truth: SESSION.md; rebuilt 2026-07-08 with the client_side tool-call architecture)
+const AGENT_ID = '95826da6-d1b6-4b81-b061-bfb52b881356'; // ACS-generic-neural (source of truth: SESSION.md; rebuilt 2026-07-08 with the client_side tool-call architecture)
 
 const envPath = [process.env.ACS_ENV, join(process.cwd(), '.env.local'), join(__dirname, '..', '..', '.env.local')].filter(Boolean).find((p) => existsSync(p));
 const ENV = {}; for (const l of readFileSync(envPath, 'utf8').split('\n')) { const t = l.trim(); if (!t || t.startsWith('#') || !t.includes('=')) continue; const i = t.indexOf('='); ENV[t.slice(0, i).trim()] = t.slice(i + 1).trim(); }

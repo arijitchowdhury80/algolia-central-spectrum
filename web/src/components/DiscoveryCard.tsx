@@ -29,7 +29,7 @@ export function DiscoveryCard({ question, onAsk, disabled }: DiscoveryCardProps)
         <span className="text-[10px] font-ac-bold uppercase tracking-[0.14em] text-ac-text-muted">
           You might also ask
         </span>
-        <span className="truncate text-ac-sm font-ac-medium text-ac-text">{question}</span>
+        <span className="text-ac-sm font-ac-medium text-ac-text">{question}</span>
       </span>
       <span
         className="ml-auto shrink-0 text-ac-text-muted transition-colors duration-ac-fast ease-ac-ease group-hover:text-ac-accent"

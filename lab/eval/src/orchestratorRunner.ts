@@ -124,8 +124,8 @@ if (!APP || !AKEY || !GKEY) { console.error("need ALGOLIA_APP_ID, ALGOLIA_ADMIN_
 
 // Live agent IDs (rebuilt 2026-07-08 with the client_side tool architecture —
 // see web/src/config/instances/spectrum.ts, the source of truth for the app).
-const GENERIC_ID = "a94ee722-f8c0-40e5-8610-6bc1c250f72a";
-const TECHNICAL_ID = "a15c8b8c-cd5c-4222-ad80-d840b1c8cd2e";
+const GENERIC_ID = "95826da6-d1b6-4b81-b061-bfb52b881356";
+const TECHNICAL_ID = "ae127977-c728-4b7c-bc15-6502a77873d1";
 
 const limit = Number(process.argv[2]) || 100;
 const allQuestions: { id: string; q: string; expectedBehavior: "answer" | "refuse"; expectedHandoff: boolean }[] =
