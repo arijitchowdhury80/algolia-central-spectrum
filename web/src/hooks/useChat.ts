@@ -25,6 +25,7 @@ import { getAgentConfig } from '../lib/agents';
 import { normalizeHit, groupSources, totalSources } from '../lib/sources';
 import { activeInstance } from '../config/active';
 import type { AnswerSegment, AnswerSource, ChatTurn, HistoryEntry } from '../types';
+import type { CompletionsConfig, CompletionsRequest, ParsedCompletion } from '../lib/agentStudio';
 
 /** Pull the first `SPECIALIST:`-prefixed deep-dive offer out of a turn's native
  *  suggestions. Returns its trimmed remainder as `offer` and the remaining
@@ -161,6 +162,30 @@ function toErrorMessage(err: unknown): string {
   return String(err);
 }
 
+/** Call completions with one automatic retry on either failure mode of the
+ *  known Agent Studio flake (SESSION.md, ~1-in-8 baseline): a thrown
+ *  network/HTTP error, OR a successful-but-empty completion with no error.
+ *  Previously only the empty-completion case retried — a genuine thrown
+ *  error went straight to the error card with zero retry, which is the
+ *  gap behind a real "couldn't reach the agent" report. Re-throws if the
+ *  retry also fails, for the caller's own try/catch to turn into the
+ *  error-card UI state. */
+async function callWithRetry(
+  config: CompletionsConfig,
+  req: CompletionsRequest,
+  onText: (accumulated: string) => void,
+): Promise<ParsedCompletion> {
+  try {
+    const result = await callCompletions(config, req, onText);
+    if (!result.error && !result.content.trim()) {
+      return await callCompletions(config, req, onText);
+    }
+    return result;
+  } catch {
+    return await callCompletions(config, req, onText);
+  }
+}
+
 export interface UseChatResult {
   turns: ChatTurn[];
   isStreaming: boolean;
@@ -215,25 +240,13 @@ export function useChat(): UseChatResult {
         // --- Generic leg ---
         let genericResult;
         try {
-          genericResult = await callCompletions(
+          genericResult = await callWithRetry(
             getAgentConfig(activeInstance.agents.generic.id),
             { history: priorHistory, query },
             (accumulated) => {
               updateSegment(turnId, 0, { status: 'streaming', text: accumulated });
             },
           );
-          // Known Agent Studio flake (SESSION.md, ~1-in-8 baseline): an
-          // occasional empty completion with no error — retry once before
-          // surfacing the empty-result UI.
-          if (!genericResult.error && !genericResult.content.trim()) {
-            genericResult = await callCompletions(
-              getAgentConfig(activeInstance.agents.generic.id),
-              { history: priorHistory, query },
-              (accumulated) => {
-                updateSegment(turnId, 0, { status: 'streaming', text: accumulated });
-              },
-            );
-          }
         } catch (err) {
           updateSegment(turnId, 0, { status: 'error', error: toErrorMessage(err) });
           return;
@@ -301,22 +314,11 @@ export function useChat(): UseChatResult {
 
         let technicalResult;
         try {
-          technicalResult = await callCompletions(
+          technicalResult = await callWithRetry(
             getAgentConfig(activeInstance.agents.technical.id),
             { history: technicalHistory, query },
             onTechToken,
           );
-          // Known Agent Studio flake (SESSION.md, ~1-in-8 baseline): an
-          // occasional empty completion with no error — manual "Try again"
-          // already proves a retry usually works, so try once automatically
-          // before surfacing the empty-result UI to the user.
-          if (!technicalResult.error && !technicalResult.content.trim()) {
-            technicalResult = await callCompletions(
-              getAgentConfig(activeInstance.agents.technical.id),
-              { history: technicalHistory, query },
-              onTechToken,
-            );
-          }
         } catch (err) {
           updateSegment(turnId, 1, { status: 'error', error: toErrorMessage(err) });
           return;
