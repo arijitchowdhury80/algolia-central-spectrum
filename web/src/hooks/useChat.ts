@@ -1,13 +1,24 @@
 /**
  * useChat — the client baton orchestration (the app's core feature).
  *
- * Ported from _legacy_plaincss/src/hooks/useChat.ts. Owns the turn list and
- * drives the Generic -> [sentinel? -> Technical] flow:
+ * Ported from _legacy_plaincss/src/hooks/useChat.ts, then upgraded from a
+ * text-sentinel handoff to a REAL client-side tool call (2026-07-08 — see
+ * docs/spikes/2026-07-08-agent-to-agent-tool-VERDICT.md for the live-tested
+ * evidence this is built on). Drives the Generic -> [tool-call? -> Technical]
+ * flow:
  *   1. Call Generic with running history. Stream text live.
- *   2. Watch the accumulated Generic text for HANDOFF_SENTINEL. If present,
- *      strip it, mark the turn as a handoff, and call Technical with
- *      history = [...priorHistory, user turn, Generic's stripped answer].
- *   3. Persist each turn's final assistant content (Generic, +Technical if
+ *   2. Generic's response may include a genuine tool-call frame naming
+ *      HANDOFF_TOOL_NAME (`consult_technical_specialist`) instead of/after
+ *      its brief text — agentStudio.ts already parses this into
+ *      `toolInvocations`. If present, mark the turn as offering a deep dive,
+ *      using the tool call's OWN `query` arg (Generic's conversation-resolved
+ *      question) rather than the user's raw turn text.
+ *   3. Deep-dive stays human-gated: only on `runDeepDive` do we call
+ *      Technical, using the pending tool call's query. We do NOT resume
+ *      Generic's paused turn (proven to work — Task 6 — but not needed for
+ *      this UX, which shows Technical's answer as its own segment, same as
+ *      the old design).
+ *   4. Persist each turn's final assistant content (Generic, +Technical if
  *      handed off) into `turns` so the NEXT call's history is correct.
  *
  * Agent IDs now come from the active instance config (not hardcoded) — see
@@ -15,24 +26,32 @@
  */
 import { useState, useCallback, useRef } from 'react';
 import { callCompletions } from '../lib/agentStudio';
-import { getAgentConfig, HANDOFF_SENTINEL } from '../lib/agents';
+import { getAgentConfig, HANDOFF_TOOL_NAME } from '../lib/agents';
 import { normalizeHit, groupSources, totalSources } from '../lib/sources';
 import { activeInstance } from '../config/active';
 import type { AnswerSegment, AnswerSource, ChatTurn, HistoryEntry } from '../types';
+import type { ParsedCompletion } from '../lib/agentStudio';
 
 const FOLLOWUP_RE = /\[\[FOLLOWUP:\s*([^\]]+?)\]\]/i;
 
-/** Parse accumulated agent text into displayable text + control signals,
- *  stripping the machine-readable tokens: `[[HANDOFF:technical]]` (deep-dive
- *  offer) and `[[FOLLOWUP: <question>]]` (discovery card). */
-function parseAgentText(text: string): { display: string; handoff: boolean; followUp?: string } {
+/** Parse accumulated agent text into displayable text + the follow-up token.
+ *  The handoff signal is no longer a text token — see `pendingToolCallFrom`. */
+function parseAgentText(text: string): { display: string; followUp?: string } {
   const fu = text.match(FOLLOWUP_RE);
   const followUp = fu ? fu[1].trim() : undefined;
-  let display = text.replace(FOLLOWUP_RE, '');
-  const idx = display.indexOf(HANDOFF_SENTINEL);
-  const handoff = idx !== -1;
-  if (handoff) display = display.slice(0, idx);
-  return { display: display.replace(/\s+$/, ''), handoff, followUp };
+  const display = text.replace(FOLLOWUP_RE, '');
+  return { display: display.replace(/\s+$/, ''), followUp };
+}
+
+/** Find the real `consult_technical_specialist` tool call in a parsed
+ *  completion, if Generic made one this turn. */
+function pendingToolCallFrom(
+  result: ParsedCompletion,
+): { toolCallId: string; toolName: string; query: string } | undefined {
+  const tc = result.toolInvocations.find((t) => t.tool_name === HANDOFF_TOOL_NAME);
+  if (!tc) return undefined;
+  const query = typeof tc.args.query === 'string' ? tc.args.query : '';
+  return { toolCallId: tc.tool_call_id, toolName: tc.tool_name, query };
 }
 
 /** Normalize + dedupe raw Agent Studio hits into AnswerSource[]. */
@@ -141,7 +160,9 @@ export function useChat(): UseChatResult {
           return;
         }
 
-        const { display: genericText, handoff, followUp } = parseAgentText(genericResult.content);
+        const { display: genericText, followUp } = parseAgentText(genericResult.content);
+        const pendingToolCall = pendingToolCallFrom(genericResult);
+        const handoff = !!pendingToolCall;
         const genericSources = normalizeSources(genericResult.hits);
 
         if (genericResult.error) {
@@ -164,11 +185,14 @@ export function useChat(): UseChatResult {
           rawHits: genericResult.hits,
         });
 
-        // Deep-dive is HUMAN-GATED: on the handoff sentinel we only OFFER the
+        // Deep-dive is HUMAN-GATED: on a real tool call we only OFFER the
         // specialist (never auto-run). Also stash the agent's suggested
-        // follow-up question for the discovery card. One state update for both.
+        // follow-up question and the tool call's resolved query for later use
+        // by runDeepDive. One state update for all three.
         setTurns((prev) =>
-          prev.map((t) => (t.id === turnId ? { ...t, deepDiveOffered: handoff, followUp } : t)),
+          prev.map((t) =>
+            t.id === turnId ? { ...t, deepDiveOffered: handoff, followUp, pendingToolCall } : t,
+          ),
         );
       } finally {
         setIsStreaming(false);
@@ -240,7 +264,11 @@ export function useChat(): UseChatResult {
     [appendSegment, updateSegment],
   );
 
-  /** User accepted the deep-dive offer → run the specialist leg. */
+  /** User accepted the deep-dive offer → run the specialist leg. Uses the
+   *  pending tool call's OWN query (Generic's conversation-resolved question,
+   *  e.g. "Algolia pricing" for a user's "what about pricing?"), falling back
+   *  to the user's raw turn text only if Generic's tool call somehow carried
+   *  no query. */
   const runDeepDive = useCallback(
     async (turnId: string) => {
       if (isStreaming) return;
@@ -248,7 +276,8 @@ export function useChat(): UseChatResult {
       if (!turn || !turn.deepDiveOffered || turn.handoff) return;
       const genericText = turn.segments[0]?.text ?? '';
       const priorHistory = historyBefore(turnsRef.current, turnId);
-      await runTechnicalLeg(turnId, turn.query, priorHistory, genericText);
+      const resolvedQuery = turn.pendingToolCall?.query || turn.query;
+      await runTechnicalLeg(turnId, resolvedQuery, priorHistory, genericText);
     },
     [isStreaming, runTechnicalLeg],
   );
@@ -299,6 +328,7 @@ export function useChat(): UseChatResult {
                 deepDiveOffered: false,
                 deepDiveDeclined: false,
                 followUp: undefined,
+                pendingToolCall: undefined,
                 segments: [{ agent: 'generic', status: 'loading', text: '', sources: [], searchCount: 0 }],
               }
             : t,

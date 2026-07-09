@@ -72,4 +72,9 @@ export interface ChatTurn {
   /** A contextual next question the front agent suggested via its
    *  `[[FOLLOWUP: …]]` token — rendered as a one-click discovery card. */
   followUp?: string;
+  /** The real tool-call Generic emitted to request the specialist (replaces
+   *  the old text-sentinel handoff). Present whenever `deepDiveOffered` is
+   *  true; `query` is Generic's own conversation-resolved question, which may
+   *  differ from `query` (the user's raw turn text) above. */
+  pendingToolCall?: { toolCallId: string; toolName: string; query: string };
 }

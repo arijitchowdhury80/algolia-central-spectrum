@@ -10,9 +10,10 @@
  */
 import type { CompletionsConfig } from './agentStudio';
 
-/** Sentinel token the Generic agent appends on its own final line when a
- *  question needs the Technical agent's deep-code handling. */
-export const HANDOFF_SENTINEL = '[[HANDOFF:technical]]';
+/** Name of the client-side tool Generic calls to hand a question to the
+ *  Technical specialist (replaces the old `[[HANDOFF:technical]]` text
+ *  sentinel — see docs/spikes/2026-07-08-agent-to-agent-tool-VERDICT.md). */
+export const HANDOFF_TOOL_NAME = 'consult_technical_specialist';
 
 interface EnvConfig {
   appId: string;

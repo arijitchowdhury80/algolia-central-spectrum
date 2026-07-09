@@ -1,0 +1,8 @@
+f:{"messageId": "alg_msg_0pXT7TRRWUVVeE2z"}
+2:[{"type": "message-metadata", "messageId": "alg_msg_0pXT7TRRWUVVeE2z", "messageMetadata": {}}]
+0:"I can help you with building a controlled ComboBox in React Spectrum."
+b:{"toolCallId": "ca1c0f52-d1a4-4aa7-8ad9-ff42d3b8a668", "toolName": "consult_technical_specialist"}
+c:{"toolCallId": "ca1c0f52-d1a4-4aa7-8ad9-ff42d3b8a668", "argsTextDelta": "{\"query\": \"How do I build a controlled ComboBox in React Spectrum?\"}"}
+9:{"toolCallId": "ca1c0f52-d1a4-4aa7-8ad9-ff42d3b8a668", "toolName": "consult_technical_specialist", "args": {"query": "How do I build a controlled ComboBox in React Spectrum?"}}
+e:{"finishReason": "stop"}
+d:{"finishReason": "stop"}

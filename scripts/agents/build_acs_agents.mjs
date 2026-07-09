@@ -23,17 +23,46 @@ async function listAgents() { const r = await call('GET', '/agents?limit=100'); 
 
 const INDEX = 'ACS_SPECTRUM_MULTI';
 const CLONE_BASE = 'ACS-generic-neural'; // self-hosting; falls back below if the panel isn't built yet
+
+// Real, live-API-validated client_side tool shape (2026-07-08 spike,
+// docs/spikes/2026-07-08-agent-to-agent-tool-findings.md) — flat, NOT the
+// docs' {type:"function", function:{...}} shape (that's rejected, 422). Field
+// is `inputSchema`, not `parameters`; `description` is capped at 200 chars.
+// Replaces the old `[[HANDOFF:technical]]` text-sentinel scanned client-side
+// in useChat.ts — the client now intercepts a real tool-call frame instead.
+const CONSULT_TECHNICAL_TOOL = {
+  name: 'consult_technical_specialist',
+  type: 'client_side',
+  description: 'Hand the user question verbatim (resolved against context) to the Technical specialist agent for deep React Spectrum code answers.',
+  inputSchema: {
+    type: 'object',
+    properties: { query: { type: 'string', description: "The user's question, verbatim and resolved against the conversation, to hand to the Technical specialist agent." } },
+    required: ['query'],
+  },
+};
+
 // Decision (Arijit 2026-07-01): 2 agents = Generic (all sources, front door) + Technical (React code).
 // filters:null → no source filter (sees the whole 502-record corpus).
+// extraTools: Generic gets the agent-to-agent client tool; Technical does not
+// (it has no one to hand off to — it IS the specialist).
 const PERSONAS = [
-  { name: 'ACS-generic-neural', prompt: 'instructions_generic.md', filters: null, desc: 'ACS_SPECTRUM_MULTI — full Spectrum corpus (all sources).' },
-  { name: 'ACS-technical-neural', prompt: 'instructions_technical.md', filters: 'source:"ReactSpectrumS2" OR source:"ReactSpectrumV3" OR source:"ReactAria"', desc: 'ACS_SPECTRUM_MULTI scoped to React code docs (ReactSpectrumS2 + V3 + ReactAria).' },
+  { name: 'ACS-generic-neural', prompt: 'instructions_generic.md', filters: null, desc: 'ACS_SPECTRUM_MULTI — full Spectrum corpus (all sources).', extraTools: [CONSULT_TECHNICAL_TOOL] },
+  { name: 'ACS-technical-neural', prompt: 'instructions_technical.md', filters: 'source:"ReactSpectrumS2" OR source:"ReactSpectrumV3" OR source:"ReactAria"', desc: 'ACS_SPECTRUM_MULTI scoped to React code docs (ReactSpectrumS2 + V3 + ReactAria).', extraTools: [] },
 ];
 // retire the superseded designer/developer split
 const RETIRE = ['ACS-designer-neural', 'ACS-developer-neural'];
 
 function loadPrompt(file) { let s = readFileSync(join(__dirname, file), 'utf8'); if (s.includes('[[SHARED_GROUNDING]]')) s = s.replace('[[SHARED_GROUNDING]]', readFileSync(join(__dirname, '_shared_grounding_acs.md'), 'utf8').trim()); return s; }
-function scopeTools(tools, filters, desc) { const t = JSON.parse(JSON.stringify(tools)); for (const tool of t) { tool.description = desc; if (Array.isArray(tool.indices)) for (const ix of tool.indices) { ix.index = INDEX; ix.description = desc; ix.searchParameters = ix.searchParameters ?? {}; if (filters) ix.searchParameters.filters = filters; else delete ix.searchParameters.filters; } } return t; }
+// Only scopes algolia_search_index tools (indices/searchParameters) — other
+// tool types (e.g. client_side) pass through build_acs_agents untouched via
+// extraTools instead, so this must never touch them or it'd stamp the wrong
+// description/index onto a non-search tool.
+function scopeTools(tools, filters, desc) {
+  const searchTools = tools.filter((t) => t.type === 'algolia_search_index');
+  const t = JSON.parse(JSON.stringify(searchTools));
+  for (const tool of t) { tool.description = desc; if (Array.isArray(tool.indices)) for (const ix of tool.indices) { ix.index = INDEX; ix.description = desc; ix.searchParameters = ix.searchParameters ?? {}; if (filters) ix.searchParameters.filters = filters; else delete ix.searchParameters.filters; } }
+  return t;
+}
 
 const mode = process.argv[2];
 const existing = await listAgents();
@@ -48,9 +77,9 @@ for (const n of RETIRE) { if (existing[n]) { const d = await call('DELETE', `/ag
 const baseId = existing[CLONE_BASE] ?? existing['ac2-developer-neural'] ?? Object.entries(existing).find(([n]) => /neural$/.test(n))?.[1];
 if (!baseId) { console.error('no clone-base agent found'); process.exit(1); }
 const base = (await call('GET', `/agents/${baseId}`)).json;
-for (const { name, prompt, filters, desc } of PERSONAS) {
+for (const { name, prompt, filters, desc, extraTools } of PERSONAS) {
   const instructions = loadPrompt(prompt);
-  const tools = scopeTools(base.tools, filters, desc);
+  const tools = [...scopeTools(base.tools, filters, desc), ...extraTools];
   const body = { name, instructions, model: base.model, providerId: base.providerId ?? base.provider_id, tools, status: 'published' };
   if (existing[name]) await call('DELETE', `/agents/${existing[name]}`);
   const c = await call('POST', '/agents', body);
@@ -59,6 +88,6 @@ for (const { name, prompt, filters, desc } of PERSONAS) {
   await call('POST', `/agents/${id}/publish`, {});
   const v = await call('GET', `/agents/${id}`);
   console.log(`  ${name} → ${id}`);
-  console.log(`      index=${v.json.tools?.[0]?.indices?.[0]?.index}  filter=${v.json.tools?.[0]?.indices?.[0]?.searchParameters?.filters}  prompt=${instructions.length}ch  model=${body.model}`);
+  console.log(`      index=${v.json.tools?.[0]?.indices?.[0]?.index}  filter=${v.json.tools?.[0]?.indices?.[0]?.searchParameters?.filters}  tools=${v.json.tools?.map((t) => t.type).join('+')}  prompt=${instructions.length}ch  model=${body.model}`);
 }
 console.log('[build_acs_agents] done.');
