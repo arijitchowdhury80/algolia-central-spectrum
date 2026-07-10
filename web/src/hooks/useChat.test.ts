@@ -221,6 +221,28 @@ describe('resolveOfferPatch (Go/No-Go item 1 — no genericResult.suggestions pa
       deepDiveQuery: undefined,
     });
   });
+
+  it('skips calling classifyOffer entirely when genericAnswer is empty — no answer means nothing to offer a deep-dive on (the empty-completion flake case)', async () => {
+    mockClassifyOffer.mockReset();
+
+    const result = await resolveOfferPatch(fakeClassifierConfig, 'my question', '', []);
+
+    expect(mockClassifyOffer).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      deepDiveOffered: false,
+      followUp: undefined,
+      deepDiveQuery: undefined,
+    });
+  });
+
+  it('skips calling classifyOffer when genericAnswer is whitespace-only', async () => {
+    mockClassifyOffer.mockReset();
+
+    const result = await resolveOfferPatch(fakeClassifierConfig, 'my question', '   ', []);
+
+    expect(mockClassifyOffer).not.toHaveBeenCalled();
+    expect(result.deepDiveOffered).toBe(false);
+  });
 });
 
 describe('runTurn classifier call-site (Go/No-Go item 2 — target agent named explicitly)', () => {

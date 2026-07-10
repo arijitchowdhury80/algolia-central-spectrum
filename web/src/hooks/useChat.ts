@@ -88,6 +88,15 @@ export async function resolveOfferPatch(
   genericAnswer: string,
   hits: Record<string, unknown>[],
 ): Promise<{ deepDiveOffered: boolean; followUp?: string; deepDiveQuery?: string }> {
+  // No real answer means nothing to offer a deep-dive on — this is the
+  // empty-completion platform flake (SESSION.md, ~1-in-8 baseline; the
+  // retry in callWithRetry already gave up by the time runTurn calls this).
+  // Calling the classifier on an empty ANSWER section makes it decide off
+  // the QUESTION alone, which can still say SPECIALIST on an
+  // implementation-flavored question — a real, observed bug: an offer to
+  // "go deeper" on an answer that never came.
+  if (!genericAnswer.trim()) return deriveOfferState([], query);
+
   let suggestions: string[] = [];
   try {
     suggestions = await classifyOffer(classifierConfig, query, genericAnswer, hits);
