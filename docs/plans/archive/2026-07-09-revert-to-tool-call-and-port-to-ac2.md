@@ -1,3 +1,5 @@
+> **ARCHIVED 2026-07-10 — SUPERSEDED, NOT EXECUTED.** This plan (Option A/B tool-call revert) was never built. The offer-caching-race bug it targets was instead fixed by adding a dedicated `ACS-classifier-neural` agent, called synchronously by the client after Generic answers — see `SESSION.md` top block and `CLAUDE.md` STATE section for the shipped architecture. Phase 1 (AC2 port) is still open but should port the classifier design, not this doc's tool-call design. Kept for history only.
+
 # Plan: Revert ACS to tool-call A2A handoff, then port to Algolia-Central2
 
 Status: PLAN ONLY — nothing in this document has been executed. Written per Arijit's explicit decision (2026-07-09 evening): revert ACS's handoff mechanism to the real client-side tool call (built 2026-07-08, retired 2026-07-09), then use the corrected architecture as the template for a from-scratch single-chat build on Algolia-Central2, replacing that project's three dead/half-built multi-agent generations.
