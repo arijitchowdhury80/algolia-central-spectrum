@@ -85,9 +85,12 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
   return nodes;
 }
 
-const LIST_ITEM_RE = /^[*-]\s+(.*)$/;
+const BULLET_ITEM_RE = /^[*-]\s+(.*)$/;
+const ORDERED_ITEM_RE = /^\d+[.)]\s+(.*)$/;
 
-/** A "block" is a paragraph or a run of consecutive `* `/`- ` list-item lines. */
+/** A "block" is a paragraph or a run of consecutive list-item lines (bullet
+ *  OR numbered — a Generic/Technical answer uses both shapes and both need
+ *  real list styling, not just a preserved line break). */
 function splitBlocks(text: string): string[] {
   return text.split(/\n{2,}/).filter((b) => b.trim().length > 0);
 }
@@ -95,23 +98,29 @@ function splitBlocks(text: string): string[] {
 function renderParagraphs(text: string, keyPrefix: string): ReactNode {
   return splitBlocks(text).map((block, pi) => {
     const lines = block.split('\n');
-    const isList = lines.every((line) => LIST_ITEM_RE.test(line.trim()) || line.trim().length === 0);
+    const isBulletList = lines.every((line) => BULLET_ITEM_RE.test(line.trim()) || line.trim().length === 0);
+    const isOrderedList =
+      !isBulletList && lines.every((line) => ORDERED_ITEM_RE.test(line.trim()) || line.trim().length === 0);
 
-    if (isList) {
+    if (isBulletList || isOrderedList) {
+      const itemRe = isBulletList ? BULLET_ITEM_RE : ORDERED_ITEM_RE;
+      const ListTag = isBulletList ? 'ul' : 'ol';
       return (
-        <ul
+        <ListTag
           key={`${keyPrefix}-l-${pi}`}
-          className="m-0 list-disc space-y-1 pl-5 text-ac-sm leading-ac-body text-ac-text"
+          className={`m-0 space-y-1 pl-5 text-ac-sm leading-ac-body text-ac-text ${
+            isBulletList ? 'list-disc' : 'list-decimal'
+          }`}
         >
           {lines
             .filter((line) => line.trim().length > 0)
             .map((line, li) => {
-              const itemText = line.trim().replace(LIST_ITEM_RE, '$1');
+              const itemText = line.trim().replace(itemRe, '$1');
               return (
                 <li key={`${keyPrefix}-l-${pi}-${li}`}>{renderInline(itemText, `${keyPrefix}-l-${pi}-${li}`)}</li>
               );
             })}
-        </ul>
+        </ListTag>
       );
     }
 
