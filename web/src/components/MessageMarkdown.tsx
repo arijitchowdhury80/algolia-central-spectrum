@@ -88,51 +88,67 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
 const BULLET_ITEM_RE = /^[*-]\s+(.*)$/;
 const ORDERED_ITEM_RE = /^\d+[.)]\s+(.*)$/;
 
-/** A "block" is a paragraph or a run of consecutive list-item lines (bullet
- *  OR numbered — a Generic/Technical answer uses both shapes and both need
- *  real list styling, not just a preserved line break). */
+/** A "block" is separated from its neighbors by a blank line. A block is NOT
+ *  itself guaranteed to be pure prose or a pure list — a real answer
+ *  routinely writes an intro sentence and a numbered list in the SAME block
+ *  ("Here's the process:\n1. Do X\n2. Do Y", one newline, no blank line
+ *  before the list starts). Classifying by the WHOLE block (the previous
+ *  approach) meant one non-list line anywhere in the block sent the entire
+ *  block — intro AND list — to the plain-paragraph path, silently dropping
+ *  list styling on real numbered answers. Fixed by grouping consecutive
+ *  same-kind lines into RUNS within a block, not classifying the block as a
+ *  single unit. */
 function splitBlocks(text: string): string[] {
   return text.split(/\n{2,}/).filter((b) => b.trim().length > 0);
 }
 
-function renderParagraphs(text: string, keyPrefix: string): ReactNode {
-  return splitBlocks(text).map((block, pi) => {
-    const lines = block.split('\n');
-    const isBulletList = lines.every((line) => BULLET_ITEM_RE.test(line.trim()) || line.trim().length === 0);
-    const isOrderedList =
-      !isBulletList && lines.every((line) => ORDERED_ITEM_RE.test(line.trim()) || line.trim().length === 0);
+type Run = { kind: 'bullet' | 'ordered' | 'prose'; lines: string[] };
 
-    if (isBulletList || isOrderedList) {
-      const itemRe = isBulletList ? BULLET_ITEM_RE : ORDERED_ITEM_RE;
-      const ListTag = isBulletList ? 'ul' : 'ol';
-      return (
-        <ListTag
-          key={`${keyPrefix}-l-${pi}`}
-          className={`m-0 space-y-1 pl-5 text-ac-sm leading-ac-body text-ac-text ${
-            isBulletList ? 'list-disc' : 'list-decimal'
-          }`}
-        >
-          {lines
-            .filter((line) => line.trim().length > 0)
-            .map((line, li) => {
-              const itemText = line.trim().replace(itemRe, '$1');
-              return (
-                <li key={`${keyPrefix}-l-${pi}-${li}`}>{renderInline(itemText, `${keyPrefix}-l-${pi}-${li}`)}</li>
-              );
-            })}
-        </ListTag>
-      );
+function groupIntoRuns(block: string): Run[] {
+  const runs: Run[] = [];
+  for (const rawLine of block.split('\n')) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const kind: Run['kind'] = BULLET_ITEM_RE.test(line) ? 'bullet' : ORDERED_ITEM_RE.test(line) ? 'ordered' : 'prose';
+    const last = runs[runs.length - 1];
+    if (last && last.kind === kind) {
+      last.lines.push(line);
+    } else {
+      runs.push({ kind, lines: [line] });
     }
+  }
+  return runs;
+}
 
+function renderRun(run: Run, keyPrefix: string): ReactNode {
+  if (run.kind === 'prose') {
     return (
-      <p
-        key={`${keyPrefix}-p-${pi}`}
-        className="m-0 whitespace-pre-wrap break-words text-ac-sm leading-ac-body text-ac-text"
-      >
-        {renderInline(block, `${keyPrefix}-p-${pi}`)}
+      <p key={keyPrefix} className="m-0 whitespace-pre-wrap break-words text-ac-sm leading-ac-body text-ac-text">
+        {renderInline(run.lines.join('\n'), keyPrefix)}
       </p>
     );
-  });
+  }
+  const itemRe = run.kind === 'bullet' ? BULLET_ITEM_RE : ORDERED_ITEM_RE;
+  const ListTag = run.kind === 'bullet' ? 'ul' : 'ol';
+  return (
+    <ListTag
+      key={keyPrefix}
+      className={`m-0 space-y-3 py-1 pl-6 marker:font-ac-bold marker:text-ac-accent text-ac-sm leading-ac-body text-ac-text ${
+        run.kind === 'bullet' ? 'list-disc' : 'list-decimal'
+      }`}
+    >
+      {run.lines.map((line, li) => {
+        const itemText = line.replace(itemRe, '$1');
+        return <li key={`${keyPrefix}-${li}`}>{renderInline(itemText, `${keyPrefix}-${li}`)}</li>;
+      })}
+    </ListTag>
+  );
+}
+
+function renderParagraphs(text: string, keyPrefix: string): ReactNode {
+  return splitBlocks(text).map((block, pi) =>
+    groupIntoRuns(block).map((run, ri) => renderRun(run, `${keyPrefix}-b${pi}-r${ri}`)),
+  );
 }
 
 export function MessageMarkdown({ text }: MessageMarkdownProps) {
