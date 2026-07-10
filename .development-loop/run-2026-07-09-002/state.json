@@ -1,0 +1,23 @@
+{
+  "mode": "FULL",
+  "run_id": "2026-07-09-002",
+  "project": "algolia-central-spectrum",
+  "feature": "track-a-offer-cache-fix-only-track-b-shelved",
+  "status": "IN_PROGRESS",
+  "current_stage": "BUILD",
+  "builder": "gsd-executor",
+  "retry_counts": {
+    "BUILD": 0,
+    "DEBUG": 0,
+    "RECTIFY": 0,
+    "STAGING": 0
+  },
+  "strike_log": [],
+  "gates": {
+    "discovery": "AUTO_PASS",
+    "intake": "approved",
+    "risk": "approved-with-conditions",
+    "architecture_review": "approved-with-corrections",
+    "plan": "approved"
+  }
+}

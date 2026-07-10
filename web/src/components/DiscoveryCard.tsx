@@ -6,11 +6,14 @@ export interface DiscoveryCardProps {
 
 /**
  * Discovery follow-up card. `question` is `turn.followUp` — an ordinary
- * (non-`SPECIALIST:`) native suggestion emitted by Agent Studio's
- * `config.suggestions` mechanism, surfaced as `rest[0]` of
- * `extractDeepDiveOffer(genericResult.suggestions)` (or Technical's
- * `technicalRest[0]`) in useChat. We render it as a one-click card so the user
- * can keep exploring. Clicking asks it as the next turn.
+ * (non-`SPECIALIST:`) suggestion. After Generic answers, it's sourced from
+ * the client's own classifier agent (`ACS-classifier-neural`,
+ * lib/classifier.ts's `classifyOffer`) via useChat.ts's
+ * `resolveOfferPatch`/`extractDeepDiveOffer`'s `rest[0]`; after a deep-dive,
+ * it's replaced by Technical's own native `config.suggestions` response
+ * (`technicalRest[0]` in useChat.ts — Technical's mechanism is unaffected and
+ * out of scope for this migration). We render it as a one-click card so the
+ * user can keep exploring. Clicking asks it as the next turn.
  */
 export function DiscoveryCard({ question, onAsk, disabled }: DiscoveryCardProps) {
   return (

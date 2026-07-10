@@ -51,10 +51,11 @@ export interface AnswerSegment {
 /** One full user turn: the question plus the assistant answer, and — only if
  *  the user opts into a deeper dive — a second specialist segment.
  *
- *  Deep-dive is HUMAN-GATED (matches the RC2 reference): Generic *offers* a
- *  specialist deep-dive when its native `config.suggestions` completion emits a
- *  `SPECIALIST:`-prefixed suggestion, but the specialist NEVER runs until the
- *  user clicks "yes". State machine:
+ *  Deep-dive is HUMAN-GATED (matches the RC2 reference): the client's own
+ *  dedicated classifier agent (`ACS-classifier-neural`, lib/classifier.ts's
+ *  `classifyOffer`, called via useChat.ts's `resolveOfferPatch`) *offers* a
+ *  specialist deep-dive when its response is `SPECIALIST:`-prefixed, but the
+ *  specialist NEVER runs until the user clicks "yes". State machine:
  *    deepDiveOffered=false                        → no offer (nothing to do)
  *    deepDiveOffered=true,  handoff=false          → offer shown, awaiting user
  *    deepDiveOffered=false, deepDiveDeclined=true  → user declined the offer

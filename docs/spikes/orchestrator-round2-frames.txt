@@ -1,0 +1,7 @@
+f:{"messageId": "msg_2"}
+2:[{"type": "message-metadata", "messageId": "msg_2", "messageMetadata": {}}]
+b:{"toolCallId": "8f29cd0d-a353-4125-84eb-44441224e6db", "toolName": "call_specialist"}
+c:{"toolCallId": "8f29cd0d-a353-4125-84eb-44441224e6db", "argsTextDelta": "{\"query\": \"What is the process for making a Slider controlled in React Spectrum?\"}"}
+9:{"toolCallId": "8f29cd0d-a353-4125-84eb-44441224e6db", "toolName": "call_specialist", "args": {"query": "What is the process for making a Slider controlled in React Spectrum?"}}
+e:{"finishReason": "stop"}
+d:{"finishReason": "stop"}

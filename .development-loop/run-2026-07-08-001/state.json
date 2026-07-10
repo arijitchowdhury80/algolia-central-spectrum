@@ -1,0 +1,12 @@
+{
+  "mode": "FULL",
+  "run_id": "2026-07-08-001",
+  "project": "algolia-central-spectrum",
+  "feature": "tool-call-handoff-and-native-suggestions",
+  "status": "IN_PROGRESS",
+  "current_stage": "INTAKE",
+  "builder": "module-builder",
+  "retry_counts": { "BUILD": 0, "DEBUG": 0, "RECTIFY": 0, "STAGING": 0 },
+  "strike_log": [],
+  "gates": {}
+}

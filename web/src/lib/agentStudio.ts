@@ -284,3 +284,33 @@ export async function callCompletions(
 
   return parseCompletionStream(lines);
 }
+
+/**
+ * Call completions with one automatic retry on either failure mode of the
+ * known Agent Studio flake (SESSION.md, ~1-in-8 baseline): a thrown
+ * network/HTTP error, OR a successful-but-empty completion with no error.
+ * Re-throws if the retry also fails, for the caller's own try/catch to turn
+ * into the error-card UI state.
+ *
+ * Moved here from useChat.ts (Task A6 / Gap 3): `classifier.ts` needs the
+ * identical resilience and importing it from `useChat.ts` would create a
+ * circular import (useChat.ts imports classifyOffer from classifier.ts).
+ * `onText` is optional here (was required in the useChat.ts original) — this
+ * matches `callCompletions`'s own already-optional `onText?`, since
+ * classification never streams to the UI.
+ */
+export async function callWithRetry(
+  config: CompletionsConfig,
+  req: CompletionsRequest,
+  onText?: (accumulated: string) => void,
+): Promise<ParsedCompletion> {
+  try {
+    const result = await callCompletions(config, req, onText);
+    if (!result.error && !result.content.trim()) {
+      return await callCompletions(config, req, onText);
+    }
+    return result;
+  } catch {
+    return await callCompletions(config, req, onText);
+  }
+}

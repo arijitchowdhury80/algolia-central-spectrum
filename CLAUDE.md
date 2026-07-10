@@ -36,8 +36,9 @@ Vault base: `~/Dropbox/AI-Development/Obsidian/Arijit-Second-Brain/`.
 - Never claim done without running verification and showing output. Evidence on every data point. Write decisions to disk.
 
 ## STATE (detail in SESSION.md)
-DONE + verified: corpus ingested & neural-live; 2 agents built, smoke-passed, cross-source grounding verified; `algolia-content-fetch` skill built; judge harness ported (runs e2e).
-OPEN: (a) **judge scoring bug** — scores uniformly ~1/10, a parse/mapping bug not the agents; P2b calibration gated regardless. (b) React Spectrum v3 legacy pages — decide if worth the overlap. (c) snapshot refresh cadence.
+DONE + verified: corpus ingested & neural-live; 2 agents built, smoke-passed, cross-source grounding verified; `algolia-content-fetch` skill built; judge harness ported (runs e2e). Production handoff mechanism = native `config.suggestions` (shipped 2026-07-09), live and stable.
+IN VALIDATION, NOT BUILT: a possible next handoff architecture (pure-orchestrator, 2 client-side tools) passed a real E2E test on real data 2026-07-10 (10/10 both metrics — see SESSION.md top block). Zero Build code written. Do not start Build without Arijit's explicit go-ahead.
+OPEN: (a) **judge scoring bug** — scores uniformly ~1/10, a parse/mapping bug not the agents; P2b calibration gated regardless. (b) React Spectrum v3 legacy pages — decide if worth the overlap. (c) snapshot refresh cadence. (d) `mandate-guard.sh` vs. auto-mode classifier conflict, blocks push/deploy.
 
 ## VERIFICATION (fork of AC2 — confirm once ported)
 - Agent grounding: bait-query harness must show no leak (port AC2's `agent_admin.mjs bait` pattern to `ACS-` agents).

@@ -11,7 +11,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { PERSONAS, INDEX, CLONE_BASE, RETIRE, MAIN_MODEL, buildAgentName, buildSuggestionsConfig, buildAgentBody, assertSuggestionsEnabled } from './agentConfig.mjs';
+import { PERSONAS, INDEX, CLONE_BASE, RETIRE, MAIN_MODEL, buildAgentName, buildSuggestionsConfig, buildAgentBody, assertSuggestionsEnabled, scopeTools } from './agentConfig.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const envPath = [process.env.ACS_ENV, join(process.cwd(), '.env.local'), join(__dirname, '..', '..', '.env.local')].filter(Boolean).find((p) => existsSync(p));
@@ -28,16 +28,6 @@ async function listAgents() { const r = await call('GET', '/agents?limit=100'); 
 const SUFFIX = process.env.ACS_AGENT_SUFFIX ?? '';
 
 function loadPrompt(file) { let s = readFileSync(join(__dirname, file), 'utf8'); if (s.includes('[[SHARED_GROUNDING]]')) s = s.replace('[[SHARED_GROUNDING]]', readFileSync(join(__dirname, '_shared_grounding_acs.md'), 'utf8').trim()); return s; }
-// Only scopes algolia_search_index tools (indices/searchParameters) — other
-// tool types (e.g. client_side) pass through build_acs_agents untouched via
-// extraTools instead, so this must never touch them or it'd stamp the wrong
-// description/index onto a non-search tool.
-function scopeTools(tools, filters, desc) {
-  const searchTools = tools.filter((t) => t.type === 'algolia_search_index');
-  const t = JSON.parse(JSON.stringify(searchTools));
-  for (const tool of t) { tool.description = desc; if (Array.isArray(tool.indices)) for (const ix of tool.indices) { ix.index = INDEX; ix.description = desc; ix.searchParameters = ix.searchParameters ?? {}; if (filters) ix.searchParameters.filters = filters; else delete ix.searchParameters.filters; } }
-  return t;
-}
 
 const mode = process.argv[2];
 const existing = await listAgents();
@@ -60,12 +50,13 @@ const SUGGESTIONS_PROMPT = {
   'ACS-technical-neural': loadPrompt('suggestions_technical.md'),
 };
 
-for (const { name, prompt, filters, desc, extraTools } of PERSONAS) {
+for (const { name, prompt, filters, desc, extraTools, noSearchTool, expectSuggestions } of PERSONAS) {
   const agentName = buildAgentName(name, SUFFIX);
   const instructions = loadPrompt(prompt);
-  const tools = [...scopeTools(base.tools, filters, desc), ...extraTools];
+  const tools = [...scopeTools(base.tools, filters, desc, { noSearchTool }), ...extraTools];
   const providerId = base.providerId ?? base.provider_id;
-  const suggestionsConfig = buildSuggestionsConfig(SUGGESTIONS_PROMPT[name]);
+  const wantSuggestions = expectSuggestions ?? true;
+  const suggestionsConfig = buildSuggestionsConfig(SUGGESTIONS_PROMPT[name] ?? '', wantSuggestions);
   const existingId = existing[agentName];
   let id;
   if (existingId) {
@@ -87,9 +78,14 @@ for (const { name, prompt, filters, desc, extraTools } of PERSONAS) {
     await call('POST', `/agents/${id}/publish`, {});
   }
   const v = await call('GET', `/agents/${id}`);
-  const suggestions = assertSuggestionsEnabled(v.json) ? 'on' : 'MISSING';
+  const enabledOk = assertSuggestionsEnabled(v.json);
   console.log(`  ${agentName} → ${id}${existingId ? ' (patched in place, ID unchanged)' : ' (created)'}`);
-  console.log(`      index=${v.json.tools?.[0]?.indices?.[0]?.index}  filter=${v.json.tools?.[0]?.indices?.[0]?.searchParameters?.filters}  tools=${v.json.tools?.map((t) => t.type).join('+')}  prompt=${instructions.length}ch  model=${v.json.model}  suggestions=${suggestions}`);
-  if (suggestions === 'MISSING') { console.error(`  ${agentName}: config.suggestions did not round-trip enabled — hard gate failed.`); process.exit(1); }
+  console.log(`      index=${v.json.tools?.[0]?.indices?.[0]?.index}  filter=${v.json.tools?.[0]?.indices?.[0]?.searchParameters?.filters}  tools=${v.json.tools?.map((t) => t.type).join('+')}  prompt=${instructions.length}ch  model=${v.json.model}  suggestions=${enabledOk ? 'on' : 'off'} (expected ${wantSuggestions ? 'on' : 'off'})`);
+  // Two-sided hard gate (Task A1): a persona is not "done" unless the server's
+  // reported suggestions.enabled state matches what THIS persona expects —
+  // either direction wrong is a real failure, not just the "expected on but
+  // missing" case the prior single-sided gate caught.
+  if (wantSuggestions && !enabledOk) { console.error(`  ${agentName}: config.suggestions did not round-trip enabled — hard gate failed.`); process.exit(1); }
+  if (!wantSuggestions && enabledOk) { console.error(`  ${agentName}: expected suggestions OFF but server reports ON — hard gate failed (would silently reintroduce the caching-race signal path this track exists to remove).`); process.exit(1); }
 }
 console.log('[build_acs_agents] done.');

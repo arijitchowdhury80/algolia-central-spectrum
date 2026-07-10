@@ -1,15 +1,23 @@
 /**
  * useChat — the client baton orchestration (the app's core feature).
  *
- * Drives the Generic -> [offer? -> Technical] flow off Agent Studio's native
- * `config.suggestions` mechanism (no tool call, no pause, no text sentinel):
+ * Drives the Generic -> [offer? -> Technical] flow. The deep-dive OFFER
+ * signal comes from the client's own dedicated classifier agent
+ * (`ACS-classifier-neural`, lib/classifier.ts's `classifyOffer`) — NOT from
+ * Generic's own completion. The old mechanism (Agent Studio's native
+ * `config.suggestions`, read off `genericResult.suggestions`) is retired for
+ * Generic's leg; see lib/classifier.ts's header for why (Track A, closing
+ * Go/No-Go items 1 & 2).
  *   1. Call Generic with running history. Stream its full answer live — the
  *      answer text is already clean, there is nothing to strip.
- *   2. After the answer, Generic's native suggestions fire. The frontend reads
- *      `genericResult.suggestions`. A suggestion prefixed `SPECIALIST:` is a
- *      deep-dive offer; any other suggestion is an ordinary follow-up. Both are
- *      derived in one shot by `deriveOfferState`, so `deepDiveOffered` and
- *      `deepDiveQuery` can never disagree.
+ *   2. After the answer, `resolveOfferPatch` calls the classifier agent with
+ *      the question, Generic's real answer text, and Generic's raw retrieved
+ *      hits. A classifier response prefixed `SPECIALIST:` is a deep-dive
+ *      offer; any other response is an ordinary follow-up. Both are derived
+ *      in one shot by `deriveOfferState`, so `deepDiveOffered` and
+ *      `deepDiveQuery` can never disagree. A failed classification degrades to
+ *      "no offer this turn" — it never rethrows and never retroactively
+ *      breaks Generic's already-rendered, already-succeeded answer.
  *   3. Deep-dive stays human-gated: only on `runDeepDive` do we call Technical,
  *      passing `turn.deepDiveQuery` (the user's original turn text, verbatim)
  *      plus Generic's answer as separate context — never concatenated.
@@ -17,15 +25,18 @@
  *      user accepted) into `turns` so the NEXT call's history is correct.
  *
  * Agent IDs now come from the active instance config (not hardcoded) — see
- * lib/agents.ts header for why.
+ * lib/agents.ts header for why. Technical's own native `config.suggestions`
+ * mechanism (its own post-deep-dive follow-up) is unaffected by any of the
+ * above — see runTechnicalLeg below.
  */
 import { useState, useCallback, useRef } from 'react';
-import { callCompletions } from '../lib/agentStudio';
+import { callWithRetry } from '../lib/agentStudio';
+import type { CompletionsConfig } from '../lib/agentStudio';
+import { classifyOffer } from '../lib/classifier';
 import { getAgentConfig } from '../lib/agents';
 import { normalizeHit, groupSources, totalSources } from '../lib/sources';
 import { activeInstance } from '../config/active';
 import type { AnswerSegment, AnswerSource, ChatTurn, HistoryEntry } from '../types';
-import type { CompletionsConfig, CompletionsRequest, ParsedCompletion } from '../lib/agentStudio';
 
 /** Pull the first `SPECIALIST:`-prefixed deep-dive offer out of a turn's native
  *  suggestions. Returns its trimmed remainder as `offer` and the remaining
@@ -61,6 +72,32 @@ export function deriveOfferState(
     followUp: rest[0],
     deepDiveQuery: offer ? turnQuery : undefined,
   };
+}
+
+/** Resolve the turn's deep-dive offer patch by calling the classifier agent.
+ *  This signature has NO parameter through which `genericResult.suggestions`
+ *  could enter (architecture-review Go/No-Go item 1, closed structurally —
+ *  the invariant is true by construction, not by a rule someone has to
+ *  remember to follow). A failed classification degrades to "no offer this
+ *  turn" and never rethrows — Generic's own segment has already rendered and
+ *  succeeded by the time this runs; a classification hiccup must not
+ *  retroactively break it. */
+export async function resolveOfferPatch(
+  classifierConfig: CompletionsConfig,
+  query: string,
+  genericAnswer: string,
+  hits: Record<string, unknown>[],
+): Promise<{ deepDiveOffered: boolean; followUp?: string; deepDiveQuery?: string }> {
+  let suggestions: string[] = [];
+  try {
+    suggestions = await classifyOffer(classifierConfig, query, genericAnswer, hits);
+  } catch (err) {
+    console.error(
+      "[useChat] classifyOffer failed — no deep-dive offer this turn (Generic's answer is unaffected)",
+      err,
+    );
+  }
+  return deriveOfferState(suggestions, query);
 }
 
 /** Build the specialist's prior-history array. The `user` entry is `query`
@@ -162,30 +199,6 @@ function toErrorMessage(err: unknown): string {
   return String(err);
 }
 
-/** Call completions with one automatic retry on either failure mode of the
- *  known Agent Studio flake (SESSION.md, ~1-in-8 baseline): a thrown
- *  network/HTTP error, OR a successful-but-empty completion with no error.
- *  Previously only the empty-completion case retried — a genuine thrown
- *  error went straight to the error card with zero retry, which is the
- *  gap behind a real "couldn't reach the agent" report. Re-throws if the
- *  retry also fails, for the caller's own try/catch to turn into the
- *  error-card UI state. */
-async function callWithRetry(
-  config: CompletionsConfig,
-  req: CompletionsRequest,
-  onText: (accumulated: string) => void,
-): Promise<ParsedCompletion> {
-  try {
-    const result = await callCompletions(config, req, onText);
-    if (!result.error && !result.content.trim()) {
-      return await callCompletions(config, req, onText);
-    }
-    return result;
-  } catch {
-    return await callCompletions(config, req, onText);
-  }
-}
-
 export interface UseChatResult {
   turns: ChatTurn[];
   isStreaming: boolean;
@@ -275,12 +288,20 @@ export function useChat(): UseChatResult {
           rawHits: genericResult.hits,
         });
 
-        // Deep-dive is HUMAN-GATED: a `SPECIALIST:`-prefixed native suggestion
-        // only OFFERS the specialist (never auto-runs). `deriveOfferState`
-        // derives deepDiveOffered / followUp / deepDiveQuery from the same
-        // `offer` value in one shot, so they can never disagree. `query` here
-        // is runTurn's own parameter, always equal to turn.query.
-        const patch = deriveOfferState(genericResult.suggestions, query);
+        // Deep-dive is HUMAN-GATED: a `SPECIALIST:`-prefixed classifier
+        // response only OFFERS the specialist (never auto-runs). The
+        // classifier sees the raw hits Generic's answer was grounded in
+        // (genericResult.hits, not the deduped genericSources), never
+        // Generic's own `config.suggestions` output — Go/No-Go item 1 is
+        // closed structurally by `resolveOfferPatch`'s signature (see its own
+        // doc comment). `query` here is runTurn's own parameter, always equal
+        // to turn.query.
+        const patch = await resolveOfferPatch(
+          getAgentConfig(activeInstance.agents.classifier.id),
+          query,
+          genericText,
+          genericResult.hits,
+        );
         setTurns((prev) =>
           prev.map((t) => (t.id === turnId ? { ...t, ...patch } : t)),
         );

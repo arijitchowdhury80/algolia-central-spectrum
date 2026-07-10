@@ -1,0 +1,5 @@
+f:{"messageId": "alg_msg_Ag4dswJm7VT8PR14"}
+2:[{"type": "message-metadata", "messageId": "alg_msg_Ag4dswJm7VT8PR14", "messageMetadata": {}}]
+2:[{"suggestions": ["SPECIALIST: See the exact props and a working code example for a controlled TextField with onChange and validation state in React Spectrum S2 TypeScript"]}]
+e:{"finishReason": "stop"}
+d:{"finishReason": "stop"}

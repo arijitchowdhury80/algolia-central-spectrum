@@ -1,4 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+// Vite's `?raw` import loads the file's own source as a string — no Node
+// filesystem API needed (this repo has no `@types/node` dependency; adding
+// one for a single test's sake isn't a call this task makes unilaterally).
+import useChatSource from './useChat.ts?raw';
 import {
   extractDeepDiveOffer,
   deriveOfferState,
@@ -6,8 +10,24 @@ import {
   summarizeForHistory,
   summarizeSegmentsForHistory,
   turnToHistory,
+  resolveOfferPatch,
 } from './useChat';
 import type { AnswerSegment, ChatTurn } from '../types';
+import type { CompletionsConfig } from '../lib/agentStudio';
+
+vi.mock('../lib/classifier', () => ({
+  classifyOffer: vi.fn(),
+}));
+
+import { classifyOffer } from '../lib/classifier';
+
+const mockClassifyOffer = classifyOffer as unknown as ReturnType<typeof vi.fn>;
+
+const fakeClassifierConfig: CompletionsConfig = {
+  appId: 'app-id',
+  searchKey: 'search-key',
+  agentId: 'classifier-agent-id',
+};
 
 describe('extractDeepDiveOffer', () => {
   it('isolates the first SPECIALIST: entry and strips it from rest', () => {
@@ -160,5 +180,59 @@ describe('turnToHistory (R11 verbatim question, summarized answer)', () => {
     expect(userEntry?.content).toBe(query);
     expect(assistantEntry).toBeDefined();
     expect(assistantEntry!.content.length).toBeLessThanOrEqual(240);
+  });
+});
+
+describe('resolveOfferPatch (Go/No-Go item 1 — no genericResult.suggestions param exists to leak)', () => {
+  it("forwards classifyOffer's resolved array into deriveOfferState untouched", async () => {
+    mockClassifyOffer.mockReset();
+    mockClassifyOffer.mockResolvedValueOnce(['SPECIALIST: x', 'y']);
+
+    const result = await resolveOfferPatch(
+      fakeClassifierConfig,
+      'my question',
+      'generic answer text',
+      [],
+    );
+
+    expect(result).toEqual(deriveOfferState(['SPECIALIST: x', 'y'], 'my question'));
+    expect(result).toEqual({
+      deepDiveOffered: true,
+      followUp: 'y',
+      deepDiveQuery: 'my question',
+    });
+  });
+
+  it('degrades to "no offer this turn" and never rethrows when classifyOffer fails', async () => {
+    mockClassifyOffer.mockReset();
+    mockClassifyOffer.mockRejectedValueOnce(new Error('classifier unavailable'));
+
+    const result = await resolveOfferPatch(
+      fakeClassifierConfig,
+      'my question',
+      'generic answer text',
+      [],
+    );
+
+    expect(result).toEqual(deriveOfferState([], 'my question'));
+    expect(result).toEqual({
+      deepDiveOffered: false,
+      followUp: undefined,
+      deepDiveQuery: undefined,
+    });
+  });
+});
+
+describe('runTurn classifier call-site (Go/No-Go item 2 — target agent named explicitly)', () => {
+  it('calls getAgentConfig with activeInstance.agents.classifier.id, not generic.id, at the resolveOfferPatch call site', () => {
+    // Hook-level mocking of a live `useChat()` call requires React test infra
+    // this repo deliberately doesn't add for one hook (see 05-plan.md Task A7).
+    // Source-level assertion on the literal call site is the plan's explicitly
+    // sanctioned alternative — cheap, deterministic, and fails the instant
+    // runTurn's classifier wiring regresses back to generic.id or any other id.
+    expect(useChatSource).toContain('getAgentConfig(activeInstance.agents.classifier.id)');
+    expect(useChatSource).not.toMatch(
+      /resolveOfferPatch\(\s*getAgentConfig\(activeInstance\.agents\.generic\.id\)/,
+    );
   });
 });

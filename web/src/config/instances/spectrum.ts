@@ -37,6 +37,11 @@ export const spectrumInstance: InstanceConfig = {
       label: 'code specialist',
       accentToken: '--ac-agent-technical',
     },
+    classifier: {
+      id: 'dbb4faa9-e917-4be9-b8ee-6dfd9a81daef', // ACS-classifier-neural, created 2026-07-10 via A9's live flip
+      label: 'Classifier (internal)',
+      accentToken: '--ac-agent-classifier',
+    },
   },
   sampleQuestions: [
     {

@@ -57,6 +57,13 @@ export interface InstanceConfig {
   agents: {
     generic: AgentDescriptor;
     technical: AgentDescriptor;
+    /** Internal plumbing agent — classifies whether Generic's answer should
+     *  offer a Technical deep-dive. Never a rendered chat participant: no
+     *  `AnswerSegment` ever has `agent: 'classifier'` (`AgentKind` stays
+     *  `'generic' | 'technical'`, unchanged). `label`/`accentToken` are
+     *  required by `AgentDescriptor` but functionally inert here — nothing
+     *  reads them. See `web/src/lib/classifier.ts`. */
+    classifier: AgentDescriptor;
   };
   /** Sample questions grouped into titled sections (each section ≥3), shown in
    *  the empty state and the "Sample questions" popover. */

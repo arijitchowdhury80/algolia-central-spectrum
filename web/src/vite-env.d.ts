@@ -12,6 +12,12 @@ interface ImportMetaEnv {
    *  is the real abuse guard. Unset = no header (fine for an unauthenticated local
    *  judge). */
   readonly VITE_LAB_API_KEY?: string;
+  /** Dev/live agent-ID override (Architecture Review I2, Task A3). A JSON
+   *  object mapping InstanceConfig.agents key -> dev agent ID, e.g.
+   *  `{"classifier":"<dev-agent-id>"}`. Unset in production; see
+   *  config/active.ts's withDevAgentOverrides for the merge semantics and
+   *  web/.env.local.example for the documented shape. */
+  readonly VITE_ACS_DEV_AGENT_IDS?: string;
 }
 
 interface ImportMeta {

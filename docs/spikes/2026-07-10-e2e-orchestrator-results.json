@@ -1,0 +1,112 @@
+[
+  {
+    "type": "design",
+    "q": "When should someone pick Spectrum's Tabs component over an Accordion for organizing content?",
+    "realAnswerText": "You should pick Spectrum's Tabs component when you need to organize related content into multiple sections of equal importance within the same view, allowing users to navigate between these categories while staying within a single context.\n\nIn contrast, an Accordion is suitable for organizing large amounts of related content within a limited space, especially when not all information needs to be visible at once. Accordions allow users to expand or collapse items to reveal additional content, helping them stay focused. However, avoid using accordions if users are likely to read all the content simultaneously, as this can lead to unnecessary clicks.\n\nFor more details, you can refer to the Spectrum design guidelines for [Tabs](https://raw.githubusercontent.com/adobe/spectrum-design-data/main/docs/s2-docs/components/navigation/tabs.md) and [Accordion](https://raw.githubusercontent.com/adobe/spectrum-design-data/main/docs/s2-docs/components/navigation/accordion.md).",
+    "expectOffer": false,
+    "gotOffer": false,
+    "precisionPass": true,
+    "orchRound1Pass": true,
+    "orchChainPass": true
+  },
+  {
+    "type": "design",
+    "q": "What's the philosophy behind Spectrum's color system for light and dark themes?",
+    "realAnswerText": "Spectrum's color system in Spectrum 2 is designed with a philosophy that emphasizes the inclusion of Adobe's brand colors and an improved appearance on various backgrounds. The system aims to create a closer connection between product experiences and marketing materials.\n\nKey aspects of this philosophy include:\n*   **Brand Color Integration:** The Spectrum 2 color update shifted previous colors to better incorporate Adobe's brand colors into the palette. While brand colors are used to generate Spectrum colors, they are not used one-to-one in the Spectrum palette.\n*   **Palette Generation:** The color palette is generated using the Leonardo tool, utilizing several key colors, including brand colors. This process adjusts lightness and hue to ensure a high degree of saturation, brightness, and recognizability, while also aiming to avoid confusion with adjacent colors.\n*   **Light Theme Foundation:** For light user interfaces, Spectrum 2 uses solid white as the primary background. This introduced the need for lighter shades for components, resulting in a slight reduction in the contrast of the lightest value (color-100) from 1.08:1 to 1.06:1.\n*   **Darker Shades for Data Visualization:** The system also includes darker shades to support data visualization palettes.\n*   **Accessibility and Consistency:** The color update also aimed to fix general issues with the previous palette, making colors brighter and more saturated, lightening contrast where possible, and adjusting certain shades (like orange, yellow, and chartreuse) to appear less muddy. This also includes making data visualization colors more color vision deficiency-safe.\n\nYou can find more details about Spectrum's color system in the \"Colors\" documentation: [https://raw.githubusercontent.com/adobe/spectrum-design-data/main/docs/s2-docs/designing/colors.md](https://raw.githubusercontent.com/adobe/spectrum-design-data/main/docs/s2-docs/designing/colors.md)",
+    "expectOffer": false,
+    "gotOffer": false,
+    "precisionPass": true,
+    "orchRound1Pass": true,
+    "orchChainPass": true
+  },
+  {
+    "type": "design",
+    "q": "How does Spectrum's spacing scale guide layout density decisions?",
+    "realAnswerText": "Spectrum's spacing scale guides layout density decisions by defining density as the spacing between components or UI elements, independent of their size and scale. This allows for a range of layouts, from spacious to dense. For instance, complex UI layouts often combine high density with smaller components and tighter spacing.\n\nSpacing is also used as the primary method to group and divide content, establishing rhythm and hierarchy within a page. Smaller spacing values indicate closely related objects (like items in a button group or a group of cards), while larger values separate less closely related groups or distinct sections of content.\n\nInternal padding within containers is also dependent on component size, density, and platform scale, varying for specific components and patterns. For example, a medium card might use `spacing-300` for its internal padding.\n\nYou can find more details on this in the [Spacing documentation](https://raw.githubusercontent.com/adobe/spectrum-design-data/main/docs/s2-docs/designing/spacing.md) and [Containers documentation](https://raw.githubusercontent.com/adobe/spectrum-design-data/main/docs/s2-docs/designing/containers.md).",
+    "expectOffer": false,
+    "gotOffer": false,
+    "precisionPass": true,
+    "orchRound1Pass": true,
+    "orchChainPass": true
+  },
+  {
+    "type": "design",
+    "q": "Why does Spectrum recommend against custom icon sets in enterprise apps?",
+    "realAnswerText": "Spectrum Design Docs strongly advises against using unapproved or custom-created icons in your work. This guidance is rooted in the goal of maintaining a consistent and unified icon language across all Adobe products.\n\nBy adhering to the established Spectrum icon set, products ensure visual harmony, familiarity, and usability, which are critical for users navigating a complex portfolio of enterprise applications. The system emphasizes clear, functional, and additive icon metaphors to simplify understanding and navigation.\n\nFor more details, you can refer to the \"Using icons\" and \"Icon fundamentals\" documentation:\n* [Using icons](https://raw.githubusercontent.com/adobe/spectrum-design-data/main/docs/s2-docs/designing/using-icons.md)\n* [Icon fundamentals](https://raw.githubusercontent.com/adobe/spectrum-design-data/main/docs/s2-docs/designing/icon-fundamentals.md)",
+    "expectOffer": false,
+    "gotOffer": false,
+    "precisionPass": true,
+    "orchRound1Pass": true,
+    "orchChainPass": true
+  },
+  {
+    "type": "design",
+    "q": "What's the design rationale for Spectrum's motion and animation guidelines?",
+    "realAnswerText": "Spectrum's motion guidelines emphasize that motion should always be purposeful, intuitive, and seamless. In Spectrum 2, motion is also used to draw attention and add personality, ensuring it always adds meaning to the user experience. It's also considered an important part of brand expression, with tone in motion ranging from formal and direct to lighthearted and subtle. Additionally, motion over large surface areas must support browser and system settings for reduced motion.\n\nYou can find more details in the [Motion guidelines](https://raw.githubusercontent.com/adobe/spectrum-design-data/main/docs/s2-docs/designing/motion.md).",
+    "expectOffer": false,
+    "gotOffer": false,
+    "precisionPass": true,
+    "orchRound1Pass": true,
+    "orchChainPass": true
+  },
+  {
+    "type": "impl",
+    "q": "How do I implement a controlled Checkbox with an indeterminate state in React Spectrum S2?",
+    "realAnswerText": "In React Spectrum S2, you can implement a controlled Checkbox with an indeterminate state using the `isSelected`, `onChange`, and `isIndeterminate` props.\n\n*   Use the `isSelected` prop to control the checkbox's selection state.\n*   The `onChange` prop is a handler that is called when the selection state changes.\n*   Set the `isIndeterminate` prop to `true` to display the checkbox in an indeterminate visual state. This prop is presentational only and overrides the selection state regardless of user interaction.\n\nFor more details and examples, refer to the Checkbox documentation on the React Spectrum website: [https://react-spectrum.adobe.com/Checkbox.html](https://react-spectrum.adobe.com/Checkbox.html)",
+    "offer": "How do you manage the selection state and indeterminate state for multiple checkboxes within a CheckboxGroup in React Spectrum S2?",
+    "expectOffer": true,
+    "gotOffer": true,
+    "precisionPass": true,
+    "orchRound1Pass": true,
+    "orchChainPass": true,
+    "specialistAnswered": true
+  },
+  {
+    "type": "impl",
+    "q": "What TypeScript props do I need to wire up async loading in a Picker component in React Spectrum?",
+    "realAnswerText": "For async loading in a React Spectrum Picker component, you'll need to use the `loadingState` and `onLoadMore` props. The `loadingState` prop indicates the current loading status, and `onLoadMore` is a handler called when more items need to be loaded, for example, when scrolling near the bottom of the list.\n\nReact Spectrum provides the `useAsyncList` hook to help manage asynchronous data loading, which can be integrated with these props.\n\nYou can find more details and an example of asynchronous loading with the Picker component in the React Spectrum documentation: [Picker | React Spectrum](https://react-spectrum.adobe.com/Picker.html)\n\nFor full working code examples and detailed implementation guidance, the Technical agent would be better suited to assist you.",
+    "offer": "See the exact TypeScript props and a working code example for wiring up async loading in a React Spectrum Picker component",
+    "expectOffer": true,
+    "gotOffer": true,
+    "precisionPass": true,
+    "orchRound1Pass": true,
+    "orchChainPass": true,
+    "specialistAnswered": true
+  },
+  {
+    "type": "impl",
+    "q": "How do I set up form validation errors on a TextArea in React Aria?",
+    "realAnswerText": "To set up form validation errors on a TextArea in React Aria, you'll primarily use the `isInvalid` and `errorMessage` props. While the specific examples in the documentation often feature `TextField`, the principles and props generally apply to `TextArea` as well, as they are both text input components within Spectrum's design system.\n\nHere's a summary of how to approach it:\n\n*   **Indicating an error**: Use the `isInvalid` boolean prop to visually mark the `TextArea` as having an error.\n*   **Displaying an error message**: Provide an `errorMessage` string prop. This message will appear below the `TextArea` and will replace any existing `helpText` when the error is active.\n\nReact Spectrum (which React Aria underpins) supports various types of validation:\n\n*   **Constraint Validation**: You can use native HTML constraints like `isRequired`, `minLength`, `maxLength`, or `pattern` directly on the `TextArea`. When using a `Form` component, setting `validationBehavior=\"native\"` will enable these browser-level checks.\n*   **Custom Validation**: For more complex rules, you can provide a `validate` prop to your `TextArea` with a function that returns a string (or array of strings) for an error message if validation fails.\n*   **Realtime Validation**: For immediate feedback (e.g., password strength), you can manage the `TextArea`'s value as a controlled component and dynamically set the `isInvalid` and `errorMessage` props based on your validation logic.\n*   **Server Validation**: You can integrate server-side validation errors by passing a `validationErrors` prop to the `Form` component, which maps field names to error messages.\n\nFor more detailed information and code examples on implementing form validation, refer to the [Forms guide in React Spectrum](https://react-spectrum.adobe.com/forms.html).\n\nYou can also find design guidance on how validation markers and error messages should appear for text inputs in the [Text area design documentation](https://raw.githubusercontent.com/adobe/spectrum-design-data/main/docs/s2-docs/components/inputs/text-area.md).",
+    "offer": "Show me a working code example of form validation for a TextArea using React Hook Form in React Spectrum S2.",
+    "expectOffer": true,
+    "gotOffer": true,
+    "precisionPass": true,
+    "orchRound1Pass": true,
+    "orchChainPass": true,
+    "specialistAnswered": true
+  },
+  {
+    "type": "impl",
+    "q": "What's the code for handling onSelectionChange in a ListView with multiple selection in React Spectrum?",
+    "realAnswerText": "In React Spectrum's `ListView`, you can handle selection changes in a multiple selection scenario using the `onSelectionChange` prop. This prop is a callback function that receives the currently selected keys as an argument. You typically pair it with the `selectedKeys` prop to control the selection state.\n\nHere's the general approach:\n\n1.  Set the `selectionMode` prop of the `ListView` to `\"multiple\"`.\n2.  Use `React.useState` to manage the `selectedKeys` state, initializing it with an empty `Set` or a `Set` of initially selected item keys.\n3.  Pass the `selectedKeys` state to the `selectedKeys` prop of the `ListView`.\n4.  Pass the state's setter function (e.g., `setSelectedKeys`) to the `onSelectionChange` prop. This will update your state whenever the user's selection changes. The value passed to `onSelectionChange` will be a `Selection` type, which is either a `Set` of `Key`s (the `id`s of the selected items) or the string `'all'` if all items are selected.\n\nFor a detailed example and further information, refer to the \"Selection and actions\" section of the React Spectrum ListView documentation: [https://react-spectrum.adobe.com/ListView.html](https://react-spectrum.adobe.com/ListView.html)",
+    "offer": "Show me how to use the `renderActionBar` prop with a multiple selection ListView in React Spectrum to display actions for the selected items.",
+    "expectOffer": true,
+    "gotOffer": true,
+    "precisionPass": true,
+    "orchRound1Pass": true,
+    "orchChainPass": true,
+    "specialistAnswered": true
+  },
+  {
+    "type": "impl",
+    "q": "How do I write a drag-and-drop reorder handler for a GridList in React Aria?",
+    "realAnswerText": "The Spectrum documentation in my area doesn't cover the specific implementation details for writing a drag-and-drop reorder handler for a GridList in React Aria. For deep React implementation questions, you may find more detailed guidance in the React Aria documentation directly on their website.",
+    "offer": "See the exact props and a working code example for drag-and-drop reordering in a React Aria GridList",
+    "expectOffer": true,
+    "gotOffer": true,
+    "precisionPass": true,
+    "orchRound1Pass": true,
+    "orchChainPass": true,
+    "specialistAnswered": true
+  }
+]

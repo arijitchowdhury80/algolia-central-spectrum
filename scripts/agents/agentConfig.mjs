@@ -26,6 +26,15 @@ export const MAIN_MODEL = 'gemini-2.5-flash';
 export const PERSONAS = [
   { name: 'ACS-generic-neural', prompt: 'instructions_generic.md', filters: null, desc: 'ACS_SPECTRUM_MULTI — full Spectrum corpus (all sources).', extraTools: [] },
   { name: 'ACS-technical-neural', prompt: 'instructions_technical.md', filters: 'source:"ReactSpectrumS2" OR source:"ReactSpectrumV3" OR source:"ReactAria"', desc: 'ACS_SPECTRUM_MULTI scoped to React code docs (ReactSpectrumS2 + V3 + ReactAria).', extraTools: [] },
+  {
+    name: 'ACS-classifier-neural',
+    prompt: 'instructions_classifier.md',
+    filters: null,
+    desc: 'ACS_SPECTRUM_MULTI classifier — no independent search, classifies from supplied context only.',
+    extraTools: [],
+    noSearchTool: true,
+    expectSuggestions: false,
+  },
 ];
 // retire the superseded designer/developer split
 export const RETIRE = ['ACS-designer-neural', 'ACS-developer-neural'];
@@ -55,14 +64,33 @@ export function buildAgentName(baseName, suffix) {
 // agent write-path (PATCH/GET round-trips clean) but 500s the completions
 // endpoint at runtime on every call (confirmed live 2026-07-09) — the classic
 // write-acceptance ≠ runtime-correctness trap. Do not re-add it.
-export function buildSuggestionsConfig(systemPrompt) {
+export function buildSuggestionsConfig(systemPrompt, enabled = true) {
   return {
-    enabled: true,
+    enabled,
     model: 'gemini-2.5-flash',
     system_prompt: systemPrompt,
     generation: { max_count: 1 },
     context: { include_tool_outputs: true },
   };
+}
+
+// Only scopes algolia_search_index tools (indices/searchParameters) — other
+// tool types (e.g. client_side) pass through build_acs_agents untouched via
+// extraTools instead, so this must never touch them or it'd stamp the wrong
+// description/index onto a non-search tool.
+// Moved here (was a local function in build_acs_agents.mjs) so it's
+// unit-testable without importing that file's unguarded top-level
+// `listAgents()` network call (Task A1, testability refinement).
+// noSearchTool:true (Architecture Review C2) is the escape hatch for a
+// persona that must carry NO search tool at all — e.g. the classifier
+// (Task A4), which classifies only from context the client embeds in its
+// query, never its own retrieval.
+export function scopeTools(tools, filters, desc, { noSearchTool = false } = {}) {
+  if (noSearchTool) return [];
+  const searchTools = tools.filter((t) => t.type === 'algolia_search_index');
+  const t = JSON.parse(JSON.stringify(searchTools));
+  for (const tool of t) { tool.description = desc; if (Array.isArray(tool.indices)) for (const ix of tool.indices) { ix.index = INDEX; ix.description = desc; ix.searchParameters = ix.searchParameters ?? {}; if (filters) ix.searchParameters.filters = filters; else delete ix.searchParameters.filters; } }
+  return t;
 }
 
 // Single source of truth for the agent request body. Called at BOTH the PATCH
