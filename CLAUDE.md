@@ -15,9 +15,10 @@ ACS is the **reference build for a reusable "Algolia-Central" design system** �
 
 ## AGENT NAMESPACE (hard)
 - **All agents in THIS project are prefixed `ACS-`** (keeps them disjoint from AC2's `ac2-*`/`*-neural` set in Agent Studio).
-- **Live panel = 2 agents** (the general/developer/marketer split is retired):
-  - `ACS-generic-neural` — front door, NO source filter (sees all), synthesizes design+code, routes deep code → Technical. ID `95826da6-d1b6-4b81-b061-bfb52b881356` (updated 2026-07-09 — prior ID was deleted server-side by a since-fixed script bug; PATCH-in-place now keeps this stable).
-  - `ACS-technical-neural` — `source:"ReactSpectrumS2" OR "ReactSpectrumV3" OR "ReactAria"` (version-aware React code). ID `ae127977-c728-4b7c-bc15-6502a77873d1` (updated 2026-07-09, same reason).
+- **Live panel = 3 agents** (added the classifier 2026-07-10; general/developer/marketer split is retired):
+  - `ACS-generic-neural` — front door, NO source filter (sees all), synthesizes design+code, routes deep code → Technical. ID `95826da6-d1b6-4b81-b061-bfb52b881356` (PATCH-in-place keeps this stable across rebuilds).
+  - `ACS-technical-neural` — `source:"ReactSpectrumS2" OR "ReactSpectrumV3" OR "ReactAria"` (version-aware React code). ID `ae127977-c728-4b7c-bc15-6502a77873d1`.
+  - `ACS-classifier-neural` — internal-only, never shown to the user, no search tool. Decides the `SPECIALIST:` deep-dive offer, called synchronously by the client right after Generic answers. ID `dbb4faa9-e917-4be9-b8ee-6dfd9a81daef` (created 2026-07-10, replaces the old native `config.suggestions` mechanism — see STATE below for why).
 
 ## WHO ARIJIT IS (how to partner)
 Equal partner, never a yes-man. Challenge before agreeing; debate to the right answer.
@@ -36,9 +37,9 @@ Vault base: `~/Dropbox/AI-Development/Obsidian/Arijit-Second-Brain/`.
 - Never claim done without running verification and showing output. Evidence on every data point. Write decisions to disk.
 
 ## STATE (detail in SESSION.md)
-DONE + verified: corpus ingested & neural-live; 2 agents built, smoke-passed, cross-source grounding verified; `algolia-content-fetch` skill built; judge harness ported (runs e2e). Production handoff mechanism = native `config.suggestions` (shipped 2026-07-09), live and stable.
-IN VALIDATION, NOT BUILT: a possible next handoff architecture (pure-orchestrator, 2 client-side tools) passed a real E2E test on real data 2026-07-10 (10/10 both metrics — see SESSION.md top block). Zero Build code written. Do not start Build without Arijit's explicit go-ahead.
-OPEN: (a) **judge scoring bug** — scores uniformly ~1/10, a parse/mapping bug not the agents; P2b calibration gated regardless. (b) React Spectrum v3 legacy pages — decide if worth the overlap. (c) snapshot refresh cadence. (d) `mandate-guard.sh` vs. auto-mode classifier conflict, blocks push/deploy.
+DONE + verified: corpus ingested & neural-live; 3 agents built, smoke-passed, cross-source grounding verified; `algolia-content-fetch` skill built; judge harness ported (runs e2e). Production handoff mechanism (2026-07-10) = a dedicated `ACS-classifier-neural` agent, called synchronously by the client — REPLACES the old native `config.suggestions` mechanism, which could race Agent Studio's own per-query cache and silently drop the deep-dive offer. Live, stable, browser-verified.
+SHELVED, NOT BUILT: a pure-orchestrator design (3rd agent, 2 client-side tools) passed a real E2E test on real data (10/10 both metrics) but was deliberately killed for ACS — once the classifier existed, the orchestrator's routing decision became provably redundant, adding 2 network hops for zero behavior change. Fully specced at `.development-loop/run-2026-07-09-002/04-spec-track-b.md` for Algolia-Central2's port if that project's use case genuinely needs real multi-agent routing.
+OPEN: (a) **judge scoring bug** — scores uniformly ~1/10, a parse/mapping bug not the agents; P2b calibration gated regardless. (b) React Spectrum v3 legacy pages — decide if worth the overlap. (c) snapshot refresh cadence. (d) `mandate-guard.sh` vs. auto-mode classifier conflict — CONFIRMED WORSE 2026-07-10: the classifier blocks the hook's own sanctioned self-unlock file write too, no assistant-side workaround exists, every push/deploy needs Arijit to run manually.
 
 ## VERIFICATION (fork of AC2 — confirm once ported)
 - Agent grounding: bait-query harness must show no leak (port AC2's `agent_admin.mjs bait` pattern to `ACS-` agents).

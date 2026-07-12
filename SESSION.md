@@ -1,6 +1,35 @@
 # SESSION.md — Algolia-Central-Spectrum (ACS)
 
-## ═══ STATUS (2026-07-10, post-midnight, CLOSED): real offer-caching-race bug fixed, shipped, deployed, verified live. Pure-orchestrator design built out then deliberately killed as redundant. 3 more real bugs caught by live usage after deploy, all fixed. Production stable. ═══
+## ═══ STATUS (2026-07-12, CLOSED): doc/planning cleanup session, no code changed. 2 stale plan docs fixed, 1 UX spec approved (not built), 3 decisions collected from Arijit. Production unchanged since 2026-07-10, still stable. ═══
+
+**Status (one line):** No code touched this session. Arijit asked for a walkthrough of the 2026-07-10 classifier architecture, then worked the open-items list: cleaned up two stale plan docs, ran the brainstorming skill to scope+spec a UI fix (not built), and collected 3 decisions on queued items (mandate-guard.sh fix direction, AC2 port scoping, eval/calibration deferral).
+
+**Resume action (do FIRST next session):**
+1. Nothing broken or blocked. Three unblocked next steps, no forced order — pick by priority:
+   a. **Build the approved empty-state spec** — `docs/superpowers/specs/2026-07-10-empty-state-sample-question-nudge-design.md` (copy label + promoted resting-style chips on `EmptyState.tsx`). Spec is approved, not yet built. Per the brainstorming skill's process, next step is inviting `writing-plans` to turn it into an implementation plan, then build+verify live in a browser.
+   b. **Get Arijit's 3 remaining AC2-port decisions** before touching AC2 code — see `docs/plans/2026-07-10-reconciled-handoff-architecture-build.md` §1: agent roster collapse (Gen3's 3 personas vs ACS's 2+classifier pattern), browser-direct vs backend-mediated topology, dead-code disposition (archive via git tag vs delete).
+   c. **Start the `mandate-guard.sh` hook redesign** — Arijit's decision this session: a real permission-prompt mechanism, not a `settings.json` allow-rule. Not scoped yet, no code written.
+2. Full 100-Q eval + judge calibration (P2b) — explicitly deferred again this session (2nd time), still never run. Not blocking anything, but the eval harness scores stay directional/untrustworthy until P2b runs.
+
+**Where we stopped (exact):** Two commits landed doc-only changes: `fc2b9b8` (archived `docs/plans/2026-07-09-revert-to-tool-call-and-port-to-ac2.md`, added the empty-state UX spec) and `24887d0` (deleted+rewrote `docs/plans/2026-07-10-reconciled-handoff-architecture-build.md` in place). `git status` clean, `main` matches `origin/main` (no push was needed — no mandate-guard.sh friction this session since nothing touched deploy). No further changes pending.
+
+**Decisions locked (this session):**
+- `mandate-guard.sh` fix: redesign the hook (real permission-prompt), NOT a `~/.claude/settings.json` allow-rule. Not started.
+- AC2 port: scope it now, don't defer further. 3 sub-decisions still open (see Resume Action 1b).
+- Sample-questions UI fix: scoped to the empty state ONLY (not the persistent mid-conversation popover pill) — steering the *first* question is the actual goal, touching the popover would be scope creep unjustified by that goal.
+- 100-Q eval + judge calibration: deferred again, explicitly, not silently.
+
+**Remaining work:** build the empty-state spec (not started). AC2 port (3 decisions pending, zero code). `mandate-guard.sh` redesign (decided, zero code). Full 100-question eval + judge calibration (never run, deferred twice now). T6 (orchestrator browser click-through) — still low priority, orchestrator isn't shipping for ACS.
+
+**Reference files:** `docs/superpowers/specs/2026-07-10-empty-state-sample-question-nudge-design.md` (the approved, unbuilt spec — read this first if picking up 1a). `docs/plans/2026-07-10-reconciled-handoff-architecture-build.md` (rewritten — §0 is what shipped, §1 is the AC2-port task list). `docs/plans/archive/2026-07-09-revert-to-tool-call-and-port-to-ac2.md` (archived, historical only). `scripts/agents/instructions_classifier.md` (the classifier's actual decision logic — read this, not memory, when explaining the architecture). Vault: `Projects/Algolia-Central/spectrum/index.md`, `log.md`, `tasks.md`.
+
+**What has NOT been done (read before claiming anything is finished):** the empty-state spec — approved, zero code written. AC2 port — 3 decisions pending, zero code. `mandate-guard.sh` — fix direction decided, zero code, hook still blocks every push/deploy today. 100-question eval and judge calibration — never run, deferred twice. T6 — never run.
+
+**Files written this session:** `docs/plans/archive/2026-07-09-revert-to-tool-call-and-port-to-ac2.md` (moved, superseded-note added), `docs/superpowers/specs/2026-07-10-empty-state-sample-question-nudge-design.md` (new), `docs/plans/2026-07-10-reconciled-handoff-architecture-build.md` (deleted + rewritten in place), `SESSION.md` (this file). Vault: `Projects/Algolia-Central/spectrum/index.md`, `log.md`, `tasks.md`, `Projects/AI-OS/My-Projects.md`, `wiki/hot.md`, `wiki/log.md`. Memory: `session_pointer.md`, `project-tracker-status.md`, `MEMORY.md`, new `feedback-rewrite-stale-plans-not-just-archive.md`. Commits: `fc2b9b8`, `24887d0`. No agent config, prompt, or application code touched — production is byte-for-byte unchanged from the 2026-07-10 close-out below.
+
+---
+
+## ═══ PRIOR STATUS (2026-07-10, post-midnight, CLOSED): real offer-caching-race bug fixed, shipped, deployed, verified live. Pure-orchestrator design built out then deliberately killed as redundant. 3 more real bugs caught by live usage after deploy, all fixed. Production stable. ═══
 
 **Status (one line):** The real bug (Generic's deep-dive offer sometimes silently missing) is fixed in production — a new dedicated `ACS-classifier-neural` agent replaces Agent Studio's racy async `config.suggestions` job. 3 more real bugs, all caught by Arijit actually using the live site (none caught by the test suite), found and fixed same session. Everything below is verified live, not claimed.
 
