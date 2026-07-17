@@ -1,8 +1,9 @@
 /**
- * build_acs_agents — the ACS 2-persona panel (Designer / Developer) over ACS_SPECTRUM_MULTI.
- * Ported from AC2 scripts/setup/honed/build_three_agents.mjs. Scoping = native
- * searchParameters.filters on `source` (the proven mechanism). Clone-base for tool
- * scaffold/model/provider = ac2-developer-neural (an existing published agent).
+ * build_acs_agents — the ACS agent panel (Generic / Technical / Classifier) over ACS_SPECTRUM_MULTI.
+ * Scoping = native searchParameters.filters on `source` (the proven mechanism).
+ * Clone-base for tool scaffold/model/provider = CLONE_BASE (self-hosting,
+ * falls back to any already-published *-neural agent on this app if the
+ * panel hasn't been built yet).
  *
  *   node build_acs_agents.mjs           # create/refresh, print ids
  *   node build_acs_agents.mjs --delete
@@ -38,8 +39,8 @@ if (mode === '--delete') { for (const n of names) { const id = existing[n]; if (
 // retire superseded agents first
 for (const n of RETIRE) { if (existing[n]) { const d = await call('DELETE', `/agents/${existing[n]}`); console.log(`  RETIRE ${n} → HTTP ${d.status}`); } }
 
-// clone tool scaffold/model/provider from an existing published agent (self, else any ac2-*-neural)
-const baseId = existing[CLONE_BASE] ?? existing['ac2-developer-neural'] ?? Object.entries(existing).find(([n]) => /neural$/.test(n))?.[1];
+// clone tool scaffold/model/provider from an existing published agent (self, else any *-neural agent on this app)
+const baseId = existing[CLONE_BASE] ?? Object.entries(existing).find(([n]) => /neural$/.test(n))?.[1];
 if (!baseId) { console.error('no clone-base agent found'); process.exit(1); }
 const base = (await call('GET', `/agents/${baseId}`)).json;
 
