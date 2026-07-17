@@ -15,6 +15,9 @@ export function EmptyState({ onPick }: EmptyStateProps) {
       <h1 className="m-0 font-ac-sans text-[clamp(28px,4vw,40px)] font-ac-bold leading-ac-heading text-ac-text">
         Ask about {activeInstance.corpusName}
       </h1>
+      <p className="m-0 text-ac-xs text-ac-text-muted">
+        Try one of these, or ask your own question below.
+      </p>
       <div className="flex flex-wrap justify-center gap-2.5">
         {/* one representative question per section — the full grouped set lives
             in the "Sample questions" popover above the composer. */}
@@ -23,9 +26,9 @@ export function EmptyState({ onPick }: EmptyStateProps) {
             key={group.section}
             type="button"
             onClick={() => onPick(group.questions[0])}
-            className="min-h-[44px] rounded-ac-full border border-ac-border bg-ac-surface px-4 py-2 text-ac-sm text-ac-text-secondary shadow-ac-1 transition-all duration-ac-base ease-ac-ease hover:-translate-y-0.5 hover:border-ac-accent hover:text-ac-text hover:shadow-ac-2"
+            className="min-h-[44px] rounded-ac-full border border-ac-border bg-ac-accent-tint px-4 py-2 text-ac-sm text-ac-text shadow-ac-1 transition-all duration-ac-base ease-ac-ease hover:-translate-y-0.5 hover:border-ac-accent hover:shadow-ac-2"
           >
-            {group.questions[0]}
+            {group.questions[0]} →
           </button>
         ))}
       </div>
