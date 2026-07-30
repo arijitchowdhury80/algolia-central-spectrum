@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/**
+ * Algolia × Adobe cobrand skin — the Algolia Design System (LIGHT).
+ *
+ * Re-declares the frozen `--algolia-*` contract (src/styles/tokens.css) with the
+ * Algolia design language: Sora type, Nebula Blue #003DFF, slate neutrals on a
+ * light canvas, crisp blue-tinted shadows. Values from the DS bundle
+ * (`colors_and_type.css`). Corpus/brand stays Adobe. Sora ships 300/400/600
+ * only → medium & bold map to 600. Google-Fonts delivery (no referrer lock).
+ */
+
+:root {
+  color-scheme: light;
+
+  /* ============================== COLOR ============================== */
+  --algolia-bg: #f7f8fb; /* Algolia canvas wash (gray-050) */
+  --algolia-surface: #ffffff;
+  --algolia-surface-2: #eef0f5; /* inset (gray-100) */
+  --algolia-surface-hover: #e6e9f0;
+  --algolia-border: #e1e4ec; /* border-subtle (gray-200) */
+  --algolia-border-strong: #c7ccd8; /* border-default (gray-300) */
+
+  --algolia-text: #021046; /* ink — headlines/primary */
+  --algolia-text-secondary: #2f3447; /* gray-700 — body */
+  --algolia-text-muted: #6b7280; /* gray-500 — muted/labels */
+  --algolia-text-on-accent: #ffffff;
+
+  --algolia-accent: #003dff; /* Nebula Blue — primary brand */
+  --algolia-accent-hover: #0031cc; /* blue-700 */
+  --algolia-accent-down: #0028a3;
+  --algolia-accent-tint: #e6ecff; /* blue-100 */
+
+  --algolia-link: #003dff;
+  --algolia-focus: #003dff;
+
+  --algolia-positive: #1f9d55;
+  --algolia-positive-bg: #e6f6ee;
+  --algolia-notice: #d97706;
+  --algolia-notice-bg: #fdf0dd;
+  --algolia-negative: #e11d48;
+  --algolia-negative-bg: #fde7ec;
+  --algolia-informative: #003dff;
+  --algolia-informative-bg: #e6ecff;
+
+  /* Assistant = Algolia blue, specialist = accent purple (DS accent set). */
+  --algolia-agent-primary: #003dff;
+  --algolia-agent-specialist: #8a4fff;
+
+  /* ============================== TYPE ================================ */
+  --algolia-font-sans: 'Sora', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --algolia-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --algolia-fs-xs: 12px;
+  --algolia-fs-sm: 14px;
+  --algolia-fs-base: 16px;
+  --algolia-fs-lg: 18px;
+  --algolia-fs-xl: 22px;
+  --algolia-fs-2xl: 28px;
+
+  --algolia-fw-regular: 400;
+  --algolia-fw-medium: 600;
+  --algolia-fw-bold: 600;
+
+  --algolia-lh-body: 1.5;
+  --algolia-lh-heading: 1.2;
+
+  /* ============================== SPACE ================================ */
+  --algolia-space-1: 4px;
+  --algolia-space-2: 8px;
+  --algolia-space-3: 12px;
+  --algolia-space-4: 16px;
+  --algolia-space-5: 20px;
+  --algolia-space-6: 24px;
+  --algolia-space-7: 32px;
+  --algolia-space-8: 40px;
+  --algolia-space-9: 48px;
+  --algolia-space-10: 64px;
+
+  --algolia-gutter: 24px;
+  --algolia-measure: 72ch;
+  --algolia-maxw: 1120px;
+
+  /* ============================== SHAPE ================================ */
+  --algolia-radius-sm: 8px;
+  --algolia-radius-md: 12px;
+  --algolia-radius-lg: 18px;
+  --algolia-radius-xl: 24px; /* generous rounding — cured edges */
+  --algolia-radius-full: 999px;
+
+  /* ============================= ELEVATION ============================= */
+  /* Crisp, low-spread, blue-tinted (ink rgba) — Algolia's card shadow feel. */
+  --algolia-shadow-1: 0 2px 4px rgba(2, 16, 70, 0.06), 0 1px 2px rgba(2, 16, 70, 0.04);
+  --algolia-shadow-2: 0 8px 24px rgba(2, 16, 70, 0.08), 0 2px 6px rgba(2, 16, 70, 0.05);
+  --algolia-shadow-3: 0 18px 40px rgba(2, 16, 70, 0.1), 0 4px 12px rgba(2, 16, 70, 0.06);
+  --algolia-shadow-focus: 0 0 0 2px #ffffff, 0 0 0 4px #003dff;
+
+  /* =============================== MOTION =============================== */
+  --algolia-dur-fast: 120ms;
+  --algolia-dur-base: 200ms;
+  --algolia-dur-slow: 320ms;
+  --algolia-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* =============================== LAYOUT ================================ */
+  --algolia-header-h: 64px;
+  --algolia-composer-h: 64px;
+}
+
+body {
+  font-family: var(--algolia-font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle branded lift for primary CTAs / the user bubble (light-appropriate —
+   a soft blue shadow, not a neon glow). */
+.algolia-glow-accent {
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--algolia-accent) 18%, transparent);
+}

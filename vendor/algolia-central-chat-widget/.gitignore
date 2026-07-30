@@ -1,0 +1,34 @@
+.DS_Store
+*.local
+
+# chat-central sub-project (custom InstantSearch widget)
+chat-central/node_modules
+chat-central/dist
+chat-central/.vite
+chat-central/*.tsbuildinfo
+
+# algolia-chat sub-project (web component)
+algolia-chat/node_modules
+algolia-chat/dist
+algolia-chat/.vite
+algolia-chat/*.tsbuildinfo
+
+# website sub-project
+website/node_modules
+website/dist
+website/public/vendor
+website/.vite
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Pre-overwrite snapshots of remote Agent Studio instructions, written by
+# scripts/republish-judge-agents.mjs and scripts/create-proactive-agents.mjs.
+# Local recovery artifacts, one per run.
+/scripts/judge-agent-backups/
+/scripts/agent-backups/

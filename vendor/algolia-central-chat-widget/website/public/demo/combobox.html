@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ComboBox — Adobe Spectrum</title>
+  <link rel="icon" href="/brand/algolia-mark.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/demo/demo.css" />
+</head>
+<body>
+
+<nav class="demo-nav">
+  <div class="wrap">
+    <a class="nav-logo" href="/demo/">
+      <img src="/brand/adobe-logo.svg" alt="Adobe" height="22" />
+      <span class="nav-sep">|</span>
+      <span>Spectrum</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/demo/">Overview</a></li>
+      <li><a href="/demo/button.html">Button</a></li>
+      <li><a href="/demo/combobox.html" class="active">ComboBox</a></li>
+      <li><a href="/demo/migration.html">Migration</a></li>
+      <li><a href="/demo/get-started.html">Get Started</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="page-header">
+  <div class="wrap">
+    <p class="breadcrumb"><a href="/demo/">Spectrum</a> <span>/</span> Components <span>/</span> ComboBox</p>
+    <h1 class="page-title">ComboBox</h1>
+    <p class="page-desc">A ComboBox combines a text input with a listbox, letting users type to filter options or select from a predefined list. Supports async loading, controlled state, and sections.</p>
+    <div class="status-chips">
+      <span class="chip-stable">Stable</span>
+      <span class="chip-new">S2 Available</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap" style="padding-top:32px; padding-bottom:80px;">
+    <div class="two-col">
+      <div class="main-content">
+
+        <div class="page-tabs">
+          <a class="page-tab active" href="#design">Design</a>
+          <a class="page-tab" href="#code">Code</a>
+          <a class="page-tab" href="#async">Async Loading</a>
+        </div>
+
+        <!-- Design -->
+        <section id="design">
+          <h2>Design guidance</h2>
+          <p>ComboBox is the right choice when your list has many options (more than ~7) and you want to help users narrow options via text. For shorter, fixed lists, consider Select instead.</p>
+
+          <div class="demo-preview" style="flex-direction:column; align-items:stretch; max-width:320px;">
+            <label style="font-size:13px;font-weight:600;margin-bottom:4px;">Choose a component</label>
+            <div class="preview-combobox" style="width:100%; padding:10px 14px;">
+              <input type="text" placeholder="Type to filter…" readonly style="font-size:14px;flex:1;" />
+              <span class="caret" style="font-size:14px;">▾</span>
+            </div>
+          </div>
+
+          <h3>When to use ComboBox vs Select</h3>
+          <table class="spec-table">
+            <thead><tr><th>Situation</th><th>Recommendation</th></tr></thead>
+            <tbody>
+              <tr><td>Short list (&lt;7 items), no typing needed</td><td>Use <strong>Select</strong></td></tr>
+              <tr><td>Long list, users filter by typing</td><td>Use <strong>ComboBox</strong></td></tr>
+              <tr><td>Free-form text + suggestions</td><td>Use <strong>ComboBox</strong> with <code>allowsCustomValue</code></td></tr>
+              <tr><td>Async search (server-side filtering)</td><td>Use <strong>ComboBox</strong> with <code>onInputChange</code></td></tr>
+            </tbody>
+          </table>
+
+          <h3>Anatomy</h3>
+          <ul>
+            <li><strong>Label</strong> — always visible above the field (never placeholder-only).</li>
+            <li><strong>Input</strong> — text field where the user types.</li>
+            <li><strong>Dropdown button</strong> — chevron that opens/closes the listbox.</li>
+            <li><strong>Listbox</strong> — filtered options rendered in a popover.</li>
+            <li><strong>Description / error text</strong> — below the field for help and validation.</li>
+          </ul>
+        </section>
+
+        <!-- Code -->
+        <section id="code">
+          <h2>Basic ComboBox (S2)</h2>
+
+          <div class="code-block">
+            <button class="copy-btn" data-cta="copy-code-combobox-basic" onclick="copyCode(this)">Copy</button>
+            <pre><span class="tok-keyword">import</span> {ComboBox, Item} <span class="tok-keyword">from</span> <span class="tok-string">'@react-spectrum/s2'</span>;
+
+&lt;<span class="tok-attr">ComboBox</span> <span class="tok-attr">label</span>=<span class="tok-string">"Component"</span>&gt;
+  &lt;<span class="tok-attr">Item</span>&gt;Button&lt;/<span class="tok-attr">Item</span>&gt;
+  &lt;<span class="tok-attr">Item</span>&gt;ComboBox&lt;/<span class="tok-attr">Item</span>&gt;
+  &lt;<span class="tok-attr">Item</span>&gt;TextField&lt;/<span class="tok-attr">Item</span>&gt;
+&lt;/<span class="tok-attr">ComboBox</span>&gt;</pre>
+          </div>
+
+          <h2 id="async">Controlled with async loading</h2>
+          <div class="code-block">
+            <button class="copy-btn" data-cta="copy-code-combobox-async" onclick="copyCode(this)">Copy</button>
+            <pre><span class="tok-keyword">import</span> {ComboBox, Item} <span class="tok-keyword">from</span> <span class="tok-string">'@react-spectrum/s2'</span>;
+<span class="tok-keyword">import</span> {useAsyncList} <span class="tok-keyword">from</span> <span class="tok-string">'react-stately'</span>;
+
+<span class="tok-fn">function</span> <span class="tok-fn">AsyncComboBox</span>() {
+  <span class="tok-keyword">const</span> list = <span class="tok-fn">useAsyncList</span>({
+    <span class="tok-fn">async load</span>({signal, filterText}) {
+      <span class="tok-keyword">const</span> res = <span class="tok-keyword">await</span> <span class="tok-fn">fetch</span>(
+        <span class="tok-string">`/api/search?q=${filterText}`</span>,
+        {signal}
+      );
+      <span class="tok-keyword">const</span> json = <span class="tok-keyword">await</span> res.<span class="tok-fn">json</span>();
+      <span class="tok-keyword">return</span> {items: json.results};
+    },
+  });
+
+  <span class="tok-keyword">return</span> (
+    &lt;<span class="tok-attr">ComboBox</span>
+      <span class="tok-attr">label</span>=<span class="tok-string">"Search"</span>
+      <span class="tok-attr">items</span>={list.items}
+      <span class="tok-attr">inputValue</span>={list.filterText}
+      <span class="tok-attr">onInputChange</span>={list.<span class="tok-fn">setFilterText</span>}
+      <span class="tok-attr">loadingState</span>={list.loadingState}
+      <span class="tok-attr">onLoadMore</span>={list.<span class="tok-fn">loadMore</span>}&gt;
+      {(item) =&gt; &lt;<span class="tok-attr">Item</span> <span class="tok-attr">key</span>={item.id}&gt;{item.name}&lt;/<span class="tok-attr">Item</span>&gt;}
+    &lt;/<span class="tok-attr">ComboBox</span>&gt;
+  );
+}</pre>
+          </div>
+
+          <h3>Key props — ComboBox (S2)</h3>
+          <table class="spec-table">
+            <thead><tr><th>Prop</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>label</code></td><td><code>ReactNode</code></td><td>Always provide a label for accessibility.</td></tr>
+              <tr><td><code>inputValue</code></td><td><code>string</code></td><td>Controlled text input value.</td></tr>
+              <tr><td><code>selectedKey</code></td><td><code>Key</code></td><td>Controlled selected item key.</td></tr>
+              <tr><td><code>onInputChange</code></td><td><code>(value: string) =&gt; void</code></td><td>Fires on every keystroke.</td></tr>
+              <tr><td><code>onSelectionChange</code></td><td><code>(key: Key) =&gt; void</code></td><td>Fires when user picks an option.</td></tr>
+              <tr><td><code>allowsCustomValue</code></td><td><code>boolean</code></td><td>Allows free-form text not in the list.</td></tr>
+              <tr><td><code>loadingState</code></td><td><code>'loading' | 'loadingMore' | 'idle' | …</code></td><td>Shows spinner in appropriate state.</td></tr>
+              <tr><td><code>isDisabled</code></td><td><code>boolean</code></td><td>Disables the combobox.</td></tr>
+            </tbody>
+          </table>
+
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;">
+            <a href="https://react-spectrum.adobe.com/react-spectrum/ComboBox.html" target="_blank" class="btn btn-outline-blue btn-sm" data-cta="view-react-combobox">View React Spectrum docs ↗</a>
+            <a href="/demo/migration.html" class="btn btn-ghost btn-sm" data-cta="combobox-migration">Migration guide →</a>
+          </div>
+        </section>
+
+      </div>
+
+      <aside class="sidebar">
+        <div class="sidebar-card" style="margin-bottom:16px;">
+          <h4>On this page</h4>
+          <ul>
+            <li><a href="#design">Design guidance</a></li>
+            <li><a href="#code">Code</a></li>
+            <li><a href="#async">Async Loading</a></li>
+          </ul>
+        </div>
+        <div class="sidebar-card">
+          <h4>Related components</h4>
+          <ul>
+            <li><a href="/demo/button.html" data-cta="related-button">Button</a></li>
+            <li><a href="/demo/migration.html" data-cta="related-migration">Migration Guide</a></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="demo-footer">
+  <p>Demo site · Powered by <a href="https://www.algolia.com" target="_blank">Algolia</a> · Content sourced from <a href="https://react-spectrum.adobe.com" target="_blank">react-spectrum.adobe.com</a></p>
+</footer>
+
+<script src="/widget-bundles/algolia-confidence-badge.js"></script>
+<script src="/widget-bundles/algolia-chat.js"></script>
+
+<algolia-instant-search app-id="0EXRPAXB56" api-key="REDACTED" index-name="ACS_SPECTRUM_MULTI">
+  <algolia-chat
+    accent-color="#003DFF"
+    brand-name="Adobe Spectrum"
+    product-title="Spectrum Assistant"
+    subtitle="ComboBox docs"
+    corpus-name="Adobe Spectrum"
+    disclaimer="Every answer cites its source."
+    powered-by-logo="/brand/algolia-mark.svg"
+    default-open-mode="docked"
+    auto-engage-toggle
+  >
+    <algolia-agent role="primary"    agent-id="95826da6-d1b6-4b81-b061-bfb52b881356" label="Spectrum Assistant"></algolia-agent>
+    <algolia-agent role="specialist" agent-id="ae127977-c728-4b7c-bc15-6502a77873d1" label="React Expert" key="react"></algolia-agent>
+    <algolia-agent role="classifier" agent-id="dbb4faa9-e917-4be9-b8ee-6dfd9a81daef"></algolia-agent>
+    <algolia-chat-confidence mode="algolia">
+      <algolia-agent agent-id="4deb53fb-402c-4ab9-97f3-a2744ff4156f"></algolia-agent>
+      <algolia-agent role="skeptic"  agent-id="0eba9eb4-dd20-42a4-8ae3-41cb84b54a79"></algolia-agent>
+      <algolia-agent role="referee"  agent-id="b0f03391-3433-42ea-bc50-183ba990e697"></algolia-agent>
+      <algolia-agent role="advocate" agent-id="b084b478-bd3a-41a7-9a29-818ae0fb9706"></algolia-agent>
+    </algolia-chat-confidence>
+
+    <img slot="logo" src="/brand/adobe-logo.svg" alt="Adobe" />
+
+    <!-- Icon for the header "New conversation" button, served from the site
+         (not hardcoded in the widget). -->
+    <img slot="new-chat-icon" src="/brand/new-chat.svg" alt="" />
+
+    <div
+      slot="welcome"
+      style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;"
+    >
+      <div
+        style="width:80px;height:80px;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(250,15,0,0.22);"
+      >
+        <img
+          src="/brand/spectrum-assistant-avatar.png"
+          alt="Spectrum AI assistant"
+          style="width:100%;height:100%;object-fit:cover;"
+        />
+      </div>
+      <h2 style="margin:0;font-size:clamp(24px,3.5vw,36px);font-weight:700;color:#111;">
+        Hello, how can I help you today?
+      </h2>
+      <p style="margin:0;font-size:14px;color:#666;max-width:360px;">
+        Ask anything about Adobe Spectrum — design tokens, React components, or accessibility.
+      </p>
+    </div>
+
+    <style id="demo-custom-skin" slot="theme">
+      /* Blank by default — set by the skin buttons above. */
+    </style>
+
+    <div slot="sample-questions">
+      <section data-title="Choosing the right field">
+        <button>When should I use ComboBox instead of Select?</button>
+        <button>How do I let users enter a free-form value that's not in the list?</button>
+        <button>What's the anatomy of a ComboBox — label, input, listbox, and more?</button>
+      </section>
+      <section data-title="Controlling state">
+        <button>How do I control the selected key and input value on a ComboBox?</button>
+        <button>How do I filter ComboBox options as the user types?</button>
+        <button>How do I disable a ComboBox?</button>
+      </section>
+      <section data-title="Async data">
+        <button>How do I load ComboBox options asynchronously with useAsyncList?</button>
+        <button>How do I show a loading state while ComboBox results are still fetching?</button>
+        <button>How do I add a label to a ComboBox for accessibility?</button>
+      </section>
+    </div>
+
+    <div slot="source-facets">
+      <span data-value="SpectrumDesignDocs">Spectrum Design Docs</span>
+      <span data-value="ReactSpectrumS2">React Spectrum S2</span>
+      <span data-value="ReactSpectrumV3">React Spectrum v3</span>
+    </div>
+  </algolia-chat>
+</algolia-instant-search>
+
+<script type="module" src="/context/context-engine.js"></script>
+<script>
+  function copyCode(btn) {
+    const pre = btn.parentElement.querySelector('pre');
+    if (pre) {
+      navigator.clipboard.writeText(pre.textContent ?? '').then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+      });
+    }
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,208 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base element styles — consume `--algolia-*` tokens only, never redeclare them. */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--algolia-bg);
+  color: var(--algolia-text);
+  font-family: var(--algolia-font-sans);
+  font-size: var(--algolia-fs-sm);
+  line-height: var(--algolia-lh-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--algolia-focus);
+  outline-offset: 2px;
+  border-radius: var(--algolia-radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ─── Chat Modal Layout ─────────────────────────────────────────────────────── */
+
+.algolia-chat-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 16, 70, 0.45);
+  animation: algolia-backdrop-in var(--algolia-dur-base, 200ms) var(--algolia-ease, ease) both;
+}
+
+@keyframes algolia-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.algolia-chat-modal__panel {
+  /* Override satellite's fixed/absolute positioning from ais-Chat-container */
+  position: relative !important;
+  inset: auto !important;
+
+  width: 85%;
+  height: 85%;
+  max-width: 1200px;
+  max-height: 900px;
+
+  display: flex;
+  flex-direction: column;
+
+  border-radius: var(--algolia-radius-xl, 24px);
+  box-shadow: var(
+    --algolia-shadow-3,
+    0 18px 40px rgba(2, 16, 70, 0.1),
+    0 4px 12px rgba(2, 16, 70, 0.06)
+  );
+  overflow: hidden;
+
+  animation: algolia-panel-in var(--algolia-dur-base, 200ms) var(--algolia-ease, ease) both;
+}
+
+@keyframes algolia-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.algolia-chat-modal__panel--maximized {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  border-radius: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .algolia-chat-modal__backdrop,
+  .algolia-chat-modal__panel {
+    animation: none;
+  }
+}
+
+/* ─── Specialist answer card ──────────────────────────────────────────────────
+ *
+ * A specialist answer is not the same KIND of thing as the generalist's, and it
+ * should not look like it. Same label, same colour, same card = the multi-agent
+ * story is invisible, and when one question yields both answers it reads as the
+ * assistant repeating itself.
+ *
+ * The treatment is deliberately more than an accent swap: glass surface,
+ * specialist-tinted rim and glow, a full-height gradient rail, and a filled label
+ * chip instead of muted text. Heavier than the generalist card, on purpose.
+ *
+ * Every value routes through a custom property so an embedder can retune it —
+ * custom properties pierce the shadow boundary, so this is themable from the host
+ * page even though the card itself is inside the shadow root.
+ */
+:host {
+  --algolia-agent-specialist: #8a4fff;
+  --algolia-specialist-rim: color-mix(in srgb, var(--algolia-agent-specialist) 34%, transparent);
+  --algolia-specialist-surface: color-mix(in srgb, var(--algolia-surface) 76%, transparent);
+  --algolia-specialist-blur: 16px;
+  /* Adobe red, not the specialist's own violet: the CARD's identity is violet
+     (rim, pill), but the directional drop-shadow is a deliberate second signal
+     — "this answer leans on Adobe's own material" — paired against the
+     generalist's Algolia-blue shadow on the opposite side. Both overridable. */
+  --algolia-specialist-shadow-color: #fa0f00;
+  --algolia-primary-shadow-color: #003dff;
+}
+
+.algolia-answer-card--specialist {
+  position: relative;
+  overflow: hidden;
+  background: var(--algolia-specialist-surface);
+  -webkit-backdrop-filter: blur(var(--algolia-specialist-blur)) saturate(150%);
+  backdrop-filter: blur(var(--algolia-specialist-blur)) saturate(150%);
+  box-shadow:
+    inset 0 0 0 1px var(--algolia-specialist-rim),
+    -18px 10px 40px -12px color-mix(in srgb, var(--algolia-specialist-shadow-color) 42%, transparent),
+    var(--algolia-shadow-3, 0 12px 32px rgba(0, 0, 0, 0.14));
+}
+
+/* Label becomes a filled chip rather than muted text. */
+.algolia-answer-card--specialist .algolia-agent-label {
+  border-radius: var(--algolia-radius-full, 9999px);
+  background: color-mix(in srgb, var(--algolia-agent-specialist) 14%, transparent);
+  color: color-mix(in srgb, var(--algolia-agent-specialist) 82%, #000);
+  padding: 3px 9px;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .algolia-answer-card--specialist {
+    background: var(--algolia-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* The generalist card: same flat white surface as before, plus a paired
+ * Algolia-blue directional shadow falling to the RIGHT — the specialist's
+ * Adobe-red shadow falls to the LEFT. Two colours, two directions, one
+ * grammar: which side a card's shadow falls on says which "half" of the
+ * product answered, before you've read a word of the label. */
+.algolia-answer-card--primary {
+  background: var(--algolia-surface);
+  box-shadow:
+    18px 10px 40px -12px color-mix(in srgb, var(--algolia-primary-shadow-color) 38%, transparent),
+    var(--algolia-shadow-2, 0 3px 12px rgba(0, 0, 0, 0.1));
+}
+
+/* Label becomes a filled chip too, so both cards read as the same visual
+ * family — pill + directional shadow — differing only in colour and side. */
+.algolia-answer-card--primary .algolia-agent-label {
+  border-radius: var(--algolia-radius-full, 9999px);
+  background: color-mix(in srgb, var(--algolia-agent-primary) 14%, transparent);
+  color: color-mix(in srgb, var(--algolia-agent-primary) 82%, #000);
+  padding: 3px 9px;
+}

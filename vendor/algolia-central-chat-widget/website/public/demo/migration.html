@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migration v3 → S2 — Adobe Spectrum</title>
+  <link rel="icon" href="/brand/algolia-mark.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/demo/demo.css" />
+</head>
+<body>
+
+<nav class="demo-nav">
+  <div class="wrap">
+    <a class="nav-logo" href="/demo/">
+      <img src="/brand/adobe-logo.svg" alt="Adobe" height="22" />
+      <span class="nav-sep">|</span>
+      <span>Spectrum</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/demo/">Overview</a></li>
+      <li><a href="/demo/button.html">Button</a></li>
+      <li><a href="/demo/combobox.html">ComboBox</a></li>
+      <li><a href="/demo/migration.html" class="active">Migration</a></li>
+      <li><a href="/demo/get-started.html">Get Started</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="page-header">
+  <div class="wrap">
+    <p class="breadcrumb"><a href="/demo/">Spectrum</a> <span>/</span> Guides <span>/</span> Migration</p>
+    <h1 class="page-title">Migrating v3 → Spectrum 2</h1>
+    <p class="page-desc">Spectrum 2 (S2) is the next generation of React Spectrum. This guide walks you through the key changes and how to update your existing v3 code step by step.</p>
+    <div class="status-chips">
+      <span class="chip-beta">In progress</span>
+      <span class="chip-new">S2 Beta</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap" style="padding-top:32px; padding-bottom:80px;">
+    <div class="two-col">
+      <div class="main-content">
+
+        <div class="alert alert-warning">
+          ⚠️ <span><strong>S2 is currently in beta.</strong> APIs may change before the stable release. Pin your version and review the <a href="https://react-spectrum.adobe.com/releases/2024-11-20.html" target="_blank" data-cta="s2-releases">release notes</a> when upgrading.</span>
+        </div>
+
+        <h2>What changed in S2?</h2>
+        <p>Spectrum 2 introduces a new visual language, updated design tokens, a consolidated package structure, and new components. It's a breaking change — but a gradual migration is possible by running v3 and S2 side by side.</p>
+
+        <div class="card-grid" style="margin:24px 0;">
+          <div class="card">
+            <div class="card-icon">📦</div>
+            <h3>New package</h3>
+            <p>S2 ships as a single <code>@react-spectrum/s2</code> package instead of the per-component packages in v3.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">🎨</div>
+            <h3>New design tokens</h3>
+            <p>Design tokens are generated from the new Spectrum 2 system using the <code>style()</code> macro instead of CSS modules.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon">⚙</div>
+            <h3>Updated props</h3>
+            <p>Some prop names and component APIs have changed (e.g. <code>variant</code> replaces <code>isQuiet</code>/<code>isEmphasized</code> on ActionButton).</p>
+          </div>
+        </div>
+
+        <!-- Steps -->
+        <h2>Migration steps</h2>
+
+        <div class="migration-step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>Install the S2 package alongside v3</h4>
+            <p>S2 uses a single package. You can install it without removing v3 to allow gradual migration.</p>
+            <div class="code-block" style="margin-top:12px;">
+              <button class="copy-btn" data-cta="copy-migration-install" onclick="copyCode(this)">Copy</button>
+              <pre>npm install @react-spectrum/s2</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>Update imports</h4>
+            <p>S2 exports components from the top-level package. Update your import paths:</p>
+            <div class="before-after">
+              <div>
+                <p class="before-after-label label-before">v3 (before)</p>
+                <div class="code-block">
+                  <pre><span class="tok-keyword">import</span> {Button} <span class="tok-keyword">from</span>
+  <span class="tok-string">'@adobe/react-spectrum'</span>;
+<span class="tok-keyword">import</span> {ComboBox} <span class="tok-keyword">from</span>
+  <span class="tok-string">'@react-spectrum/combobox'</span>;</pre>
+                </div>
+              </div>
+              <div>
+                <p class="before-after-label label-after">S2 (after)</p>
+                <div class="code-block">
+                  <pre><span class="tok-keyword">import</span> {Button} <span class="tok-keyword">from</span>
+  <span class="tok-string">'@react-spectrum/s2'</span>;
+<span class="tok-keyword">import</span> {ComboBox} <span class="tok-keyword">from</span>
+  <span class="tok-string">'@react-spectrum/s2'</span>;</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>Update ActionButton props</h4>
+            <p>ActionButton's <code>isQuiet</code> and <code>isEmphasized</code> props are replaced by a unified <code>variant</code>:</p>
+            <div class="before-after">
+              <div>
+                <p class="before-after-label label-before">v3</p>
+                <div class="code-block"><pre>&lt;<span class="tok-attr">ActionButton</span> <span class="tok-attr">isEmphasized</span>&gt;
+  Edit
+&lt;/<span class="tok-attr">ActionButton</span>&gt;</pre></div>
+              </div>
+              <div>
+                <p class="before-after-label label-after">S2</p>
+                <div class="code-block"><pre>&lt;<span class="tok-attr">ActionButton</span>
+  <span class="tok-attr">variant</span>=<span class="tok-string">"accent"</span>&gt;
+  Edit
+&lt;/<span class="tok-attr">ActionButton</span>&gt;</pre></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h4>Adopt the <code>style()</code> macro</h4>
+            <p>S2 uses a Parcel / webpack / Vite macro for design tokens. Instead of inline <code>style</code> props or CSS modules, wrap your styles with <code>style()</code>:</p>
+            <div class="code-block" style="margin-top:12px;">
+              <button class="copy-btn" data-cta="copy-migration-style" onclick="copyCode(this)">Copy</button>
+              <pre><span class="tok-keyword">import</span> {style} <span class="tok-keyword">from</span> <span class="tok-string">'@react-spectrum/s2/style'</span> <span class="tok-attr">with</span> {type: <span class="tok-string">'macro'</span>};
+
+&lt;<span class="tok-attr">Button</span> <span class="tok-attr">styles</span>={<span class="tok-fn">style</span>({marginTop: <span class="tok-string">'size-100'</span>})}&gt;
+  Save
+&lt;/<span class="tok-attr">Button</span>&gt;</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="migration-step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <h4>Test both providers side by side</h4>
+            <p>Wrap S2 components in <code>Provider</code> from <code>@react-spectrum/s2</code>. You can keep v3's <code>Provider</code> for unchanged components.</p>
+            <div class="alert alert-info" style="margin-top:12px;">
+              💡 <span>Ask the AI assistant about specific components you're migrating — it can look up the exact v3 vs S2 prop differences from the live documentation.</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:32px;">
+          <a href="https://react-spectrum.adobe.com/react-spectrum/migration.html" target="_blank" class="btn btn-outline-blue btn-sm" data-cta="view-migration-docs">Full migration guide ↗</a>
+          <a href="/demo/get-started.html" class="btn btn-primary btn-sm" data-cta="migration-to-get-started">Set up S2 now →</a>
+        </div>
+
+      </div>
+
+      <aside class="sidebar">
+        <div class="sidebar-card" style="margin-bottom:16px;">
+          <h4>On this page</h4>
+          <ul>
+            <li><a href="#whatchanged">What changed</a></li>
+            <li><a href="#steps">Migration steps</a></li>
+          </ul>
+        </div>
+        <div class="sidebar-card">
+          <h4>Related</h4>
+          <ul>
+            <li><a href="/demo/button.html" data-cta="related-button">Button</a></li>
+            <li><a href="/demo/combobox.html" data-cta="related-combobox">ComboBox</a></li>
+            <li><a href="/demo/get-started.html" data-cta="related-get-started">Get Started</a></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="demo-footer">
+  <p>Demo site · Powered by <a href="https://www.algolia.com" target="_blank">Algolia</a></p>
+</footer>
+
+<script src="/widget-bundles/algolia-confidence-badge.js"></script>
+<script src="/widget-bundles/algolia-chat.js"></script>
+
+<algolia-instant-search app-id="0EXRPAXB56" api-key="REDACTED" index-name="ACS_SPECTRUM_MULTI">
+  <algolia-chat
+    accent-color="#003DFF"
+    brand-name="Adobe Spectrum"
+    product-title="Spectrum Assistant"
+    subtitle="Migration guide"
+    corpus-name="Adobe Spectrum"
+    disclaimer="Every answer cites its source."
+    powered-by-logo="/brand/algolia-mark.svg"
+    default-open-mode="docked"
+    auto-engage-toggle
+  >
+    <algolia-agent role="primary"    agent-id="95826da6-d1b6-4b81-b061-bfb52b881356" label="Spectrum Assistant"></algolia-agent>
+    <algolia-agent role="specialist" agent-id="ae127977-c728-4b7c-bc15-6502a77873d1" label="React Expert" key="react"></algolia-agent>
+    <algolia-agent role="classifier" agent-id="dbb4faa9-e917-4be9-b8ee-6dfd9a81daef"></algolia-agent>
+    <algolia-chat-confidence mode="algolia">
+      <algolia-agent agent-id="4deb53fb-402c-4ab9-97f3-a2744ff4156f"></algolia-agent>
+      <algolia-agent role="skeptic"  agent-id="0eba9eb4-dd20-42a4-8ae3-41cb84b54a79"></algolia-agent>
+      <algolia-agent role="referee"  agent-id="b0f03391-3433-42ea-bc50-183ba990e697"></algolia-agent>
+      <algolia-agent role="advocate" agent-id="b084b478-bd3a-41a7-9a29-818ae0fb9706"></algolia-agent>
+    </algolia-chat-confidence>
+
+    <img slot="logo" src="/brand/adobe-logo.svg" alt="Adobe" />
+
+    <!-- Icon for the header "New conversation" button, served from the site
+         (not hardcoded in the widget). -->
+    <img slot="new-chat-icon" src="/brand/new-chat.svg" alt="" />
+
+    <div
+      slot="welcome"
+      style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;"
+    >
+      <div
+        style="width:80px;height:80px;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(250,15,0,0.22);"
+      >
+        <img
+          src="/brand/spectrum-assistant-avatar.png"
+          alt="Spectrum AI assistant"
+          style="width:100%;height:100%;object-fit:cover;"
+        />
+      </div>
+      <h2 style="margin:0;font-size:clamp(24px,3.5vw,36px);font-weight:700;color:#111;">
+        Hello, how can I help you today?
+      </h2>
+      <p style="margin:0;font-size:14px;color:#666;max-width:360px;">
+        Ask anything about Adobe Spectrum — design tokens, React components, or accessibility.
+      </p>
+    </div>
+
+    <style id="demo-custom-skin" slot="theme">
+      /* Blank by default — set by the skin buttons above. */
+    </style>
+
+    <div slot="sample-questions">
+      <section data-title="What changed in S2">
+        <button>What changed in the package structure between v3 and Spectrum 2?</button>
+        <button>How do design tokens work differently in S2 vs v3?</button>
+        <button>Can I run v3 and S2 components side by side during migration?</button>
+      </section>
+      <section data-title="Updating your code">
+        <button>How do I update my import paths from v3 to S2?</button>
+        <button>How do isQuiet and isEmphasized map to the new variant prop on ActionButton?</button>
+        <button>How do I use the style() macro to style an S2 component?</button>
+      </section>
+      <section data-title="Before you upgrade">
+        <button>Is Spectrum 2 stable enough to use in production yet?</button>
+        <button>Where can I find the S2 release notes?</button>
+        <button>How do I set up a Provider that works for both v3 and S2 components?</button>
+      </section>
+    </div>
+
+    <div slot="source-facets">
+      <span data-value="SpectrumDesignDocs">Spectrum Design Docs</span>
+      <span data-value="ReactSpectrumS2">React Spectrum S2</span>
+      <span data-value="ReactSpectrumV3">React Spectrum v3</span>
+    </div>
+  </algolia-chat>
+</algolia-instant-search>
+
+<script type="module" src="/context/context-engine.js"></script>
+<script>
+  function copyCode(btn) {
+    const pre = btn.parentElement.querySelector('pre');
+    if (pre) {
+      navigator.clipboard.writeText(pre.textContent ?? '').then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+      });
+    }
+  }
+</script>
+
+</body>
+</html>

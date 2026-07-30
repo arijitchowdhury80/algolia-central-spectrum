@@ -1,0 +1,19 @@
+{
+  "name": "algolia-central-chat-repo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node watch.mjs",
+    "watch": "node watch.mjs",
+    "build:central": "npm run build --prefix chat-central",
+    "build:widget": "npm run build --prefix algolia-chat",
+    "dev:website": "npm run dev --prefix website",
+    "agents:create": "node scripts/create-proactive-agents.mjs",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.0",
+    "@types/node": "^26.1.2"
+  }
+}

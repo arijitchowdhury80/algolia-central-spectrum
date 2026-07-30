@@ -1,0 +1,28 @@
+{
+  "appId": "0EXRPAXB56",
+  "searchKey": "REDACTED",
+  "agents": {
+    "ACS-persona-designer": {
+      "id": "6b716c73-0072-4ce7-b915-c4dc00f8b74d",
+      "name": "ACS-persona-designer"
+    },
+    "ACS-persona-developer": {
+      "id": "06c4f43e-a16c-4783-b061-539e063397a4",
+      "name": "ACS-persona-developer"
+    },
+    "ACS-persona-pm": {
+      "id": "17cb7a0a-5e04-41ec-9527-e914f648c995",
+      "name": "ACS-persona-pm"
+    },
+    "ACS-concierge-neural": {
+      "id": "213315ed-0488-4329-8fc6-db4691148a09",
+      "name": "ACS-concierge-neural"
+    }
+  },
+  "personaAgents": {
+    "designer": "6b716c73-0072-4ce7-b915-c4dc00f8b74d",
+    "developer": "06c4f43e-a16c-4783-b061-539e063397a4",
+    "pm": "17cb7a0a-5e04-41ec-9527-e914f648c995"
+  },
+  "conciergeAgentId": "213315ed-0488-4329-8fc6-db4691148a09"
+}

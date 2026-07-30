@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Button — Adobe Spectrum</title>
+  <link rel="icon" href="/brand/algolia-mark.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/demo/demo.css" />
+</head>
+<body>
+
+<nav class="demo-nav">
+  <div class="wrap">
+    <a class="nav-logo" href="/demo/">
+      <img src="/brand/adobe-logo.svg" alt="Adobe" height="22" />
+      <span class="nav-sep">|</span>
+      <span>Spectrum</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/demo/">Overview</a></li>
+      <li><a href="/demo/button.html" class="active">Button</a></li>
+      <li><a href="/demo/combobox.html">ComboBox</a></li>
+      <li><a href="/demo/migration.html">Migration</a></li>
+      <li><a href="/demo/get-started.html">Get Started</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="page-header">
+  <div class="wrap">
+    <p class="breadcrumb"><a href="/demo/">Spectrum</a> <span>/</span> Components <span>/</span> Button</p>
+    <h1 class="page-title">Button</h1>
+    <p class="page-desc">Buttons let users take actions and make choices with a single tap. Spectrum offers ActionButton, Button, ToggleButton, and more — each with distinct semantics and visual weight.</p>
+    <div class="status-chips">
+      <span class="chip-stable">Stable</span>
+      <span class="chip-new">S2 Available</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap" style="padding-top:32px; padding-bottom:80px;">
+    <div class="two-col">
+      <div class="main-content">
+
+        <!-- Tabs -->
+        <div class="page-tabs">
+          <a class="page-tab active" href="#design">Design</a>
+          <a class="page-tab" href="#code">Code</a>
+          <a class="page-tab" href="#accessibility">Accessibility</a>
+        </div>
+
+        <!-- Design section -->
+        <section id="design">
+          <h2>Design guidance</h2>
+          <p>Buttons communicate an action that will occur when the user triggers them. The visual weight — filled, outline, or quiet — signals the action's importance relative to other elements on the page.</p>
+
+          <h3>Visual hierarchy</h3>
+          <p>Use no more than one primary (filled) button per view. Secondary and quiet buttons de-emphasize less critical actions so the primary action is clear.</p>
+
+          <div class="demo-preview">
+            <button class="btn btn-primary" data-cta="preview-primary">Primary</button>
+            <button class="btn btn-outline-blue" data-cta="preview-secondary">Secondary</button>
+            <button style="background:transparent;border:none;color:#003DFF;font-weight:600;cursor:pointer;padding:10px 16px;" data-cta="preview-quiet">Quiet</button>
+          </div>
+
+          <h3>Sizes</h3>
+          <p>Spectrum buttons come in five sizes: XS, S, M (default), L, and XL. Match the size to the surrounding content density and target area requirements.</p>
+
+          <div class="demo-preview">
+            <button class="btn btn-primary btn-sm" data-cta="preview-sm">Small</button>
+            <button class="btn btn-primary" data-cta="preview-md">Medium</button>
+            <button class="btn btn-primary btn-lg" data-cta="preview-lg">Large</button>
+          </div>
+
+          <div class="alert alert-info">
+            💡 <span>The Spectrum 2 design system updates the button anatomy: rounded corners are now more pronounced and static-color variants have been consolidated. Check the <a href="#code" data-cta="design-to-s2-link">S2 code docs</a> for migration details.</span>
+          </div>
+
+          <h3>States</h3>
+          <table class="spec-table">
+            <thead><tr><th>State</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>default</code></td><td>The button's resting state.</td></tr>
+              <tr><td><code>hover</code></td><td>Mouse pointer is over the button.</td></tr>
+              <tr><td><code>pressed</code></td><td>Active click / touch state.</td></tr>
+              <tr><td><code>focus</code></td><td>Keyboard or programmatic focus.</td></tr>
+              <tr><td><code>disabled</code></td><td>Button is non-interactive. Use <code>isDisabled</code> prop.</td></tr>
+              <tr><td><code>pending</code></td><td>Async action in progress (S2). Shows a spinner.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Code section -->
+        <section id="code">
+          <h2>React Spectrum implementation</h2>
+
+          <div class="alert alert-info" style="margin-bottom:24px;">
+            <span>🆕 The examples below use <strong>React Spectrum S2</strong>. For v3, see the <a href="/demo/migration.html" data-cta="v3-migration-link">migration guide</a>.</span>
+          </div>
+
+          <h3>Basic button</h3>
+          <div class="code-block">
+            <button class="copy-btn" data-cta="copy-code-basic" onclick="copyCode(this)">Copy</button>
+            <pre><span class="tok-keyword">import</span> {Button} <span class="tok-keyword">from</span> <span class="tok-string">'@react-spectrum/s2'</span>;
+
+<span class="tok-fn">function</span> <span class="tok-fn">Example</span>() {
+  <span class="tok-keyword">return</span> (
+    &lt;<span class="tok-attr">Button</span> <span class="tok-attr">variant</span>=<span class="tok-string">"accent"</span> <span class="tok-attr">onPress</span>={<span class="tok-fn">handlePress</span>}&gt;
+      Save changes
+    &lt;/<span class="tok-attr">Button</span>&gt;
+  );
+}</pre>
+          </div>
+
+          <h3>ActionButton with icon</h3>
+          <div class="code-block">
+            <button class="copy-btn" data-cta="copy-code-action" onclick="copyCode(this)">Copy</button>
+            <pre><span class="tok-keyword">import</span> {ActionButton} <span class="tok-keyword">from</span> <span class="tok-string">'@react-spectrum/s2'</span>;
+<span class="tok-keyword">import</span> EditIcon <span class="tok-keyword">from</span> <span class="tok-string">'@react-spectrum/s2/icons/Edit'</span>;
+
+&lt;<span class="tok-attr">ActionButton</span>&gt;
+  &lt;<span class="tok-attr">EditIcon</span> /&gt;
+  &lt;<span class="tok-attr">Text</span>&gt;Edit&lt;/<span class="tok-attr">Text</span>&gt;
+&lt;/<span class="tok-attr">ActionButton</span>&gt;</pre>
+          </div>
+
+          <h3>ToggleButton</h3>
+          <div class="code-block">
+            <button class="copy-btn" data-cta="copy-code-toggle" onclick="copyCode(this)">Copy</button>
+            <pre><span class="tok-keyword">import</span> {ToggleButton} <span class="tok-keyword">from</span> <span class="tok-string">'@react-spectrum/s2/ToggleButton'</span>;
+<span class="tok-keyword">import</span> {useState} <span class="tok-keyword">from</span> <span class="tok-string">'react'</span>;
+<span class="tok-keyword">import</span> Star <span class="tok-keyword">from</span> <span class="tok-string">'@react-spectrum/s2/icons/Star'</span>;
+
+<span class="tok-fn">function</span> <span class="tok-fn">StarToggle</span>() {
+  <span class="tok-keyword">const</span> [selected, setSelected] = <span class="tok-fn">useState</span>(<span class="tok-keyword">false</span>);
+  <span class="tok-keyword">return</span> (
+    &lt;<span class="tok-attr">ToggleButton</span>
+      <span class="tok-attr">aria-label</span>=<span class="tok-string">"Star"</span>
+      <span class="tok-attr">isSelected</span>={selected}
+      <span class="tok-attr">onChange</span>={setSelected}&gt;
+      &lt;<span class="tok-attr">Star</span> /&gt;
+    &lt;/<span class="tok-attr">ToggleButton</span>&gt;
+  );
+}</pre>
+          </div>
+
+          <h3>Key props — Button (S2)</h3>
+          <table class="spec-table">
+            <thead><tr><th>Prop</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>variant</code></td><td><code>'accent' | 'primary' | 'secondary' | 'negative'</code></td><td><code>'primary'</code></td><td>Visual style / importance.</td></tr>
+              <tr><td><code>style</code></td><td><code>'fill' | 'outline'</code></td><td><code>'fill'</code></td><td>Filled vs outlined.</td></tr>
+              <tr><td><code>size</code></td><td><code>'XS'|'S'|'M'|'L'|'XL'</code></td><td><code>'M'</code></td><td>Size of the button.</td></tr>
+              <tr><td><code>isPending</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Shows spinner while async op runs (S2).</td></tr>
+              <tr><td><code>isDisabled</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Disables interaction.</td></tr>
+              <tr><td><code>onPress</code></td><td><code>(e: PressEvent) =&gt; void</code></td><td>—</td><td>Called on pointer/keyboard activation.</td></tr>
+            </tbody>
+          </table>
+
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;">
+            <a href="https://react-spectrum.adobe.com/react-spectrum/Button.html" target="_blank" class="btn btn-outline-blue btn-sm" data-cta="view-react-button">View React Spectrum docs ↗</a>
+            <a href="/demo/migration.html" class="btn btn-ghost btn-sm" data-cta="see-migration">Migration guide →</a>
+          </div>
+        </section>
+
+        <!-- Accessibility -->
+        <section id="accessibility" style="margin-top:40px;">
+          <h2>Accessibility</h2>
+          <p>Spectrum buttons are built on React Aria, providing keyboard, pointer, and screen-reader support out of the box.</p>
+          <ul>
+            <li>Always provide a meaningful label — either visible text or <code>aria-label</code> for icon-only buttons.</li>
+            <li>Use <code>isDisabled</code> instead of HTML <code>disabled</code> to preserve tab order and aria state.</li>
+            <li>For async actions, <code>isPending</code> communicates the loading state to screen readers automatically.</li>
+          </ul>
+        </section>
+
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-card" style="margin-bottom:16px;">
+          <h4>On this page</h4>
+          <ul>
+            <li><a href="#design">Design guidance</a></li>
+            <li><a href="#code">Code</a></li>
+            <li><a href="#accessibility">Accessibility</a></li>
+          </ul>
+        </div>
+        <div class="sidebar-card">
+          <h4>Related components</h4>
+          <ul>
+            <li><a href="/demo/combobox.html" data-cta="related-combobox">ComboBox</a></li>
+            <li><a href="/demo/migration.html" data-cta="related-migration">Migration Guide</a></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="demo-footer">
+  <p>Demo site · Powered by <a href="https://www.algolia.com" target="_blank">Algolia</a> · Content sourced from <a href="https://react-spectrum.adobe.com" target="_blank">react-spectrum.adobe.com</a></p>
+</footer>
+
+<!-- Widget -->
+<script src="/widget-bundles/algolia-confidence-badge.js"></script>
+<script src="/widget-bundles/algolia-chat.js"></script>
+
+<algolia-instant-search app-id="0EXRPAXB56" api-key="REDACTED" index-name="ACS_SPECTRUM_MULTI">
+  <algolia-chat
+    accent-color="#003DFF"
+    brand-name="Adobe Spectrum"
+    product-title="Spectrum Assistant"
+    subtitle="Button docs"
+    corpus-name="Adobe Spectrum"
+    disclaimer="Every answer cites its source."
+    powered-by-logo="/brand/algolia-mark.svg"
+    default-open-mode="docked"
+    auto-engage-toggle
+  >
+    <algolia-agent role="primary"    agent-id="95826da6-d1b6-4b81-b061-bfb52b881356" label="Spectrum Assistant"></algolia-agent>
+    <algolia-agent role="specialist" agent-id="ae127977-c728-4b7c-bc15-6502a77873d1" label="React Expert" key="react"></algolia-agent>
+    <algolia-agent role="classifier" agent-id="dbb4faa9-e917-4be9-b8ee-6dfd9a81daef"></algolia-agent>
+    <algolia-chat-confidence mode="algolia">
+      <algolia-agent agent-id="4deb53fb-402c-4ab9-97f3-a2744ff4156f"></algolia-agent>
+      <algolia-agent role="skeptic"  agent-id="0eba9eb4-dd20-42a4-8ae3-41cb84b54a79"></algolia-agent>
+      <algolia-agent role="referee"  agent-id="b0f03391-3433-42ea-bc50-183ba990e697"></algolia-agent>
+      <algolia-agent role="advocate" agent-id="b084b478-bd3a-41a7-9a29-818ae0fb9706"></algolia-agent>
+    </algolia-chat-confidence>
+
+    <img slot="logo" src="/brand/adobe-logo.svg" alt="Adobe" />
+
+    <!-- Icon for the header "New conversation" button, served from the site
+         (not hardcoded in the widget). -->
+    <img slot="new-chat-icon" src="/brand/new-chat.svg" alt="" />
+
+    <div
+      slot="welcome"
+      style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;"
+    >
+      <div
+        style="width:80px;height:80px;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(250,15,0,0.22);"
+      >
+        <img
+          src="/brand/spectrum-assistant-avatar.png"
+          alt="Spectrum AI assistant"
+          style="width:100%;height:100%;object-fit:cover;"
+        />
+      </div>
+      <h2 style="margin:0;font-size:clamp(24px,3.5vw,36px);font-weight:700;color:#111;">
+        Hello, how can I help you today?
+      </h2>
+      <p style="margin:0;font-size:14px;color:#666;max-width:360px;">
+        Ask anything about Adobe Spectrum — design tokens, React components, or accessibility.
+      </p>
+    </div>
+
+    <style id="demo-custom-skin" slot="theme">
+      /* Blank by default — set by the skin buttons above. */
+    </style>
+
+    <div slot="sample-questions">
+      <section data-title="Variants &amp; style">
+        <button>What's the difference between the accent, primary, secondary, and negative Button variants?</button>
+        <button>What's the difference between the fill and outline button styles?</button>
+        <button>What sizes does the Spectrum Button support?</button>
+      </section>
+      <section data-title="Button behavior">
+        <button>How do I show a loading spinner on a button while an async action runs?</button>
+        <button>How do I disable a button and keep it accessible?</button>
+        <button>What's the difference between Button, ActionButton, and ToggleButton?</button>
+      </section>
+      <section data-title="Building in React">
+        <button>How do I add an icon to an ActionButton in React Spectrum?</button>
+        <button>How do I build a ToggleButton with controlled selected state?</button>
+        <button>What props does the S2 Button component accept?</button>
+      </section>
+    </div>
+
+    <div slot="source-facets">
+      <span data-value="SpectrumDesignDocs">Spectrum Design Docs</span>
+      <span data-value="ReactSpectrumS2">React Spectrum S2</span>
+      <span data-value="ReactSpectrumV3">React Spectrum v3</span>
+    </div>
+  </algolia-chat>
+</algolia-instant-search>
+
+<script type="module" src="/context/context-engine.js"></script>
+<script>
+  function copyCode(btn) {
+    const pre = btn.parentElement.querySelector('pre');
+    if (pre) {
+      navigator.clipboard.writeText(pre.textContent ?? '').then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+      });
+    }
+  }
+</script>
+
+</body>
+</html>

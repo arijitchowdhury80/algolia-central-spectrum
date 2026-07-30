@@ -1,0 +1,45 @@
+# Deploys ACS's own judge on the VPS as a container INDEPENDENT of AC2's
+# `ac2-lab-backend` (different image, different container name, different
+# port — 8788 here vs AC2's 8787). Never touches ac2-lab-backend.
+#
+#   cd <this repo, on the VPS> && \
+#     docker compose -f deploy/vps-judge/docker-compose.yml build \
+#       --build-arg GIT_SHA=$(git rev-parse HEAD) \
+#       --build-arg BUILT_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ) && \
+#     docker compose -f deploy/vps-judge/docker-compose.yml up -d
+#
+# (deploy/vps-deploy-judge.sh does exactly this, on a timer — see
+# deploy/systemd/.)
+#
+# Caddy (already running on this VPS for AC2 + other services) fronts this
+# with HTTPS on its own subdomain — see Caddyfile.snippet.example. The judge
+# does its own auth (LAB_API_KEY / x-lab-key) + rate-limiting, so Caddy just
+# forwards.
+services:
+  acs-lab-backend:
+    build:
+      context: ../..          # repo root — Dockerfile copies lab/{judge,server}
+      dockerfile: deploy/vps-judge/Dockerfile
+      args:
+        GIT_SHA: ${GIT_SHA:-unknown}
+        BUILT_AT: ${BUILT_AT:-unknown}
+    image: acs-lab-backend:latest
+    container_name: acs-lab-backend
+    restart: unless-stopped
+    # Hardening: the image runs as non-root `node` (see Dockerfile). Below caps
+    # the blast radius of a compromised/runaway judge on this shared VPS.
+    security_opt:
+      - no-new-privileges:true   # block setuid privilege escalation inside the container
+    mem_limit: 512m              # judge is light (calls the external inference server; low local footprint)
+    cpus: "1.0"
+    pids_limit: 256
+    env_file:
+      - .env                  # deploy/vps-judge/.env — copy from .env.example; NEVER commit
+    ports:
+      - "127.0.0.1:8788:8788"   # localhost-only; Caddy fronts it with HTTPS
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8788/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

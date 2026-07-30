@@ -1,0 +1,21 @@
+{
+  "name": "algolia-central-website",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Demo website that embeds the compiled <algolia-central-chat> widget.",
+  "scripts": {
+    "sync:widget": "node scripts/sync-widget.mjs",
+    "predev": "npm run sync:widget",
+    "prebuild": "npm run sync:widget",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@algolia-central/chat-widget": "file:../algolia-chat"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "main": false
+    }
+  },
+  "installCommand": "echo 'each package installs inside scripts/deploy/build_prod_site.sh'",
+  "buildCommand": "bash scripts/deploy/build_prod_site.sh",
+  "outputDirectory": "dist-widget",
+  "rewrites": [
+    { "source": "/app", "destination": "/app/index.html" },
+    { "source": "/app/(.*)", "destination": "/app/index.html" }
+  ]
+}

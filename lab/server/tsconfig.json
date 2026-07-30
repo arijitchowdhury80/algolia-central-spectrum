@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": false,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": false,
+    "isolatedModules": true,
+    "noEmit": true
+  },
+  "//": "Tests run via the local vitest (npm test -> vitest.config.ts), so tsc checks src logic only; *.test.ts is the vitest surface.",
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts"]
+}

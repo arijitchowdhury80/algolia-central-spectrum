@@ -1,0 +1,26 @@
+.env.local
+.env.local.bak
+.env
+deploy/vps-judge/.env
+node_modules/
+data/
+crawler_ids.json
+army_ids.json
+*.log
+.DS_Store
+lab/**/node_modules/
+.vercel
+
+# Assembled widget demo site (build output of scripts/widget/build_demo_site.mjs)
+dist-widget/
+
+# Built by `cd web-widget && npm run build`. NOT committed: it bakes in
+# VITE_JUDGE_URL and VITE_LAB_API_KEY at build time, so a committed copy would
+# both leak a key and pin whatever environment the last local build used.
+web-widget/dist/
+dist-widget*/
+
+# Runtime output of scripts/agents/snapshot_panel_agents.mjs and
+# scripts/crawler/repair_citation_urls.mjs — local evidence, not shipped.
+scripts/agents/snapshots/
+scripts/crawler/citation-url-evidence/

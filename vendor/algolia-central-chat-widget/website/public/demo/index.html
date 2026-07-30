@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adobe Spectrum — Component Library Demo</title>
+  <link rel="icon" href="/brand/algolia-mark.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/demo/demo.css" />
+</head>
+<body>
+
+<!-- ── Nav ─────────────────────────────────────────────────────────────── -->
+<nav class="demo-nav">
+  <div class="wrap">
+    <a class="nav-logo" href="/demo/">
+      <img src="/brand/adobe-logo.svg" alt="Adobe" height="22" />
+      <span class="nav-sep">|</span>
+      <span>Spectrum</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/demo/" class="active">Overview</a></li>
+      <li><a href="/demo/button.html">Button</a></li>
+      <li><a href="/demo/combobox.html">ComboBox</a></li>
+      <li><a href="/demo/migration.html">Migration</a></li>
+      <li><a href="/demo/get-started.html">Get Started</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ── Hero ───────────────────────────────────────────────────────────── -->
+<header class="demo-hero">
+  <div class="wrap">
+    <p class="eyebrow">Design System</p>
+    <h1>Adobe Spectrum</h1>
+    <p class="hero-sub">A comprehensive design system and component library for building consistent, accessible Adobe experiences. Covers design foundations, React Spectrum v3, and the new Spectrum 2.</p>
+    <div class="hero-actions">
+      <a href="/demo/get-started.html" class="btn btn-primary" data-cta="get-started-hero">Get Started</a>
+      <a href="/demo/button.html" class="btn btn-ghost">Browse Components →</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><strong>100+</strong><span>Components</span></div>
+      <div class="stat"><strong>3</strong><span>Content Sources</span></div>
+      <div class="stat"><strong>WCAG AA</strong><span>Accessible</span></div>
+      <div class="stat"><strong>React</strong><span>First-class Support</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ── Content sources ────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="wrap">
+    <h2 class="section-title">What's in the Spectrum corpus</h2>
+    <p class="section-sub">The AI assistant is grounded in three distinct documentation sources — each indexed and searchable.</p>
+    <div class="card-grid">
+      <div class="card card-design">
+        <div class="card-icon">🎨</div>
+        <h3>Spectrum Design Docs</h3>
+        <p>Design principles, component anatomy, states, usage guidance, color, motion, typography, and accessibility foundations from the official Spectrum 2 design documentation.</p>
+        <span class="tag">SpectrumDesignDocs · 103 records</span>
+        <a href="/demo/button.html" class="card-link" data-cta="explore-design-docs">Explore design guidance →</a>
+      </div>
+      <div class="card card-react-s2">
+        <div class="card-icon">⚙</div>
+        <h3>React Spectrum S2</h3>
+        <p>The latest generation of React Spectrum. Component APIs, prop types, TypeScript types, controlled patterns, code examples, and migration from v3.</p>
+        <span class="tag">ReactSpectrumS2 · 111 records</span>
+        <a href="/demo/combobox.html" class="card-link" data-cta="explore-react-s2">Explore React S2 →</a>
+      </div>
+      <div class="card card-react-v3">
+        <div class="card-icon">📦</div>
+        <h3>React Spectrum V3</h3>
+        <p>The stable v3 library powering many Adobe products. Full prop reference, hooks, collections API, and overlap with S2 to help you plan migrations.</p>
+        <span class="tag">ReactSpectrumV3 · 144 records</span>
+        <a href="/demo/migration.html" class="card-link" data-cta="explore-react-v3">Explore v3 → S2 migration →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Featured components ───────────────────────────────────────────── -->
+<section class="section bg-soft">
+  <div class="wrap">
+    <h2 class="section-title">Featured Components</h2>
+    <p class="section-sub">Explore individual components — each page includes design guidance, code examples, and live demos.</p>
+    <div class="component-grid">
+      <a href="/demo/button.html" class="comp-card" data-cta="nav-button">
+        <div class="comp-preview">
+          <button class="preview-btn preview-btn-primary">Primary</button>
+          <button class="preview-btn preview-btn-secondary">Secondary</button>
+          <button class="preview-btn preview-btn-quiet">Quiet</button>
+        </div>
+        <div class="comp-info">
+          <strong>Button</strong>
+          <span>ActionButton, ToggleButton, Link</span>
+        </div>
+      </a>
+      <a href="/demo/combobox.html" class="comp-card" data-cta="nav-combobox">
+        <div class="comp-preview">
+          <div class="preview-combobox">
+            <input type="text" placeholder="Search components…" readonly />
+            <span class="caret">▾</span>
+          </div>
+        </div>
+        <div class="comp-info">
+          <strong>ComboBox</strong>
+          <span>Controlled, async, filtering</span>
+        </div>
+      </a>
+      <a href="/demo/migration.html" class="comp-card" data-cta="nav-migration">
+        <div class="comp-preview migration-preview">
+          <span class="chip chip-v3">v3</span>
+          <span class="arrow">→</span>
+          <span class="chip chip-s2">S2</span>
+        </div>
+        <div class="comp-info">
+          <strong>Migration Guide</strong>
+          <span>v3 → Spectrum 2</span>
+        </div>
+      </a>
+      <a href="/demo/get-started.html" class="comp-card cta-card" data-cta="nav-get-started">
+        <div class="comp-preview">
+          <span class="start-icon">🚀</span>
+        </div>
+        <div class="comp-info">
+          <strong>Get Started</strong>
+          <span>Installation, setup, first component</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Context demo callout ──────────────────────────────────────────── -->
+<section class="section">
+  <div class="wrap">
+    <div class="context-callout">
+      <div class="callout-text">
+        <h2>Context-aware AI assistant</h2>
+        <p>This demo showcases Algolia's proactive chat experience. The assistant watches what you read, tracks which components interest you, and — when it has enough context — opens a personalized greeting tailored to your browsing pattern and selected persona.</p>
+        <ul>
+          <li>Select a <strong>persona</strong> in the top-right dropdown to engage the agent with a different focus (Designer, Developer, or Product Manager).</li>
+          <li>Browse a few pages, click CTAs, or scroll deep — the concierge agent will notice and proactively offer help.</li>
+          <li>The chat widget always answers from the <strong>live Algolia Agent Studio</strong> agents, grounded in real Spectrum documentation.</li>
+        </ul>
+        <a href="/demo/button.html" class="btn btn-primary" data-cta="start-browsing">Start browsing components →</a>
+      </div>
+      <div class="callout-badge">
+        <img src="/brand/algolia-mark.svg" alt="Algolia" width="64" />
+        <p>Powered by<br/><strong>Algolia Agent Studio</strong></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Widget ────────────────────────────────────────────────────────── -->
+<script src="/widget-bundles/algolia-confidence-badge.js"></script>
+<script src="/widget-bundles/algolia-chat.js"></script>
+
+<algolia-instant-search app-id="0EXRPAXB56" api-key="REDACTED" index-name="ACS_SPECTRUM_MULTI">
+  <algolia-chat
+    accent-color="#003DFF"
+    brand-name="Adobe Spectrum"
+    product-title="Spectrum Assistant"
+    subtitle="Powered by Algolia"
+    corpus-name="Adobe Spectrum"
+    disclaimer="Every answer cites its source."
+    powered-by-logo="/brand/algolia-mark.svg"
+    default-open-mode="docked"
+    auto-engage-toggle
+  >
+    <algolia-agent role="primary"    agent-id="95826da6-d1b6-4b81-b061-bfb52b881356" label="Spectrum Assistant"></algolia-agent>
+    <algolia-agent role="specialist" agent-id="ae127977-c728-4b7c-bc15-6502a77873d1" label="React Expert" key="react"></algolia-agent>
+    <algolia-agent role="classifier" agent-id="dbb4faa9-e917-4be9-b8ee-6dfd9a81daef"></algolia-agent>
+    <algolia-chat-confidence mode="algolia">
+      <algolia-agent agent-id="4deb53fb-402c-4ab9-97f3-a2744ff4156f"></algolia-agent>
+      <algolia-agent role="skeptic"  agent-id="0eba9eb4-dd20-42a4-8ae3-41cb84b54a79"></algolia-agent>
+      <algolia-agent role="referee"  agent-id="b0f03391-3433-42ea-bc50-183ba990e697"></algolia-agent>
+      <algolia-agent role="advocate" agent-id="b084b478-bd3a-41a7-9a29-818ae0fb9706"></algolia-agent>
+    </algolia-chat-confidence>
+
+    <img slot="logo" src="/brand/adobe-logo.svg" alt="Adobe" />
+
+    <!-- Icon for the header "New conversation" button, served from the site
+         (not hardcoded in the widget). -->
+    <img slot="new-chat-icon" src="/brand/new-chat.svg" alt="" />
+
+    <div
+      slot="welcome"
+      style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;"
+    >
+      <div
+        style="width:80px;height:80px;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(250,15,0,0.22);"
+      >
+        <img
+          src="/brand/spectrum-assistant-avatar.png"
+          alt="Spectrum AI assistant"
+          style="width:100%;height:100%;object-fit:cover;"
+        />
+      </div>
+      <h2 style="margin:0;font-size:clamp(24px,3.5vw,36px);font-weight:700;color:#111;">
+        Hello, how can I help you today?
+      </h2>
+      <p style="margin:0;font-size:14px;color:#666;max-width:360px;">
+        Ask anything about Adobe Spectrum — design tokens, React components, or accessibility.
+      </p>
+    </div>
+
+    <style id="demo-custom-skin" slot="theme">
+      /* Blank by default — set by the skin buttons above. */
+    </style>
+
+    <div slot="sample-questions">
+      <section data-title="Foundations">
+        <button>Which accent color tokens does Spectrum provide?</button>
+        <button>What type styles and sizes does Spectrum define?</button>
+        <button>How does the Spectrum spacing and sizing scale work?</button>
+      </section>
+      <section data-title="Choosing a component">
+        <button>When should I use a ComboBox vs a Picker?</button>
+        <button>When should I use a Dialog vs a Tray?</button>
+        <button>ActionButton vs Button — which fits my use case?</button>
+      </section>
+      <section data-title="Building in React">
+        <button>How do I make a ComboBox controlled in React Spectrum?</button>
+        <button>How do I add a date range picker in React?</button>
+        <button>How do I build a form with validation in React Spectrum?</button>
+      </section>
+    </div>
+
+    <div slot="source-facets">
+      <span data-value="SpectrumDesignDocs">Spectrum Design Docs</span>
+      <span data-value="ReactSpectrumS2">React Spectrum S2</span>
+      <span data-value="ReactSpectrumV3">React Spectrum v3</span>
+    </div>
+  </algolia-chat>
+</algolia-instant-search>
+
+<!-- Context engine (tracking + persona dropdown + proactive analysis) -->
+<script type="module" src="/context/context-engine.js"></script>
+
+</body>
+</html>

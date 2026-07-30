@@ -1,0 +1,45 @@
+/**
+ * Brand lockup styles — self-contained, consumed inside the custom element's
+ * shadow root. All colors, type, and spacing read from `--algolia-*` custom
+ * properties with neutral fallbacks so the element renders correctly both
+ * inside <algolia-chat> (which injects the full token sheet) and as a
+ * standalone <algolia-brand> drop-in on any page.
+ *
+ * CSS custom properties inherit through shadow-DOM boundaries, so the widget's
+ * theme is automatically picked up when this element is nested inside the widget.
+ */
+
+:host {
+  display: inline-flex;
+}
+
+/* ─── Lockup row ────────────────────────────────────────────────────────────── */
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--algolia-space-3, 12px);
+  font-family: var(--algolia-font-sans, system-ui, sans-serif);
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+/* ─── Logo image ────────────────────────────────────────────────────────────── */
+
+.brand__logo {
+  display: block;
+  height: var(--algolia-brand-logo-size, 32px);
+  width: auto;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+/* ─── Brand name text ───────────────────────────────────────────────────────── */
+
+.brand__name {
+  font-size: var(--algolia-fs-base, 15px);
+  font-weight: var(--algolia-fw-medium, 500);
+  line-height: 1.2;
+  color: var(--algolia-text, #1a1a1a);
+  white-space: nowrap;
+}

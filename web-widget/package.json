@@ -1,0 +1,20 @@
+{
+  "name": "acs-widget-enhance",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "ACS enhancement layer for the vendored Algolia chat widget. Host-page config + our deterministic grounding verdict. Never edits vendor/.",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vite": "^7.3.6",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "@lab/judge": "file:../lab/judge"
+  }
+}

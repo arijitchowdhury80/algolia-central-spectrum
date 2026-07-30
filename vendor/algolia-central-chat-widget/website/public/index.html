@@ -1,0 +1,2043 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Adobe Spectrum Design System Assistant — Powered by Algolia</title>
+    <meta
+      name="description"
+      content="An AI assistant grounded in the Adobe Spectrum design system. Ask about design tokens, React components, and accessibility — every answer cited and confidence-scored."
+    />
+    <link rel="icon" href="/brand/algolia-mark.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #131313;
+        --ink-soft: #464646;
+        --muted: #6e6e6e;
+        --line: #e1e1e1;
+        --bg: #ffffff;
+        --bg-soft: #f8f8f8;
+        --accent: #fa0f00;
+        --accent-2: #d10c00;
+        --accent-tint: #fff0ef;
+        --adobe-red: #fa0f00;
+        --nebula: linear-gradient(135deg, #fa0f00 0%, #ff4422 100%);
+        --radius: 8px;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.07), 0 4px 8px rgba(0, 0, 0, 0.05);
+        --shadow-lg: 0 8px 28px rgba(250, 15, 0, 0.18);
+        --maxw: 1160px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Source Sans 3', adobe-clean, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        color: var(--ink);
+        background: var(--bg);
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.6;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .wrap {
+        max-width: var(--maxw);
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--accent);
+        background: var(--accent-tint);
+        border: 1px solid #ffb3af;
+        padding: 5px 12px;
+        border-radius: 999px;
+      }
+
+      .eyebrow .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: inherit;
+        font-weight: 600;
+        font-size: 15px;
+        padding: 11px 22px;
+        border-radius: 999px;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+        box-shadow: 0 2px 8px rgba(250, 15, 0, 0.24);
+      }
+
+      .btn-primary:hover {
+        background: #d10c00;
+        border-color: #d10c00;
+        box-shadow: 0 4px 14px rgba(250, 15, 0, 0.36);
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+
+      .btn-ghost:hover {
+        background: var(--accent-tint);
+      }
+
+      /* ---------- Nav ---------- */
+      header.nav {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: saturate(140%) blur(12px);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 64px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        font-size: 17px;
+        text-decoration: none;
+      }
+
+      .brand .collab {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .brand .collab-plus {
+        font-size: 18px;
+        font-weight: 300;
+        color: var(--muted);
+        line-height: 1;
+      }
+
+      .brand .mark {
+        width: 36px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        background: transparent;
+        border-radius: 0;
+        padding: 0;
+      }
+
+      .brand .mark img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .brand .mark.rounded img {
+        border-radius: 8px;
+      }
+
+      .brand .brand-text {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .brand small {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--ink-soft);
+      }
+
+      .nav-links a:hover {
+        color: var(--accent);
+      }
+
+      .nav-cta {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .nav-powered {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      .nav-powered strong {
+        color: var(--ink-soft);
+        font-weight: 600;
+      }
+
+      @media (max-width: 860px) {
+        .nav-links {
+          display: none;
+        }
+        .nav-powered {
+          display: none;
+        }
+      }
+
+      /* ---------- Hero ---------- */
+      .hero {
+        position: relative;
+        overflow: hidden;
+        padding: 84px 0 72px;
+        background: radial-gradient(1200px 500px at 70% -10%, #fff0ef 0%, rgba(255, 255, 255, 0) 60%),
+          radial-gradient(900px 500px at 0% 10%, #fff5f4 0%, rgba(255, 255, 255, 0) 55%);
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 56px;
+        align-items: center;
+      }
+
+      .hero h1 {
+        font-size: clamp(38px, 5.4vw, 62px);
+        line-height: 1.05;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin: 22px 0 18px;
+      }
+
+      .hero h1 .grad {
+        background: var(--nebula);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .hero p.lead {
+        font-size: 19px;
+        color: var(--ink-soft);
+        max-width: 540px;
+        margin: 0 0 30px;
+      }
+
+      .hero-cta {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+
+      .hero-meta {
+        display: flex;
+        gap: 26px;
+        margin-top: 34px;
+        flex-wrap: wrap;
+      }
+
+      .hero-meta .stat .num {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .hero-meta .stat .lbl {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      /* Hero visual — orchestration diagram */
+      .orchestrator {
+        position: relative;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 26px;
+        box-shadow: var(--shadow-lg);
+      }
+
+      .orchestrator .bubble {
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-size: 14px;
+      }
+
+      .bubble.user {
+        background: var(--accent);
+        color: #fff;
+        margin-left: auto;
+        max-width: 78%;
+        border-bottom-right-radius: 4px;
+      }
+
+      .bubble.assistant {
+        background: var(--bg-soft);
+        border: 1px solid var(--line);
+        color: var(--ink);
+        max-width: 90%;
+        margin-top: 12px;
+        border-bottom-left-radius: 4px;
+      }
+
+      .agent-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 6px 11px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+
+      .chip .swatch {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+
+      .index-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+        flex-wrap: wrap;
+      }
+
+      .index-tag {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        color: var(--accent);
+        background: var(--accent-tint);
+        border: 1px solid #ffb3af;
+        border-radius: 8px;
+        padding: 5px 9px;
+      }
+
+      .verdict {
+        margin-top: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #0a7a3f;
+        background: #ecfdf3;
+        border: 1px solid #c6f0d8;
+        border-radius: 10px;
+        padding: 9px 12px;
+      }
+
+      .verdict .score {
+        margin-left: auto;
+        font-size: 13px;
+      }
+
+      @media (max-width: 900px) {
+        .hero-grid {
+          grid-template-columns: 1fr;
+          gap: 40px;
+        }
+      }
+
+      /* ---------- Logos strip ---------- */
+      .strip {
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        background: var(--bg-soft);
+        padding: 26px 0;
+      }
+
+      .strip .wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+
+      .strip .label {
+        font-size: 13px;
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      .strip .items {
+        display: flex;
+        gap: 34px;
+        flex-wrap: wrap;
+        align-items: center;
+        font-weight: 700;
+        color: #9aa2b6;
+        font-size: 17px;
+        letter-spacing: 0.01em;
+      }
+
+      /* ---------- Section shell ---------- */
+      section.block {
+        padding: 92px 0;
+      }
+
+      .section-head {
+        max-width: 680px;
+        margin: 0 auto 56px;
+        text-align: center;
+      }
+
+      .section-head h2 {
+        font-size: clamp(28px, 3.6vw, 42px);
+        line-height: 1.12;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin: 16px 0 14px;
+      }
+
+      .section-head p {
+        font-size: 18px;
+        color: var(--ink-soft);
+        margin: 0;
+      }
+
+      /* ---------- Feature grid ---------- */
+      .features {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 22px;
+      }
+
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 28px;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: #ffb3af;
+      }
+
+      .card .icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: var(--accent-tint);
+        color: var(--accent);
+        margin-bottom: 18px;
+      }
+
+      .card h3 {
+        font-size: 19px;
+        margin: 0 0 8px;
+        font-weight: 700;
+      }
+
+      .card p {
+        margin: 0;
+        color: var(--ink-soft);
+        font-size: 15px;
+      }
+
+      @media (max-width: 900px) {
+        .features {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ---------- Multi-index section ---------- */
+      .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 56px;
+        align-items: center;
+      }
+
+      .split.alt {
+        background: var(--bg-soft);
+        border-radius: 28px;
+        padding: 48px;
+        border: 1px solid var(--line);
+      }
+
+      .split h2 {
+        font-size: clamp(26px, 3.2vw, 38px);
+        line-height: 1.14;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin: 16px 0 16px;
+      }
+
+      .split p {
+        color: var(--ink-soft);
+        font-size: 17px;
+        margin: 0 0 20px;
+      }
+
+      .checklist {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 14px;
+      }
+
+      .checklist li {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        font-size: 15px;
+        color: var(--ink);
+      }
+
+      .checklist .tick {
+        flex: none;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        margin-top: 2px;
+        font-size: 12px;
+      }
+
+      /* Index fan visual */
+      .fan {
+        position: relative;
+        display: grid;
+        gap: 14px;
+      }
+
+      .fan .router {
+        justify-self: center;
+        background: var(--nebula);
+        color: #fff;
+        border-radius: 16px;
+        padding: 16px 22px;
+        font-weight: 700;
+        box-shadow: var(--shadow-lg);
+        text-align: center;
+      }
+
+      .fan .router small {
+        display: block;
+        font-weight: 500;
+        opacity: 0.85;
+        font-size: 12px;
+        margin-top: 2px;
+      }
+
+      .fan .lanes {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .lane {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .lane .name {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      .lane .desc {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      @media (max-width: 900px) {
+        .split {
+          grid-template-columns: 1fr;
+          gap: 34px;
+        }
+        .split.alt {
+          padding: 32px 24px;
+        }
+      }
+
+      /* ---------- How it works ---------- */
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        counter-reset: step;
+      }
+
+      .step {
+        position: relative;
+        padding: 26px 22px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #fff;
+      }
+
+      .step::before {
+        counter-increment: step;
+        content: counter(step);
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 16px;
+      }
+
+      .step h4 {
+        margin: 0 0 6px;
+        font-size: 16px;
+      }
+
+      .step p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ink-soft);
+      }
+
+      @media (max-width: 900px) {
+        .steps {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @media (max-width: 560px) {
+        .steps {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ---------- Embed / code ---------- */
+      .code-wrap {
+        background: #0b1020;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid #1a2138;
+      }
+
+      .code-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 18px;
+        border-bottom: 1px solid #1a2138;
+      }
+
+      .code-bar .dots {
+        display: flex;
+        gap: 6px;
+      }
+
+      .code-bar .dots i {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+
+      .code-bar .fname {
+        color: #7c8499;
+        font-size: 13px;
+        margin-left: 8px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+
+      pre {
+        margin: 0;
+        padding: 22px;
+        overflow-x: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13.5px;
+        line-height: 1.7;
+        color: #d7dcec;
+      }
+
+      .tok-tag {
+        color: #7aa2ff;
+      }
+      .tok-attr {
+        color: #9ad4b7;
+      }
+      .tok-str {
+        color: #f5c177;
+      }
+      .tok-com {
+        color: #5a637d;
+        font-style: italic;
+      }
+
+      /* ---------- Try it panel ---------- */
+      .try {
+        background: var(--nebula);
+        border-radius: 28px;
+        padding: 56px 48px;
+        color: #fff;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .try h2 {
+        font-size: clamp(28px, 3.6vw, 40px);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        margin: 0 0 12px;
+      }
+
+      .try p {
+        font-size: 18px;
+        opacity: 0.92;
+        max-width: 560px;
+        margin: 0 auto 28px;
+      }
+
+      .try .btn-primary {
+        background: #fff;
+        color: var(--accent);
+        border-color: #fff;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+      }
+
+      .try .btn-ghost {
+        background: transparent;
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.6);
+      }
+
+      .try .btn-ghost:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      .try .demo-row {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 30px;
+      }
+
+      .skin-btn {
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 999px;
+        padding: 9px 16px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .skin-btn:hover {
+        background: rgba(255, 255, 255, 0.24);
+      }
+
+      /* ---------- Footer ---------- */
+      footer.site {
+        border-top: 1px solid var(--line);
+        padding: 54px 0 40px;
+        background: var(--bg-soft);
+      }
+
+      .foot-grid {
+        display: flex;
+        justify-content: space-between;
+        gap: 40px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+
+      .foot-grid p {
+        color: var(--muted);
+        font-size: 14px;
+        max-width: 320px;
+        margin: 12px 0 0;
+      }
+
+      .foot-cols {
+        display: flex;
+        gap: 60px;
+        flex-wrap: wrap;
+      }
+
+      .foot-col h5 {
+        margin: 0 0 12px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+
+      .foot-col a {
+        display: block;
+        font-size: 14px;
+        color: var(--ink-soft);
+        margin-bottom: 8px;
+      }
+
+      .foot-col a:hover {
+        color: var(--accent);
+      }
+
+      .foot-bottom {
+        margin-top: 40px;
+        padding-top: 22px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      /* ---------- Agent flow diagrams ---------- */
+      .flow-card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .flow-header {
+        padding: 24px 32px 20px;
+        border-bottom: 1px solid var(--line);
+        background: var(--bg-soft);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+
+      .flow-badge {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        padding: 4px 12px;
+        border-radius: 999px;
+      }
+
+      .chat-badge {
+        background: var(--accent-tint);
+        color: var(--accent);
+        border: 1px solid #ffb3af;
+      }
+
+      .judge-badge {
+        background: #f0f4ff;
+        color: #3558d4;
+        border: 1px solid #c5d1f8;
+      }
+
+      .flow-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .flow-body {
+        padding: 32px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+      }
+
+      .flow-node {
+        width: 100%;
+        max-width: 560px;
+        background: #fff;
+        border: 1.5px solid var(--line);
+        border-radius: 12px;
+        padding: 16px 20px;
+        text-align: center;
+        box-shadow: var(--shadow-sm);
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+
+      .flow-node:hover {
+        border-color: var(--accent);
+        box-shadow: 0 4px 18px rgba(250,15,0,0.12);
+      }
+
+      .flow-icon {
+        font-size: 22px;
+        margin-bottom: 4px;
+      }
+
+      .flow-label {
+        font-weight: 700;
+        font-size: 15px;
+        color: var(--ink);
+      }
+
+      .flow-sub {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .flow-chips {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+
+      .flow-chip {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: var(--accent-tint);
+        color: var(--accent);
+        border: 1px solid #ffb3af;
+      }
+
+      .flow-arrow {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        letter-spacing: 0.03em;
+        padding: 10px 0;
+        text-align: center;
+      }
+
+      /* Branch for primary/specialist */
+      .flow-branch {
+        width: 100%;
+        max-width: 560px;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .flow-branch-node {
+        background: #fff;
+        border: 1.5px solid var(--line);
+        border-radius: 12px;
+        padding: 14px 16px;
+        text-align: center;
+        box-shadow: var(--shadow-sm);
+        transition: border-color 0.2s;
+      }
+
+      .flow-branch-node:hover {
+        border-color: var(--accent);
+      }
+
+      .flow-branch-or {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      .node-primary { border-top: 3px solid var(--accent); }
+      .node-specialist { border-top: 3px solid #d10c00; }
+      .node-classifier { border-top: 3px solid #e87000; }
+      .node-user { border-top: 3px solid var(--ink); }
+      .node-answer { border-top: 3px solid #0a7a3f; }
+      .node-artifact { border-top: 3px solid var(--ink); }
+      .node-gate { border-top: 3px solid #e87000; }
+      .node-synthesizer { border-top: 3px solid #3558d4; }
+      .node-badge { border-top: 3px solid #0a7a3f; }
+      .node-signals { border-top: 3px solid var(--ink); }
+      .node-persona { border-top: 3px solid #3558d4; }
+      .node-concierge { border-top: 3px solid #e87000; }
+      .node-greeting { border-top: 3px solid #0a7a3f; }
+
+      /* Proactive flow: the visitor stays in control, so the "stay quiet"
+         outcome is deliberately styled as an equal, unremarkable branch. */
+      .node-quiet { border-top: 3px solid var(--line); }
+      .node-quiet .flow-label { color: var(--muted); }
+
+      .proactive-badge {
+        background: #ecfdf3;
+        color: #0a7a3f;
+        border: 1px solid #c6f0d8;
+      }
+
+      .flow-chip.chip-neutral {
+        background: var(--bg-soft);
+        color: var(--ink-soft);
+        border-color: var(--line);
+      }
+
+      /* Cross-cutting guarantees that sit beside the flow rather than inside it,
+         so they get a rule separating them from the steps they annotate. */
+      .flow-guards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        width: 100%;
+        margin-top: 32px;
+        padding-top: 28px;
+        border-top: 1px dashed var(--line);
+      }
+
+      .flow-guard-card {
+        background: var(--bg-soft);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px 18px;
+      }
+
+      .flow-guard-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+
+      .flow-guard-desc {
+        font-size: 12.5px;
+        line-height: 1.5;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+
+      .flow-guard-code {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 11px;
+        color: var(--ink-soft);
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 1px 5px;
+      }
+
+      /* Algolia index cards */
+      .flow-indices {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        width: 100%;
+        max-width: 560px;
+      }
+
+      .flow-index-card {
+        background: var(--bg-soft);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 12px;
+        text-align: center;
+      }
+
+      .flow-index-name {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--accent);
+      }
+
+      .flow-index-desc {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 3px;
+      }
+
+      /* Judge panel */
+      .flow-judges {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        width: 100%;
+        max-width: 700px;
+      }
+
+      .flow-judge-card {
+        border: 1.5px solid var(--line);
+        border-radius: 12px;
+        padding: 16px;
+        background: #fff;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.18s, box-shadow 0.18s;
+      }
+
+      .flow-judge-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .flow-judge-card.skeptic { border-top: 3px solid #fa0f00; }
+      .flow-judge-card.referee { border-top: 3px solid #e87000; }
+      .flow-judge-card.advocate { border-top: 3px solid #0a7a3f; }
+
+      .flow-judge-role {
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--ink);
+      }
+
+      .flow-judge-model {
+        font-size: 11px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .flow-judge-weight {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        margin-top: 6px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: var(--bg-soft);
+        border: 1px solid var(--line);
+        color: var(--ink-soft);
+      }
+
+      .flow-judge-desc {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 8px;
+        line-height: 1.5;
+      }
+
+      .flow-note {
+        width: 100%;
+        max-width: 700px;
+        background: #fffbf0;
+        border: 1px solid #f0d98a;
+        border-radius: 8px;
+        padding: 10px 16px;
+        font-size: 12.5px;
+        color: #7a5800;
+        text-align: center;
+        margin: 8px 0 0;
+      }
+
+      .flow-gate-row {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+
+      .flow-gate-chip {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid;
+      }
+
+      .flow-gate-chip.pass   { background: #ecfdf3; color: #0a7a3f; border-color: #c6f0d8; }
+      .flow-gate-chip.borderline { background: #fffbf0; color: #7a5800; border-color: #f0d98a; }
+      .flow-gate-chip.fail   { background: #fff0ef; color: #c00; border-color: #ffb3af; }
+
+      @media (max-width: 700px) {
+        .flow-indices { grid-template-columns: repeat(2, 1fr); }
+        .flow-judges  { grid-template-columns: 1fr; }
+        .flow-branch  { grid-template-columns: 1fr; }
+        .flow-guards  { grid-template-columns: 1fr; }
+        .flow-branch-or { display: none; }
+        .flow-header  { flex-direction: column; align-items: flex-start; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============ NAV ============ -->
+    <header class="nav">
+      <div class="wrap nav-inner">
+        <a class="brand" href="#top">
+          <span class="collab">
+            <span class="mark"><img src="/brand/adobe-logo.png" alt="Adobe" /></span>
+            <span class="collab-plus">+</span>
+            <span class="mark rounded"><img src="/brand/algolia-logo.png" alt="Algolia" /></span>
+          </span>
+          <span class="brand-text">
+            Spectrum
+            <small>Design System Assistant</small>
+          </span>
+        </a>
+        <nav class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#indices">Multi-index</a>
+          <a href="#how">How it works</a>
+          <a href="#agent-flows">Agent flows</a>
+          <a href="#proactive">Proactive</a>
+          <a href="#embed">Embed</a>
+        </nav>
+        <div class="nav-cta" style="display:flex;gap:8px;align-items:center;">
+          <a href="/demo/" style="font-size:13px;font-weight:600;color:#003DFF;text-decoration:none;padding:7px 14px;border:1.5px solid #003DFF;border-radius:7px;transition:background .15s;" onmouseenter="this.style.background='#eef2ff'" onmouseleave="this.style.background='transparent'">Proactive Demo →</a>
+          <button class="btn btn-primary" onclick="openAssistant()">Try the assistant</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="top">
+      <div class="wrap hero-grid">
+        <div>
+          <span class="eyebrow"><span class="dot"></span> Adobe Spectrum × Algolia</span>
+          <h1>
+            Ask anything about<br />
+            <span class="grad">Adobe Spectrum.</span>
+          </h1>
+          <p class="lead">
+            A grounded AI assistant trained on the full Adobe Spectrum design system — design tokens,
+            React components, accessibility guidelines, and more. Every answer is cited and
+            confidence-scored, powered by Algolia's multi-agent engine.
+          </p>
+          <div class="hero-cta">
+            <button class="btn btn-primary" onclick="openAssistant()">
+              Ask the assistant →
+            </button>
+            <a class="btn btn-ghost" href="#how">See how it works</a>
+          </div>
+          <div class="hero-meta">
+            <div class="stat">
+              <div class="num">3 indices</div>
+              <div class="lbl">Design, React v3 &amp; S2 docs</div>
+            </div>
+            <div class="stat">
+              <div class="num">3-judge</div>
+              <div class="lbl">Confidence panel per answer</div>
+            </div>
+            <div class="stat">
+              <div class="num">1 &lt;script&gt;</div>
+              <div class="lbl">Drop-in embed, isolated CSS</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live orchestration mock -->
+        <div class="orchestrator" aria-hidden="true">
+          <div class="bubble user">Which color tokens should I use for a warning banner?</div>
+          <div class="agent-row">
+            <span class="chip"><span class="swatch" style="background:#fa0f00"></span>Classifier → routing</span>
+            <span class="chip"><span class="swatch" style="background:#d10c00"></span>Design specialist</span>
+          </div>
+          <div class="index-row">
+            <span class="index-tag">design_tokens</span>
+            <span class="index-tag">component_docs</span>
+            <span class="index-tag">react_code</span>
+          </div>
+          <div class="bubble assistant">
+            Use the semantic <strong>negative</strong> palette — <code>--spectrum-negative-visual-color</code>
+            for the icon and border. It stays accessible in light and dark themes.
+          </div>
+          <div class="verdict">
+            ✓ Grounded &amp; cited across 3 sources
+            <span class="score">Grounded</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LOGO STRIP ============ -->
+    <div class="strip">
+      <div class="wrap">
+        <span class="label">AI assistant grounded in</span>
+        <div class="items">
+          <span>Design&nbsp;Tokens</span>
+          <span>React&nbsp;Spectrum</span>
+          <span>Accessibility</span>
+          <span>Components</span>
+          <span>Icons</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ FEATURES ============ -->
+    <section class="block" id="features">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow"><span class="dot"></span> Why multi-agent</span>
+          <h2>Spectrum expertise, grounded and cited</h2>
+          <p>
+            Specialist AI agents own distinct parts of the Spectrum corpus — design tokens,
+            component docs, React code — so every answer draws from the right source.
+          </p>
+        </div>
+
+        <div class="features">
+          <div class="card">
+            <div class="icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v4M12 11l-6 6M12 11l6 6"/></svg>
+            </div>
+            <h3>Intelligent routing</h3>
+            <p>
+              A lightweight classifier reads intent and routes the question to the agent — and
+              the Spectrum index — best equipped to answer it.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/></svg>
+            </div>
+            <h3>Three Spectrum indices</h3>
+            <p>
+              Design docs, React Spectrum v3, and S2 each live in a separate Algolia index —
+              synthesized into one grounded, unified answer.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            </div>
+            <h3>Grounded &amp; cited</h3>
+            <p>
+              Every claim links back to the Spectrum source it came from. No hallucinated APIs,
+              no invented token names — just traceable answers.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h3>Confidence judge</h3>
+            <p>
+              A three-judge panel — skeptic, referee, advocate — scores each answer for grounding
+              and surfaces a live confidence badge your team can trust.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-6 0v4"/><rect x="4" y="9" width="16" height="11" rx="2"/></svg>
+            </div>
+            <h3>Shadow-DOM isolation</h3>
+            <p>
+              The widget renders inside its own Shadow DOM. Spectrum styles never conflict with
+              the host page — pixel-perfect on any Spectrum site.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+            </div>
+            <h3>Deep-dive handoff</h3>
+            <p>
+              Start with a quick answer, then let users opt into a specialist deep dive on
+              React Spectrum code — streamed live, on demand.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MULTI-INDEX ============ -->
+    <section class="block" id="indices" style="padding-top: 0">
+      <div class="wrap">
+        <div class="split alt">
+          <div>
+            <span class="eyebrow"><span class="dot"></span> Federated by design</span>
+            <h2>The full Spectrum corpus, intelligently federated</h2>
+            <p>
+              The Adobe Spectrum design system spans design guidelines, React Spectrum v3, and the
+              new S2 library. All three live in one federated Algolia index, tagged by source. The
+              multi-agent router filters to exactly the right source — so a single question can span
+              all three.
+            </p>
+            <ul class="checklist">
+              <li><span class="tick">✓</span> Point each agent at one or many Spectrum indices</li>
+              <li><span class="tick">✓</span> Scope answers with source facets and filters</li>
+              <li><span class="tick">✓</span> Add or swap indices without touching the embed</li>
+              <li><span class="tick">✓</span> Keep permissions per index with scoped API keys</li>
+            </ul>
+          </div>
+
+          <div class="fan" aria-hidden="true">
+            <div class="router">
+              Multi-Agent Router
+              <small>classifies intent → selects indices</small>
+            </div>
+            <div class="lanes">
+              <div class="lane">
+                <div class="name">design_tokens</div>
+                <div class="desc">Colors, type, spacing scale</div>
+              </div>
+              <div class="lane">
+                <div class="name">component_docs</div>
+                <div class="desc">Usage &amp; guidelines</div>
+              </div>
+              <div class="lane">
+                <div class="name">react_code</div>
+                <div class="desc">React Spectrum S2 &amp; v3</div>
+              </div>
+              <div class="lane">
+                <div class="name">support_kb</div>
+                <div class="desc">FAQs &amp; troubleshooting</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="block" id="how" style="padding-top: 0">
+      <div class="wrap">
+        <div class="section-head">
+          <span class="eyebrow"><span class="dot"></span> How it works</span>
+          <h2>From Spectrum question to verified answer</h2>
+          <p>Every message flows through the same trustworthy four-step pipeline.</p>
+        </div>
+        <div class="steps">
+          <div class="step">
+            <h4>Classify</h4>
+            <p>The classifier agent reads the question and picks the domain and Spectrum indices to search.</p>
+          </div>
+          <div class="step">
+            <h4>Retrieve</h4>
+            <p>Specialist agents query the design, React v3, and S2 indices for the most relevant content.</p>
+          </div>
+          <div class="step">
+            <h4>Synthesize</h4>
+            <p>The answer is streamed back with inline citations to each Spectrum source document.</p>
+          </div>
+          <div class="step">
+            <h4>Judge</h4>
+            <p>A three-judge panel scores grounding and attaches a live confidence badge.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AGENT FLOW DIAGRAMS ============ -->
+    <section class="block" id="agent-flows" style="padding-top: 0">
+      <div class="wrap">
+
+        <div class="section-head">
+          <span class="eyebrow"><span class="dot"></span> Under the hood</span>
+          <h2>How the agents decide</h2>
+          <p>Two independent pipelines work together — a chat pipeline that routes and retrieves, and a judge pipeline that scores and verifies.</p>
+        </div>
+
+        <!-- ── FLOW 1: Chat Agent Pipeline ── -->
+        <div class="flow-card">
+          <div class="flow-header">
+            <div class="flow-badge chat-badge">Chat Pipeline</div>
+            <h3 class="flow-title">From question to grounded answer</h3>
+          </div>
+          <div class="flow-body">
+
+            <div class="flow-node node-user">
+              <div class="flow-icon">💬</div>
+              <div class="flow-label">User question</div>
+              <div class="flow-sub">e.g. "Which color token for a warning banner?"</div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-node node-classifier">
+              <div class="flow-icon">🧭</div>
+              <div class="flow-label">Classifier Agent</div>
+              <div class="flow-sub">Reads intent → picks domain &amp; indices</div>
+              <div class="flow-chips">
+                <span class="flow-chip">role: classifier</span>
+                <span class="flow-chip">Algolia Agent Studio</span>
+              </div>
+            </div>
+
+            <div class="flow-arrow">↓ routes to</div>
+
+            <div class="flow-branch">
+              <div class="flow-branch-node node-primary">
+                <div class="flow-icon">🤖</div>
+                <div class="flow-label">Primary Agent</div>
+                <div class="flow-sub">General Spectrum questions</div>
+              </div>
+              <div class="flow-branch-or">or</div>
+              <div class="flow-branch-node node-specialist">
+                <div class="flow-icon">⚙️</div>
+                <div class="flow-label">Code Specialist</div>
+                <div class="flow-sub">React Spectrum / code questions</div>
+              </div>
+            </div>
+
+            <div class="flow-arrow">↓ queries</div>
+
+            <div class="flow-indices">
+              <div class="flow-index-card">
+                <div class="flow-index-name">design_tokens</div>
+                <div class="flow-index-desc">Colors, type, spacing</div>
+              </div>
+              <div class="flow-index-card">
+                <div class="flow-index-name">component_docs</div>
+                <div class="flow-index-desc">Usage &amp; guidelines</div>
+              </div>
+              <div class="flow-index-card">
+                <div class="flow-index-name">react_code</div>
+                <div class="flow-index-desc">S2 &amp; v3 code samples</div>
+              </div>
+              <div class="flow-index-card">
+                <div class="flow-index-name">support_kb</div>
+                <div class="flow-index-desc">FAQs &amp; troubleshooting</div>
+              </div>
+            </div>
+
+            <div class="flow-arrow">↓ streams</div>
+
+            <div class="flow-node node-answer">
+              <div class="flow-icon">✅</div>
+              <div class="flow-label">Cited answer</div>
+              <div class="flow-sub">Streamed with inline source citations → Judge pipeline triggered</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── FLOW 2: Judge Panel Pipeline ── -->
+        <div class="flow-card" style="margin-top: 28px;">
+          <div class="flow-header">
+            <div class="flow-badge judge-badge">Judge Pipeline</div>
+            <h3 class="flow-title">Blind, corroborated confidence scoring</h3>
+          </div>
+          <div class="flow-body">
+
+            <div class="flow-node node-artifact">
+              <div class="flow-icon">📄</div>
+              <div class="flow-label">Answer artifact</div>
+              <div class="flow-sub">The streamed answer + retrieved source snippets</div>
+            </div>
+
+            <div class="flow-arrow">↓ checked two ways, in parallel</div>
+
+            <div class="flow-node node-gate">
+              <div class="flow-icon">🔒</div>
+              <div class="flow-label">Deterministic grounding gate</div>
+              <div class="flow-sub">A rule-based check decides the served verdict — reproducible, same input gives the same answer every time, zero LLM tokens.</div>
+            </div>
+
+            <div class="flow-judges">
+              <div class="flow-judge-card skeptic">
+                <div class="flow-judge-role">Skeptic</div>
+                <div class="flow-judge-model">medium (Algolia inference)</div>
+                <div class="flow-judge-desc">Most critical — aggressively flags ungrounded claims.</div>
+              </div>
+              <div class="flow-judge-card referee">
+                <div class="flow-judge-role">Referee</div>
+                <div class="flow-judge-model">medium (Algolia inference)</div>
+                <div class="flow-judge-desc">Neutral arbiter — balances grounding against helpfulness.</div>
+              </div>
+              <div class="flow-judge-card advocate">
+                <div class="flow-judge-role">Advocate</div>
+                <div class="flow-judge-model">medium (Algolia inference)</div>
+                <div class="flow-judge-desc">Steelmans the answer — surfaces correct, well-grounded claims before flagging gaps.</div>
+              </div>
+            </div>
+
+            <div class="flow-note">All three run the same model, scored independently with a blinded prompt (no judge sees another judge's output). Findings are advisory — they never override the deterministic gate above.</div>
+
+            <div class="flow-arrow">↓ ≥2-of-3 corroboration</div>
+
+            <div class="flow-node node-gate">
+              <div class="flow-icon">🤝</div>
+              <div class="flow-label">Corroboration gate</div>
+              <div class="flow-sub">A flagged claim only counts if at least 2 of the 3 judges agree — one judge alone can't flag something.</div>
+            </div>
+
+            <div class="flow-arrow">↓</div>
+
+            <div class="flow-node node-badge">
+              <div class="flow-icon">🏅</div>
+              <div class="flow-label">Confidence badge</div>
+              <div class="flow-sub">Binary chip displayed live in chat: <strong>Grounded</strong>, or <strong>N unverified claims</strong> — never a decimal or percentage.</div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ PROACTIVE ============ -->
+    <section class="block" id="proactive" style="padding-top: 0">
+      <div class="wrap">
+
+        <div class="section-head">
+          <span class="eyebrow"><span class="dot"></span> Proactive chat</span>
+          <h2>It offers help before they ask</h2>
+          <p>Most visitors never open a chat window. A concierge agent watches the journey instead — and opens the conversation only when it has something specific and useful to say.</p>
+        </div>
+
+        <div class="flow-card">
+          <div class="flow-header">
+            <div class="flow-badge proactive-badge">Proactive Pipeline</div>
+            <h3 class="flow-title">From browsing behaviour to an opened conversation</h3>
+          </div>
+          <div class="flow-body">
+
+            <div class="flow-node node-signals">
+              <div class="flow-icon">🧭</div>
+              <div class="flow-label">Visitor browses the docs</div>
+              <div class="flow-sub">No question typed, no chat opened — just navigation the host page already sees</div>
+            </div>
+
+            <div class="flow-arrow">↓ collects</div>
+
+            <div class="flow-indices">
+              <div class="flow-index-card">
+                <div class="flow-index-name">pages viewed</div>
+                <div class="flow-index-desc">Path, title, dwell time</div>
+              </div>
+              <div class="flow-index-card">
+                <div class="flow-index-name">read &amp; CTA events</div>
+                <div class="flow-index-desc">What they engaged with</div>
+              </div>
+              <div class="flow-index-card">
+                <div class="flow-index-name">visit history</div>
+                <div class="flow-index-desc">First-time or returning</div>
+              </div>
+              <div class="flow-index-card">
+                <div class="flow-index-name">persona</div>
+                <div class="flow-index-desc">Chosen, or inferred</div>
+              </div>
+            </div>
+
+            <div class="flow-note">Signals live on the host page — this demo keeps them in <span class="flow-guard-code">localStorage</span>, so nothing leaves the browser. Swap in your own CDP, analytics, or session store without touching the widget.</div>
+
+            <div class="flow-arrow">↓ persona narrows the corpus</div>
+
+            <div class="flow-node node-persona">
+              <div class="flow-icon">🎭</div>
+              <div class="flow-label">Persona agent selected</div>
+              <div class="flow-sub">Designer, Developer, or Product Manager — each a dedicated agent with its own voice and a filtered slice of the Spectrum corpus</div>
+              <div class="flow-chips">
+                <span class="flow-chip">🎨 design docs</span>
+                <span class="flow-chip">⚙ React Spectrum code</span>
+                <span class="flow-chip">📋 adoption &amp; migration</span>
+              </div>
+            </div>
+
+            <div class="flow-arrow">↓ launcher starts thinking</div>
+
+            <div class="flow-node node-concierge">
+              <div class="flow-icon">✨</div>
+              <div class="flow-label">Concierge Agent</div>
+              <div class="flow-sub">Searches the index <strong>once</strong> for the current page's topic, then decides whether it can genuinely help</div>
+              <div class="flow-chips">
+                <span class="flow-chip">Algolia Agent Studio</span>
+                <span class="flow-chip chip-neutral">{ engage, greeting, suggestions }</span>
+              </div>
+            </div>
+
+            <div class="flow-arrow">↓ decides</div>
+
+            <div class="flow-branch">
+              <div class="flow-branch-node node-greeting">
+                <div class="flow-icon">💬</div>
+                <div class="flow-label">Opens with a greeting</div>
+                <div class="flow-sub">A line about the page they're on, plus three grounded follow-up questions</div>
+              </div>
+              <div class="flow-branch-or">or</div>
+              <div class="flow-branch-node node-quiet">
+                <div class="flow-icon">🤫</div>
+                <div class="flow-label">Stays quiet</div>
+                <div class="flow-sub">Nothing specific to add — the launcher goes idle and never interrupts</div>
+              </div>
+            </div>
+
+            <div class="flow-arrow">↓ visitor replies</div>
+
+            <div class="flow-node node-answer">
+              <div class="flow-icon">✅</div>
+              <div class="flow-label">Handed to the chat pipeline</div>
+              <div class="flow-sub">Their persona agent answers from the filtered corpus, with the same citations and confidence scoring as any other question</div>
+            </div>
+
+            <div class="flow-guards">
+              <div class="flow-guard-card">
+                <div class="flow-guard-title">🎛️ The visitor can switch it off</div>
+                <div class="flow-guard-desc">A header toggle disables auto-opening for good. The choice persists across pages, and the widget enforces it — <span class="flow-guard-code">engage()</span> returns <span class="flow-guard-code">false</span> even if the host forgets to check.</div>
+              </div>
+              <div class="flow-guard-card">
+                <div class="flow-guard-title">⚡ No waiting on a spinner</div>
+                <div class="flow-guard-desc">If they navigate while the concierge is still thinking, the greeting is cached and replayed instantly on the next page instead of being lost.</div>
+              </div>
+              <div class="flow-guard-card">
+                <div class="flow-guard-title">🧩 One element, any host</div>
+                <div class="flow-guard-desc">Everything above is driven by <span class="flow-guard-code">&lt;algolia-chat&gt;</span> attributes and four methods. Commands sent before it mounts are queued, not dropped.</div>
+              </div>
+            </div>
+
+            <div class="flow-note" style="margin-top: 22px;">
+              <a href="/demo/" style="color:var(--accent);font-weight:600;text-decoration:none;">Walk through the multi-page demo →</a>
+              — pick a persona, browse two pages, and watch the concierge decide.
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ EMBED ============ -->
+    <section class="block" id="embed" style="padding-top: 0">
+      <div class="wrap">
+        <div class="split">
+          <div>
+            <span class="eyebrow"><span class="dot"></span> Drop-in embed</span>
+            <h2>Ship it with a single script tag</h2>
+            <p>
+              Declare your Spectrum indices and agents in plain HTML. No build step, no framework
+              lock-in — the same web component powering this page today.
+            </p>
+            <ul class="checklist">
+              <li><span class="tick">✓</span> Framework-agnostic custom element</li>
+              <li><span class="tick">✓</span> Configure agents &amp; indices declaratively</li>
+              <li><span class="tick">✓</span> Theme with CSS tokens — zero rebuild</li>
+            </ul>
+          </div>
+
+          <div class="code-wrap">
+            <div class="code-bar">
+              <span class="dots">
+                <i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>
+              </span>
+              <span class="fname">index.html</span>
+            </div>
+            <pre><span class="tok-com">&lt;!-- One assistant, many agents, many indices --&gt;</span>
+<span class="tok-tag">&lt;algolia-instant-search</span>
+  <span class="tok-attr">app-id</span>=<span class="tok-str">"YOUR_APP_ID"</span>
+  <span class="tok-attr">api-key</span>=<span class="tok-str">"SEARCH_KEY"</span>
+  <span class="tok-attr">index-name</span>=<span class="tok-str">"docs_primary"</span><span class="tok-tag">&gt;</span>
+
+  <span class="tok-tag">&lt;algolia-chat</span> <span class="tok-attr">brand-name</span>=<span class="tok-str">"Algolia"</span><span class="tok-tag">&gt;</span>
+    <span class="tok-tag">&lt;algolia-agent</span> <span class="tok-attr">role</span>=<span class="tok-str">"primary"</span>     <span class="tok-attr">agent-id</span>=<span class="tok-str">"..."</span><span class="tok-tag">/&gt;</span>
+    <span class="tok-tag">&lt;algolia-agent</span> <span class="tok-attr">role</span>=<span class="tok-str">"specialist"</span>  <span class="tok-attr">agent-id</span>=<span class="tok-str">"..."</span><span class="tok-tag">/&gt;</span>
+    <span class="tok-tag">&lt;algolia-agent</span> <span class="tok-attr">role</span>=<span class="tok-str">"classifier"</span>  <span class="tok-attr">agent-id</span>=<span class="tok-str">"..."</span><span class="tok-tag">/&gt;</span>
+
+    <span class="tok-com">&lt;!-- confidence judge panel --&gt;</span>
+    <span class="tok-tag">&lt;algolia-chat-confidence&gt;</span>
+      <span class="tok-tag">&lt;algolia-agent</span> <span class="tok-attr">agent-id</span>=<span class="tok-str">"..."</span><span class="tok-tag">/&gt;</span>
+    <span class="tok-tag">&lt;/algolia-chat-confidence&gt;</span>
+  <span class="tok-tag">&lt;/algolia-chat&gt;</span>
+<span class="tok-tag">&lt;/algolia-instant-search&gt;</span>
+
+<span class="tok-tag">&lt;script</span> <span class="tok-attr">src</span>=<span class="tok-str">"algolia-chat.js"</span><span class="tok-tag">&gt;&lt;/script&gt;</span></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TRY IT (live widget CTA) ============ -->
+    <section class="block" style="padding-top: 0">
+      <div class="wrap">
+        <div class="try">
+          <h2>See it answer for yourself</h2>
+          <p>
+            The assistant on this page is live and grounded in the Adobe Spectrum design system
+            across three Algolia indices. Ask about tokens, components, or React Spectrum — then
+            watch the confidence badge.
+          </p>
+          <div class="hero-cta" style="justify-content:center">
+            <button class="btn btn-primary" onclick="openAssistant()">Open the assistant</button>
+          </div>
+          <div class="demo-row">
+            <button class="skin-btn" onclick="setTheme('algolia')">Algolia skin</button>
+            <button class="skin-btn" onclick="setTheme('spectrum')">Spectrum skin</button>
+            <button class="skin-btn" onclick="setCustomSkin()">Custom (red) skin</button>
+            <button class="skin-btn" onclick="clearCustomSkin()">Reset skin</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="site">
+      <div class="wrap">
+        <div class="foot-grid">
+          <div>
+            <a class="brand" href="#top">
+              <span class="collab">
+                <span class="mark"><img src="/brand/adobe-logo.png" alt="Adobe" /></span>
+                <span class="collab-plus">+</span>
+                <span class="mark rounded"><img src="/brand/algolia-logo.png" alt="Algolia" /></span>
+              </span>
+              <span class="brand-text">Spectrum<small>Design System Assistant</small></span>
+            </a>
+            <p>
+              A grounded AI assistant over the Adobe Spectrum design system — design tokens,
+              React components, and accessibility, all cited. Powered by Algolia Agent Studio.
+            </p>
+          </div>
+          <div class="foot-cols">
+            <div class="foot-col">
+              <h5>Assistant</h5>
+              <a href="#features">Features</a>
+              <a href="#indices">Multi-index</a>
+              <a href="#how">How it works</a>
+              <a href="#embed">Embed</a>
+            </div>
+            <div class="foot-col">
+              <h5>Spectrum</h5>
+              <a href="https://spectrum.adobe.com/" target="_blank" rel="noopener">spectrum.adobe.com</a>
+              <a href="https://react-spectrum.adobe.com/" target="_blank" rel="noopener">React Spectrum</a>
+              <a href="https://react-spectrum.adobe.com/react-spectrum/index.html" target="_blank" rel="noopener">Components</a>
+            </div>
+            <div class="foot-col">
+              <h5>Powered by</h5>
+              <a href="https://www.algolia.com/" target="_blank" rel="noopener">Algolia.com</a>
+              <a href="https://www.algolia.com/products/ai-search/" target="_blank" rel="noopener">Agent Studio</a>
+              <a href="https://www.algolia.com/doc/" target="_blank" rel="noopener">Documentation</a>
+            </div>
+          </div>
+        </div>
+        <div class="foot-bottom">
+          <span>© 2026 Adobe · Spectrum Design System Assistant demo</span>
+          <span>Grounded in Spectrum docs — every answer cites its source. Powered by Algolia.</span>
+        </div>
+      </div>
+    </footer>
+
+    <!--
+      ============ LIVE WIDGET EMBED ============
+      Two-tier InstantSearch layout:
+        <algolia-instant-search>  ← root element: owns instantsearch() + searchClient
+          <algolia-chat>          ← main custom widget: React UI + Shadow DOM
+            <algolia-agent>       ← leaf sub-widgets: declarative agent config
+    -->
+    <algolia-instant-search
+      app-id="0EXRPAXB56"
+      api-key="REDACTED"
+      index-name="ACS_SPECTRUM_MULTI"
+    >
+      <algolia-chat
+        id="demo-chat"
+        powered-by-logo="/brand/algolia-mark.svg"
+        accent-color="#003DFF"
+        brand-name="Algolia"
+        product-title="Spectrum Assistant"
+        subtitle="Adobe Spectrum docs"
+        corpus-name="Adobe Spectrum"
+        disclaimer="Every answer cites its source."
+        default-open-mode="docked"
+      >
+        <algolia-agent
+          role="primary"
+          agent-id="95826da6-d1b6-4b81-b061-bfb52b881356"
+          label="Spectrum Assistant"
+        ></algolia-agent>
+        <algolia-agent
+          role="specialist"
+          key="react"
+          agent-id="ae127977-c728-4b7c-bc15-6502a77873d1"
+          label="React Expert"
+          accent-token="--algolia-agent-specialist"
+        ></algolia-agent>
+        <algolia-agent
+          role="classifier"
+          agent-id="dbb4faa9-e917-4be9-b8ee-6dfd9a81daef"
+        ></algolia-agent>
+
+        <!-- Confidence panel: three blind judges, each pinned to its own Agent
+             Studio agent. All three run the same model — medium, on Algolia's
+             own inference server — scored independently with no shared context.
+             (Models are configured on the agents in Agent Studio, not here.)
+             The role-less entry is the default/fallback backend. -->
+        <algolia-chat-confidence mode="algolia">
+          <algolia-agent agent-id="4deb53fb-402c-4ab9-97f3-a2744ff4156f"></algolia-agent>
+          <algolia-agent role="skeptic" agent-id="0eba9eb4-dd20-42a4-8ae3-41cb84b54a79"></algolia-agent>
+          <algolia-agent role="referee" agent-id="b0f03391-3433-42ea-bc50-183ba990e697"></algolia-agent>
+          <algolia-agent role="advocate" agent-id="b084b478-bd3a-41a7-9a29-818ae0fb9706"></algolia-agent>
+        </algolia-chat-confidence>
+
+        <img slot="logo" src="/brand/adobe-logo.svg" alt="Adobe" />
+
+        <!-- Icon for the header "New conversation" button, served from the site
+             (not hardcoded in the widget). -->
+        <img slot="new-chat-icon" src="/brand/new-chat.svg" alt="" />
+
+        <div
+          slot="welcome"
+          style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;"
+        >
+          <div
+            style="width:80px;height:80px;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(250,15,0,0.22);"
+          >
+            <img
+              src="/brand/spectrum-assistant-avatar.png"
+              alt="Spectrum AI assistant"
+              style="width:100%;height:100%;object-fit:cover;"
+            />
+          </div>
+          <h2 style="margin:0;font-size:clamp(24px,3.5vw,36px);font-weight:700;color:#111;">
+            Hello, how can I help you today?
+          </h2>
+          <p style="margin:0;font-size:14px;color:#666;max-width:360px;">
+            Ask anything about Adobe Spectrum — design tokens, React components, or accessibility.
+          </p>
+        </div>
+
+        <style id="demo-custom-skin" slot="theme">
+          /* Blank by default — set by the skin buttons above. */
+        </style>
+
+        <div slot="sample-questions">
+          <section data-title="Foundations">
+            <button>Which accent color tokens does Spectrum provide?</button>
+            <button>What type styles and sizes does Spectrum define?</button>
+            <button>How does the Spectrum spacing and sizing scale work?</button>
+          </section>
+          <section data-title="Choosing a component">
+            <button>When should I use a ComboBox vs a Picker?</button>
+            <button>When should I use a Dialog vs a Tray?</button>
+            <button>ActionButton vs Button — which fits my use case?</button>
+          </section>
+          <section data-title="Building in React">
+            <button>How do I make a ComboBox controlled in React Spectrum?</button>
+            <button>How do I add a date range picker in React?</button>
+            <button>How do I build a form with validation in React Spectrum?</button>
+          </section>
+        </div>
+
+        <div slot="source-facets">
+          <span data-value="SpectrumDesignDocs">Spectrum Design Docs</span>
+          <span data-value="ReactSpectrumS2">React Spectrum S2</span>
+          <span data-value="ReactSpectrumV3">React Spectrum v3</span>
+        </div>
+      </algolia-chat>
+    </algolia-instant-search>
+
+    <!-- Widget bundles copied into public/widget-bundles/ by scripts/sync-widget.mjs -->
+    <script src="/widget-bundles/algolia-confidence-badge.js"></script>
+    <script src="/widget-bundles/algolia-chat.js"></script>
+
+    <script>
+      /**
+       * Landing-page controls for the live <algolia-chat> element.
+       * The widget reads attributes + slots at connectedCallback time, so
+       * attribute changes are applied with a reload to force re-init.
+       */
+      const chatEl = document.getElementById('demo-chat');
+
+      function openAssistant() {
+        // Try to click the widget's floating action button inside its Shadow DOM.
+        const fab =
+          chatEl &&
+          chatEl.shadowRoot &&
+          chatEl.shadowRoot.querySelector(
+            '[data-fab], .algolia-chat-fab, button[aria-label*="chat" i], button[aria-label*="assistant" i]',
+          );
+        if (fab) {
+          fab.click();
+          return;
+        }
+        // Fallback: scroll to the widget region so the FAB is in view.
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }
+
+      function setTheme(theme) {
+        chatEl.setAttribute('theme', theme);
+        location.reload();
+      }
+
+      function setCustomSkin() {
+        const styleEl = document.getElementById('demo-custom-skin');
+        if (styleEl) {
+          styleEl.textContent = `
+            :host {
+              --algolia-accent: #e2361b;
+              --algolia-accent-hover: color-mix(in srgb, #e2361b 85%, #000);
+              --algolia-accent-tint: color-mix(in srgb, #e2361b 12%, #fff);
+              --algolia-focus: #e2361b;
+              --algolia-agent-primary: #e2361b;
+              --algolia-radius-xl: 4px;
+              --algolia-radius-lg: 3px;
+              --algolia-radius-md: 2px;
+            }
+          `;
+        }
+        location.reload();
+      }
+
+      function clearCustomSkin() {
+        const styleEl = document.getElementById('demo-custom-skin');
+        if (styleEl) styleEl.textContent = '';
+        location.reload();
+      }
+    </script>
+  </body>
+</html>

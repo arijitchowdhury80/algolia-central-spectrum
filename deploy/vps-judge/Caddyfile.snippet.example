@@ -1,0 +1,15 @@
+# Append this as its OWN site block to the VPS's existing Caddyfile
+# (/home/chowmesadmin/Caddyfile, currently fronting AC2's ac2-lab-backend at
+# judge.contentengagement.info among other sites — see phase-5
+# deploy-design.md for why ACS gets a separate subdomain instead of reusing
+# that one).
+#
+# NOT applied automatically by anything in this repo — Caddy's live config
+# on a shared production VPS is out of scope for an automated agent to edit.
+# Applied once, by hand, then `caddy reload`.
+#
+# Pick a real subdomain before use — "acs-judge" below is a placeholder.
+
+acs-judge.contentengagement.info {
+	reverse_proxy 127.0.0.1:8788
+}

@@ -1,0 +1,12 @@
+[Unit]
+Description=ACS judge — poll main and redeploy acs-lab-backend if changed
+# One-shot: the .timer decides the schedule, this unit just runs the check.
+
+[Service]
+Type=oneshot
+User=chowmesadmin
+Environment=ACS_JUDGE_REPO_DIR=/home/chowmesadmin/acs-judge
+ExecStart=/home/chowmesadmin/acs-judge/deploy/vps-deploy-judge.sh
+# Keep exit-code visibility in the journal — do not silence a failing deploy.
+StandardOutput=journal
+StandardError=journal

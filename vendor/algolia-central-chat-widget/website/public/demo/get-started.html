@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Get Started — Adobe Spectrum</title>
+  <link rel="icon" href="/brand/algolia-mark.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/demo/demo.css" />
+</head>
+<body>
+
+<nav class="demo-nav">
+  <div class="wrap">
+    <a class="nav-logo" href="/demo/">
+      <img src="/brand/adobe-logo.svg" alt="Adobe" height="22" />
+      <span class="nav-sep">|</span>
+      <span>Spectrum</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/demo/">Overview</a></li>
+      <li><a href="/demo/button.html">Button</a></li>
+      <li><a href="/demo/combobox.html">ComboBox</a></li>
+      <li><a href="/demo/migration.html">Migration</a></li>
+      <li><a href="/demo/get-started.html" class="active">Get Started</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="page-header">
+  <div class="wrap">
+    <p class="breadcrumb"><a href="/demo/">Spectrum</a> <span>/</span> Get Started</p>
+    <h1 class="page-title">Get started with Spectrum 2</h1>
+    <p class="page-desc">Install React Spectrum S2, set up your provider, and build your first accessible component in minutes.</p>
+    <div class="status-chips">
+      <span class="chip-new">S2 Beta</span>
+      <span class="chip-stable">v3 Stable</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap" style="padding-top:40px; padding-bottom:80px;">
+
+    <!-- Quick steps -->
+    <div class="two-col" style="gap:48px;">
+      <div>
+
+        <h2>Installation</h2>
+        <div class="code-block">
+          <button class="copy-btn" data-cta="copy-install" onclick="copyCode(this)">Copy</button>
+          <pre><span class="tok-comment"># React Spectrum S2 (recommended for new projects)</span>
+npm install @react-spectrum/s2
+
+<span class="tok-comment"># Peer dependencies</span>
+npm install react react-dom react-aria react-stately</pre>
+        </div>
+
+        <h2>Provider setup</h2>
+        <p>Wrap your app in <code>Provider</code> to supply the theme and locale context to all Spectrum components.</p>
+        <div class="code-block">
+          <button class="copy-btn" data-cta="copy-provider" onclick="copyCode(this)">Copy</button>
+          <pre><span class="tok-keyword">import</span> {Provider, defaultTheme} <span class="tok-keyword">from</span> <span class="tok-string">'@react-spectrum/s2'</span>;
+
+<span class="tok-fn">function</span> <span class="tok-fn">App</span>() {
+  <span class="tok-keyword">return</span> (
+    &lt;<span class="tok-attr">Provider</span> <span class="tok-attr">theme</span>={defaultTheme} <span class="tok-attr">colorScheme</span>=<span class="tok-string">"light"</span>&gt;
+      <span class="tok-comment">{/* your app here */}</span>
+    &lt;/<span class="tok-attr">Provider</span>&gt;
+  );
+}</pre>
+        </div>
+
+        <h2>Your first component</h2>
+        <div class="code-block">
+          <button class="copy-btn" data-cta="copy-first-component" onclick="copyCode(this)">Copy</button>
+          <pre><span class="tok-keyword">import</span> {Button, TextField} <span class="tok-keyword">from</span> <span class="tok-string">'@react-spectrum/s2'</span>;
+<span class="tok-keyword">import</span> {useState} <span class="tok-keyword">from</span> <span class="tok-string">'react'</span>;
+
+<span class="tok-fn">function</span> <span class="tok-fn">SearchBar</span>() {
+  <span class="tok-keyword">const</span> [value, setValue] = <span class="tok-fn">useState</span>(<span class="tok-string">''</span>);
+
+  <span class="tok-keyword">return</span> (
+    &lt;<span class="tok-attr">div</span> <span class="tok-attr">style</span>={{display: <span class="tok-string">'flex'</span>, gap: 8}}&gt;
+      &lt;<span class="tok-attr">TextField</span>
+        <span class="tok-attr">label</span>=<span class="tok-string">"Search"</span>
+        <span class="tok-attr">value</span>={value}
+        <span class="tok-attr">onChange</span>={setValue}
+        <span class="tok-attr">placeholder</span>=<span class="tok-string">"Search…"</span>
+      /&gt;
+      &lt;<span class="tok-attr">Button</span>
+        <span class="tok-attr">variant</span>=<span class="tok-string">"accent"</span>
+        <span class="tok-attr">onPress</span>={() =&gt; <span class="tok-fn">console</span>.<span class="tok-fn">log</span>(value)}&gt;
+        Search
+      &lt;/<span class="tok-attr">Button</span>&gt;
+    &lt;/<span class="tok-attr">div</span>&gt;
+  );
+}</pre>
+        </div>
+
+        <!-- Primary CTA -->
+        <div class="cta-banner" style="margin-top:40px;">
+          <h2>Ready to build?</h2>
+          <p>Explore the full component library, design docs, and React Spectrum API references — and ask the AI assistant any question about Spectrum.</p>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            <a href="https://react-spectrum.adobe.com/react-spectrum/index.html" target="_blank" class="btn-white" data-cta="open-full-docs" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+              Open full docs ↗
+            </a>
+            <a href="/demo/" class="btn-white" data-cta="explore-demo-site" style="background:rgba(255,255,255,.15);color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:12px 28px;border-radius:8px;font-weight:700;">
+              Explore demo site
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Sidebar / cheat-sheet -->
+      <div>
+        <div class="sidebar-card" style="margin-bottom:20px;">
+          <h4>Quick links</h4>
+          <ul>
+            <li><a href="https://react-spectrum.adobe.com/react-spectrum/getting-started.html" target="_blank" data-cta="official-getting-started">Official Getting Started ↗</a></li>
+            <li><a href="https://react-spectrum.adobe.com/react-spectrum/index.html" target="_blank" data-cta="component-list">Component list ↗</a></li>
+            <li><a href="https://react-spectrum.adobe.com/react-spectrum/migration.html" target="_blank" data-cta="migration-docs">v3 → S2 migration ↗</a></li>
+            <li><a href="https://spectrum.adobe.com" target="_blank" data-cta="spectrum-design">spectrum.adobe.com ↗</a></li>
+          </ul>
+        </div>
+
+        <div class="sidebar-card" style="margin-bottom:20px;">
+          <h4>Key packages</h4>
+          <table class="spec-table" style="margin:0;">
+            <thead><tr><th>Package</th><th>Use for</th></tr></thead>
+            <tbody>
+              <tr><td><code>@react-spectrum/s2</code></td><td>S2 components</td></tr>
+              <tr><td><code>@adobe/react-spectrum</code></td><td>v3 stable</td></tr>
+              <tr><td><code>react-aria</code></td><td>Headless accessibility</td></tr>
+              <tr><td><code>react-stately</code></td><td>State management</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="sidebar-card">
+          <h4>Explore components</h4>
+          <ul>
+            <li><a href="/demo/button.html" data-cta="nav-button">Button →</a></li>
+            <li><a href="/demo/combobox.html" data-cta="nav-combobox">ComboBox →</a></li>
+            <li><a href="/demo/migration.html" data-cta="nav-migration">Migration guide →</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer class="demo-footer">
+  <p>Demo site · Powered by <a href="https://www.algolia.com" target="_blank">Algolia</a></p>
+</footer>
+
+<script src="/widget-bundles/algolia-confidence-badge.js"></script>
+<script src="/widget-bundles/algolia-chat.js"></script>
+
+<algolia-instant-search app-id="0EXRPAXB56" api-key="REDACTED" index-name="ACS_SPECTRUM_MULTI">
+  <algolia-chat
+    accent-color="#003DFF"
+    brand-name="Adobe Spectrum"
+    product-title="Spectrum Assistant"
+    subtitle="Getting started"
+    corpus-name="Adobe Spectrum"
+    disclaimer="Every answer cites its source."
+    powered-by-logo="/brand/algolia-mark.svg"
+    default-open-mode="docked"
+    auto-engage-toggle
+  >
+    <algolia-agent role="primary"    agent-id="95826da6-d1b6-4b81-b061-bfb52b881356" label="Spectrum Assistant"></algolia-agent>
+    <algolia-agent role="specialist" agent-id="ae127977-c728-4b7c-bc15-6502a77873d1" label="React Expert" key="react"></algolia-agent>
+    <algolia-agent role="classifier" agent-id="dbb4faa9-e917-4be9-b8ee-6dfd9a81daef"></algolia-agent>
+    <algolia-chat-confidence mode="algolia">
+      <algolia-agent agent-id="4deb53fb-402c-4ab9-97f3-a2744ff4156f"></algolia-agent>
+      <algolia-agent role="skeptic"  agent-id="0eba9eb4-dd20-42a4-8ae3-41cb84b54a79"></algolia-agent>
+      <algolia-agent role="referee"  agent-id="b0f03391-3433-42ea-bc50-183ba990e697"></algolia-agent>
+      <algolia-agent role="advocate" agent-id="b084b478-bd3a-41a7-9a29-818ae0fb9706"></algolia-agent>
+    </algolia-chat-confidence>
+
+    <img slot="logo" src="/brand/adobe-logo.svg" alt="Adobe" />
+
+    <!-- Icon for the header "New conversation" button, served from the site
+         (not hardcoded in the widget). -->
+    <img slot="new-chat-icon" src="/brand/new-chat.svg" alt="" />
+
+    <div
+      slot="welcome"
+      style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;"
+    >
+      <div
+        style="width:80px;height:80px;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(250,15,0,0.22);"
+      >
+        <img
+          src="/brand/spectrum-assistant-avatar.png"
+          alt="Spectrum AI assistant"
+          style="width:100%;height:100%;object-fit:cover;"
+        />
+      </div>
+      <h2 style="margin:0;font-size:clamp(24px,3.5vw,36px);font-weight:700;color:#111;">
+        Hello, how can I help you today?
+      </h2>
+      <p style="margin:0;font-size:14px;color:#666;max-width:360px;">
+        Ask anything about Adobe Spectrum — design tokens, React components, or accessibility.
+      </p>
+    </div>
+
+    <style id="demo-custom-skin" slot="theme">
+      /* Blank by default — set by the skin buttons above. */
+    </style>
+
+    <div slot="sample-questions">
+      <section data-title="Installation">
+        <button>How do I install React Spectrum S2 and its peer dependencies?</button>
+        <button>What's the difference between @react-spectrum/s2 and @adobe/react-spectrum?</button>
+        <button>What do the react-aria and react-stately packages provide?</button>
+      </section>
+      <section data-title="Setting up your app">
+        <button>How do I set up the Provider and defaultTheme for my app?</button>
+        <button>How do I switch between light and dark color scheme?</button>
+        <button>How do I build my first component with TextField and Button?</button>
+      </section>
+      <section data-title="Where to go next">
+        <button>Where can I find the full React Spectrum component list?</button>
+        <button>How do I start migrating from v3 to Spectrum 2?</button>
+        <button>Where do I find the Spectrum design guidelines site?</button>
+      </section>
+    </div>
+
+    <div slot="source-facets">
+      <span data-value="SpectrumDesignDocs">Spectrum Design Docs</span>
+      <span data-value="ReactSpectrumS2">React Spectrum S2</span>
+      <span data-value="ReactSpectrumV3">React Spectrum v3</span>
+    </div>
+  </algolia-chat>
+</algolia-instant-search>
+
+<script type="module" src="/context/context-engine.js"></script>
+<script>
+  function copyCode(btn) {
+    const pre = btn.parentElement.querySelector('pre');
+    if (pre) {
+      navigator.clipboard.writeText(pre.textContent ?? '').then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+      });
+    }
+  }
+</script>
+
+</body>
+</html>

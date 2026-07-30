@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>algolia-chat — dev harness</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        color: #021046;
+        background: #f7f8fb;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 64px 24px;
+      }
+      h1 {
+        font-size: 28px;
+      }
+      p {
+        color: #4d4d4d;
+        line-height: 1.6;
+      }
+      code {
+        background: #eef0f5;
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>algolia-chat</h1>
+      <p>
+        Dev harness for the embeddable chat widget (two-tier InstantSearch topology). The floating
+        button in the bottom-right is the <code>&lt;algolia-chat&gt;</code> custom element, mounted
+        as a custom InstantSearch widget inside <code>&lt;algolia-instant-search&gt;</code>.
+      </p>
+      <p>This host page has its own styles — the widget must stay visually isolated from them.</p>
+    </main>
+
+    <!--
+      Two-tier layout:
+        <algolia-instant-search>  ← root: owns instantsearch() + searchClient
+          <algolia-chat>          ← main widget: React UI + Shadow DOM
+            <algolia-agent>  ← leaf sub-widgets: agent config carriers
+    -->
+    <algolia-instant-search
+      app-id="0EXRPAXB56"
+      api-key="REDACTED"
+      index-name="ACS_SPECTRUM_MULTI"
+    >
+      <algolia-chat
+        powered-by-logo="/brand/algolia-mark.svg"
+        accent-color="#003DFF"
+        brand-name="Algolia Central"
+        product-title="Adobe Spectrum"
+        subtitle="Adobe Spectrum docs"
+        corpus-name="Adobe Spectrum design + React code"
+        disclaimer="Grounded in Adobe Spectrum docs — every answer cites its source."
+      >
+        <!-- Agents: one primary, any number of specialists, optional classifier -->
+        <algolia-agent
+          role="primary"
+          agent-id="95826da6-d1b6-4b81-b061-bfb52b881356"
+          label="Assistant"
+        ></algolia-agent>
+        <algolia-agent
+          role="specialist"
+          key="technical"
+          agent-id="ae127977-c728-4b7c-bc15-6502a77873d1"
+          label="Code specialist"
+          accent-token="--algolia-agent-specialist"
+        ></algolia-agent>
+        <algolia-agent
+          role="classifier"
+          agent-id="dbb4faa9-e917-4be9-b8ee-6dfd9a81daef"
+        ></algolia-agent>
+
+        <!-- Judge agent — nested inside the confidence widget -->
+        <algolia-chat-confidence mode="algolia">
+          <algolia-agent agent-id="a18e0bf0-9af5-41c7-bc8c-291f04f7e1ba"></algolia-agent>
+        </algolia-chat-confidence>
+
+        <img slot="logo" src="/brand/adobe-logo.svg" alt="Adobe" />
+
+        <div slot="sample-questions">
+          <section data-title="Foundations">
+            <button>Which accent color tokens does Spectrum provide?</button>
+            <button>What type styles and sizes does Spectrum define?</button>
+            <button>How does the Spectrum spacing and sizing scale work?</button>
+          </section>
+          <section data-title="Choosing a component">
+            <button>When should I use a ComboBox vs a Picker?</button>
+            <button>When should I use a Dialog vs a Tray?</button>
+            <button>ActionButton vs Button — which fits my use case?</button>
+          </section>
+          <section data-title="Building in React">
+            <button>How do I make a ComboBox controlled in React Spectrum?</button>
+            <button>How do I add a date range picker in React?</button>
+            <button>How do I build a form with validation in React Spectrum?</button>
+          </section>
+        </div>
+
+        <div slot="source-facets">
+          <span data-value="SpectrumDesignDocs">Spectrum Design Docs</span>
+          <span data-value="ReactSpectrumS2">React Spectrum S2</span>
+          <span data-value="ReactSpectrumV3">React Spectrum v3</span>
+        </div>
+      </algolia-chat>
+    </algolia-instant-search>
+
+    <script type="module" src="/src/chat-embed.tsx"></script>
+  </body>
+</html>
