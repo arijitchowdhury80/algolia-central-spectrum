@@ -112,6 +112,17 @@ export function configureOpenMode(root: ParentNode, pathname: string): boolean {
  * write a half-configured hosted judge that would 401 or hit localhost — a wrong
  * config here shows up as a dark chip, which is exactly the failure mode that
  * cost us two hours of broken production on 2026-07-28.
+ *
+ * `mode` is ours to decide — their markup ships `mode="algolia"` and the whole
+ * point of this function is to overrule that. `url` / `api-key` are not: an
+ * explicit value in the markup is someone deliberately repointing this page at
+ * another judge, so it wins and the compiled value is only the default.
+ *
+ * Measured on production 2026-07-30: before this, a `url` written into the
+ * markup was overwritten here on every page load, so repointing the page by
+ * editing it did nothing and reported no error. The widget itself always
+ * honoured the attribute (chat-central's hostedJudgeClient prefers the
+ * per-widget config over its env fallback) — we were the ones discarding it.
  */
 const JUDGE_URL = import.meta.env?.VITE_JUDGE_URL as string | undefined;
 const JUDGE_KEY = import.meta.env?.VITE_LAB_API_KEY as string | undefined;
@@ -132,8 +143,9 @@ export function configureHostedJudge(
   }
   for (const el of panels) {
     el.setAttribute('mode', 'hosted');
-    el.setAttribute('url', url);
-    if (apiKey) el.setAttribute('api-key', apiKey);
+    // Author-set endpoint wins; ours is the default (see the note above).
+    if (!el.getAttribute('url')?.trim()) el.setAttribute('url', url);
+    if (apiKey && !el.getAttribute('api-key')?.trim()) el.setAttribute('api-key', apiKey);
   }
   return true;
 }

@@ -68,6 +68,36 @@ describe('configureHostedJudge', () => {
     expect(el.getAttribute('api-key')).toBeNull();
   });
 
+  /**
+   * Measured on production 2026-07-30: a `url` written into the page markup was
+   * overwritten here on every load, so repointing a page at another judge by
+   * editing it silently did nothing. The endpoint someone wrote down wins; ours
+   * is the default. `mode` is still ours — their markup ships `mode="algolia"`,
+   * which is the whole reason this function exists.
+   */
+  it('keeps an endpoint already set in the markup instead of overwriting it', () => {
+    const el = fakeElement();
+    el.setAttribute('mode', 'algolia');
+    el.setAttribute('url', 'https://staging-judge.example.com');
+    el.setAttribute('api-key', 'author-key');
+
+    const applied = configureHostedJudge(fakeRoot([el]), 'https://judge.example.com', 'k123');
+
+    expect(applied).toBe(true);
+    expect(el.getAttribute('mode')).toBe('hosted');
+    expect(el.getAttribute('url')).toBe('https://staging-judge.example.com');
+    expect(el.getAttribute('api-key')).toBe('author-key');
+  });
+
+  it('treats a blank url attribute as unset and fills in the compiled one', () => {
+    const el = fakeElement();
+    el.setAttribute('url', '   ');
+
+    configureHostedJudge(fakeRoot([el]), 'https://judge.example.com', 'k123');
+
+    expect(el.getAttribute('url')).toBe('https://judge.example.com');
+  });
+
   it('reports false, and warns nothing, when the page has no confidence panel', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     expect(configureHostedJudge(fakeRoot([]), undefined, undefined)).toBe(false);
