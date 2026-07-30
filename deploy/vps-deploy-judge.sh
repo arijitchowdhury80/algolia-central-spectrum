@@ -13,7 +13,7 @@
 #     without standing up a separate CI runner or webhook receiver.
 #
 # Deliberately does NOT touch AC2's ac2-lab-backend container, its
-# Dockerfile, or its checkout at /home/chowmesadmin/lab-judge. This script
+# Dockerfile, or its checkout at /home/deployuser/lab-judge. This script
 # only ever operates on a NEW, separate clone (ACS_JUDGE_REPO_DIR below) and
 # the NEW acs-lab-backend container defined in deploy/vps-judge/.
 #
@@ -23,7 +23,7 @@
 set -euo pipefail
 
 # --- config (override via env for local dry-run / testing) -----------------
-REPO_DIR="${ACS_JUDGE_REPO_DIR:-/home/chowmesadmin/acs-judge}"
+REPO_DIR="${ACS_JUDGE_REPO_DIR:-/home/deployuser/acs-judge}"
 COMPOSE_FILE="deploy/vps-judge/docker-compose.yml"
 HEALTH_URL="${ACS_JUDGE_HEALTH_URL:-http://127.0.0.1:8788/health}"
 BRANCH="main"
@@ -73,7 +73,7 @@ fi
 log "judge-relevant changes detected, rebuilding acs-lab-backend"
 BUILT_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-# NOTE: chowmesadmin runs docker via passwordless `sudo` on this VPS (not in
+# NOTE: deployuser runs docker via passwordless `sudo` on this VPS (not in
 # the docker group), so the poller uses `sudo docker`. The SHA/timestamp are
 # passed explicitly as --build-arg (no reliance on sudo env-passthrough); `up`
 # reuses the freshly built image. (Verified 2026-07-27.)

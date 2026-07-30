@@ -1,138 +1,154 @@
-# Deploying ACS
+# Deploying
 
-Three deployables. None is automatic. Each needs an explicit go-ahead per deploy.
+Three deployables. None is automatic. Each is a deliberate step.
+
+| # | Deployable | Target |
+|---|---|---|
+| 1 | Widget site (`/`, `/demo/`) and full-screen app (`/app`) | Vercel |
+| 2 | Grounding judge | A container behind a reverse proxy |
+| 3 | Agents | Agent Studio |
+
+The corpus is not a deploy — see [Corpus](#corpus--not-a-deploy).
 
 ---
 
-## 1. Web app → `algolia-central-spectrum.vercel.app`
+## 1. Widget site and app → Vercel
 
-**Production deploys are MANUAL.** `vercel.json` sets:
+**Production deploys are manual.** `vercel.json` sets:
 
 ```json
 "git": { "deploymentEnabled": { "main": false } }
 ```
 
-Why: Vercel's Git integration was auto-deploying **every push to `main`**. On 2026-07-28 three pushes reached production unintentionally — one shipped a chat client expecting a judge field the deployed judge did not yet return, so the live Confidence chip read "Grounding · unavailable" for about two hours. Pushing is not a neutral act unless this setting is in place.
+Why: Vercel's Git integration was auto-deploying every push to `main`. On 2026-07-28 three pushes reached production unintentionally — one shipped a client expecting a judge field the deployed judge did not yet return, and the live confidence chip read "Grounding · unavailable" for about two hours. **Pushing is not a neutral act unless this setting is in place.**
 
 Deploy:
 
 ```bash
-vercel --prod --yes          # from the repo root; the project is linked via .vercel/
+vercel --prod --yes     # from the repo root; the project is linked via .vercel/
 ```
 
-Notes:
+Vercel runs `scripts/deploy/build_prod_site.sh`, which builds four packages in dependency order — the two vendored widget packages, the enhancement layer, then the full-screen app — and assembles them with `scripts/widget/build_demo_site.mjs`.
 
-- `vercel.json` is schema-validated. It **rejects comment keys** — a `"//"` key fails the deploy with `Invalid vercel.json - should NOT have additional property`. Keep prose in this file instead.
-- Vercel reads `git.deploymentEnabled` from the pushed commit, so it applies from the first push that contains it. Confirm in **Project Settings → Git** rather than assuming.
-- Env vars (`VITE_JUDGE_URL`, `VITE_LAB_API_KEY`) live in the Vercel project, not in the repo. A local `npm run build` without them produces a bundle whose judge calls go to `http://localhost:8788` — which is exactly what made the chip look like it had disappeared on 2026-07-28. For a representative local preview:
+### The build refuses to ship a misconfigured site
+
+These are hard failures, not warnings. Each exists because the corresponding mistake reached production once.
+
+| Check | Fails when |
+|---|---|
+| `VITE_JUDGE_URL` set | Missing — the client's judge calls would go to `localhost` |
+| Judge key present in the bundle | Missing — every judge call would return 401 |
+| Enhancement script on every widget page | A page hosting `<algolia-chat>` reached the output without `acs-enhance.js`, so it would ship the widget's own in-browser judge instead of ours |
+| Proactive context assets present | `context/context-engine.js`, `personas.js` or `agents.generated.json` missing — the demo pages would load a 404 and track nothing |
+
+The page list is derived from the vendored source rather than hardcoded, so a page added upstream is covered automatically.
+
+### Environment
+
+`VITE_JUDGE_URL` and `VITE_LAB_API_KEY` live in the Vercel project, not the repo. A local build without them produces a bundle whose judge calls go to `http://localhost:8788`.
+
+Note the naming seam: the vendored client reads the secret as `VITE_JUDGE_API_KEY`; this project has always called it `VITE_LAB_API_KEY`. The build script exports both so either spelling resolves. Setting only one silently produced 401s on every judge call.
+
+### Verify after deploying
+
+Do not trust the deploy's own success message.
 
 ```bash
-cd web
-VITE_JUDGE_URL=https://judge.contentengagement.info/acs VITE_LAB_API_KEY=<key> npm run build
-npx vite preview --port 5200
+B=https://<your-deployment>
+
+# surfaces respond
+for p in / /demo/ /demo/button.html /app; do
+  echo "$p -> $(curl -s -o /dev/null -w '%{http_code}' $B$p)"
+done
+
+# the demo pages carry our enhancement layer
+curl -s $B/demo/button.html | grep -c acs-enhance.js
+
+# the judge endpoint baked into the bundle is the real one
+curl -s $B/acs-enhance.js | grep -oE 'https://[a-z.]+/acs'
 ```
 
-**Verify after deploying** (do not trust the deploy's own success message):
+Then load the site, ask a question, and read the chip. A changed bundle hash proves a deploy happened; it does not prove the feature works.
 
-```bash
-# 1. the served bundle changed
-curl -s https://algolia-central-spectrum.vercel.app/ | grep -oE 'index-[A-Za-z0-9_]+\.js'
-# 2. it contains what you shipped — probe a string only the new code has
-```
-
-Then load the site, ask a question, and read the chip. The bundle hash changing proves a deploy happened; it does not prove the feature works.
+**The widget bundle is what carries the judge URL.** `judgeUrl()` prefers runtime config but falls back to the `VITE_JUDGE_URL` compiled into the bundle, and in practice the compiled value is what takes effect — setting the `url` attribute on `<algolia-chat-confidence>` alone does **not** repoint the judge. Confirm in the network tab: our judge is one call to the judge host; the widget's own engine is three calls to `algolia.net/agent-studio`.
 
 ---
 
-## 2. Judge backend → `judge.contentengagement.info/acs`
+## 2. Judge → container behind a reverse proxy
 
-Runs as the `acs-lab-backend` container on the `chowmes` VPS (`72.61.72.147`, user `chowmesadmin`, key `~/.ssh/chowmes_ed25519`).
+Runs as the `acs-lab-backend` container on the judge host.
 
-**The `acs-judge-deploy.timer` is INACTIVE**, so the judge never updates itself. It moved 20 commits behind `main` this way, which is how a client got deployed against a judge that didn't have the fields it expected.
-
-Deploy:
+**The `acs-judge-deploy.timer` is inactive**, so the judge never updates itself. It once drifted 20 commits behind `main` that way, which is how a client shipped against a judge lacking the fields it expected.
 
 ```bash
 # 1. tag a rollback image FIRST
-ssh -i ~/.ssh/chowmes_ed25519 chowmesadmin@72.61.72.147 \
+ssh -i ~/.ssh/<judge_deploy_key> <deployuser>@<JUDGE_HOST> \
   "sudo -n docker tag acs-lab-backend:latest acs-lab-backend:rollback-$(date +%Y%m%d)"
 
-# 2. run the deploy script (fast-forwards the checkout, rebuilds, health-checks by SHA)
-ssh -i ~/.ssh/chowmes_ed25519 chowmesadmin@72.61.72.147 \
-  "cd /home/chowmesadmin/acs-judge && bash deploy/vps-deploy-judge.sh"
+# 2. deploy — fast-forwards the checkout, rebuilds, health-checks by SHA
+ssh -i ~/.ssh/<judge_deploy_key> <deployuser>@<JUDGE_HOST> \
+  "cd ~/acs-judge && bash deploy/vps-deploy-judge.sh"
 ```
 
-The script refuses to run against a dirty checkout, only rebuilds when something under `lab/judge/`, `lab/server/`, or `deploy/vps-judge/` changed, and fails loudly if the running container doesn't report the SHA it just built.
+The script refuses a dirty checkout, rebuilds only when something under `lab/judge/`, `lab/server/` or `deploy/vps-judge/` changed, and fails loudly if the running container does not report the SHA it just built.
 
-**Verify:**
+### Verify
 
 ```bash
-curl -s https://judge.contentengagement.info/acs/health     # must report the SHA you deployed
+curl -s https://<judge-host>/acs/health      # must report the SHA you deployed
 ```
 
-Then confirm it emits the fields the client needs — a healthy container is not the same as a correct contract:
+A healthy container is not the same as a correct contract. Confirm it emits the fields the client needs — each panel should carry `grounded`, `unsupportedTerms`, `termsChecked` and `groundingMode`:
 
 ```bash
-ssh -i ~/.ssh/chowmes_ed25519 chowmesadmin@72.61.72.147 \
-  'K=$(sudo -n docker exec acs-lab-backend printenv LAB_API_KEY); \
-   curl -s -X POST http://127.0.0.1:8788/api/judge -H "Content-Type: application/json" \
-     -H "x-lab-key: $K" -d @/tmp/jr.json' | python3 -m json.tool | head -40
+curl -s -X POST https://<judge-host>/acs/api/ground \
+  -H 'content-type: application/json' -H "x-judge-api-key: $KEY" \
+  -d '{"question":"…","panels":[{"panelId":"p1","answer":"…","sources":[…]}]}'
 ```
 
-Expect `grounded`, `unsupportedTerms`, `termsChecked`, `groundingMode` on each panel. The public endpoint requires the `x-lab-key` header; without it you get `{"error":"unauthorized"}`.
+Without the key you get `{"error":"unauthorized"}`. `/api/ground` runs the deterministic gate only and spends no tokens; `/api/judge` runs the full panel and does.
 
-Rollback:
+### Rollback
 
 ```bash
-ssh -i ~/.ssh/chowmes_ed25519 chowmesadmin@72.61.72.147 \
+ssh -i ~/.ssh/<judge_deploy_key> <deployuser>@<JUDGE_HOST> \
   "sudo -n docker tag acs-lab-backend:rollback-YYYYMMDD acs-lab-backend:latest && \
-   cd /home/chowmesadmin/acs-judge && sudo -n docker compose -f deploy/vps-judge/docker-compose.yml up -d"
+   cd ~/acs-judge && sudo -n docker compose -f deploy/vps-judge/docker-compose.yml up -d"
 ```
 
 ---
 
-## 3. Merged widget demo site (`dist-widget/`)
-
-The vendored Algolia widget assembled with our enhancement layer. Built, never committed — `web-widget/dist/` and `dist-widget*/` are gitignored precisely because the bundle **bakes in `VITE_JUDGE_URL` and `VITE_LAB_API_KEY` at build time**.
+## 3. Agents → Agent Studio
 
 ```bash
-# 1. vendored bundles (their build; run after any re-vendor)
-cd vendor/algolia-central-chat-widget/chat-central && npm run build
-cd ../algolia-chat && npm run build
-
-# 2. our enhancement layer — the judge config is baked in HERE
-cd ../../../web-widget
-VITE_JUDGE_URL=https://judge.contentengagement.info/acs VITE_LAB_API_KEY=<key> npm run build
-
-# 3. assemble (copies their site, adds the bundles their build forgets, injects our script)
-cd .. && node scripts/widget/build_demo_site.mjs --out dist-widget
+node scripts/agents/build_acs_agents.mjs
 ```
 
-**Verify before shipping** — the failure mode here is silent, and it has already happened once:
+Agents are **PATCHed in place**, never deleted and recreated, so their IDs stay stable — those IDs are embedded in page markup and in `context/agents.generated.json`.
+
+Snapshot before changing anything:
 
 ```bash
-grep -c "judge.contentengagement" dist-widget/acs-enhance.js   # must be >= 1, not localhost
+node scripts/agents/snapshot_panel_agents.mjs     # writes to scripts/agents/snapshots/
+node scripts/agents/restore_agent_from_snapshot.mjs <agent> <snapshot>
 ```
 
-Then load the site and check in the browser console that the confidence panel actually took our config:
+**Before running the build script, check `MAIN_MODEL` in `scripts/agents/agentConfig.mjs`.** It currently declares a model that differs from what the live agents run, so running the script as-is would change their model.
 
-```js
-const p = document.querySelector('algolia-chat-confidence');
-({ mode: p.getAttribute('mode'), url: p.getAttribute('url') })   // expect hosted + our judge URL
-```
-
-That check is not paranoia. `<algolia-chat-confidence>` captures mode/url/api-key in `connectedCallback` and implements **no `attributeChangedCallback`**, so anything written after the element upgrades is silently ignored — the attribute reads correctly in DevTools while the widget runs its own in-browser judge. Confirm with the network tab: our judge means one call to `judge.contentengagement.info`, theirs means three calls to `algolia.net/agent-studio`.
+The judge agents are rubric-agnostic by design: the rubric travels with each request from `lab/judge`. Baking a rubric back into their instructions breaks any other consumer of the same agents.
 
 ---
 
-## 4. Corpus / index — not a deploy
+## Corpus — not a deploy
 
-`ACS_SPECTRUM_MULTI` is shared live data. Changing it takes effect immediately for every client, prod included, with no deploy. Snapshot before mutating (`scripts/crawler/repair_citation_urls.mjs` writes a baseline snapshot before it touches any record, for exactly this reason).
+`ACS_SPECTRUM_MULTI` is shared live data. Changing it takes effect immediately for every client, production included, with no deploy. Snapshot before mutating — `scripts/crawler/repair_citation_urls.mjs` writes a baseline before it touches any record, for exactly this reason.
 
-**Client-side caveat:** `react-instantsearch`'s `useChat` persists whole answers — including their captured search results — in `sessionStorage`. A corpus change is therefore invisible in any already-rendered turn. Bump `CHAT_CACHE_EPOCH` in `web/src/lib/chatCache.ts` whenever a corpus change makes old turns misleading, or users will keep seeing the pre-fix data and report the fix as broken.
+**Client-side caveat:** the chat engine persists whole answers, including their captured search results, in `sessionStorage`. A corpus change is therefore invisible in any already-rendered turn. Bump `CHAT_CACHE_EPOCH` in `web/src/lib/chatCache.ts` when a corpus change makes old turns misleading, or users keep seeing pre-fix data and report the fix as broken.
 
 ---
 
 ## Order of operations
 
-When a change spans layers, deploy **backend before client**. The 2026-07-28 incident was exactly this inverted: the client shipped first and spent two hours asking a judge for a field it couldn't produce.
+When a change spans layers, deploy **backend before client**. The 2026-07-28 incident was exactly this inverted: the client shipped first and spent two hours asking the judge for a field it could not produce.
+
+Batch changes into one deploy per surface rather than shipping a series of small ones.

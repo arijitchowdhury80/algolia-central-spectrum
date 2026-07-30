@@ -1,5 +1,5 @@
 # Append this as its OWN site block to the VPS's existing Caddyfile
-# (/home/chowmesadmin/Caddyfile, currently fronting AC2's ac2-lab-backend at
+# (/home/deployuser/Caddyfile, currently fronting AC2's ac2-lab-backend at
 # judge.contentengagement.info among other sites — see phase-5
 # deploy-design.md for why ACS gets a separate subdomain instead of reusing
 # that one).
