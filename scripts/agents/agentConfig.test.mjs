@@ -21,7 +21,7 @@ test('buildAgentName with empty suffix is unchanged (backward-compatible default
 test('buildSuggestionsConfig returns the locked spec shape', () => {
   const c = buildSuggestionsConfig('test prompt');
   assert.equal(c.enabled, true);
-  assert.equal(c.model, 'gemini-2.5-flash');
+  assert.equal(c.model, 'medium');
   assert.equal(c.system_prompt, 'test prompt');
   assert.deepEqual(c.generation, { max_count: 1 });
   assert.deepEqual(c.context, { include_tool_outputs: true });
@@ -83,7 +83,7 @@ test('buildSuggestionsConfig 1-arg call still defaults enabled:true (backward-co
 test('buildSuggestionsConfig("p", false) sets enabled:false, other fields unchanged', () => {
   const c = buildSuggestionsConfig('p', false);
   assert.equal(c.enabled, false);
-  assert.equal(c.model, 'gemini-2.5-flash');
+  assert.equal(c.model, 'medium');
   assert.equal(c.system_prompt, 'p');
   assert.deepEqual(c.generation, { max_count: 1 });
   assert.deepEqual(c.context, { include_tool_outputs: true });

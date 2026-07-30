@@ -11,7 +11,7 @@
  *
  * Live judging is INDICATIVE (thinner sources + fewer rounds for latency).
  * The scoring fn is INJECTED so the orchestration is unit-testable without a
- * network; judgeHandler.ts binds the default (provider-resolved Gemini/OpenAI
+ * network; judgeHandler.ts binds the default (provider-resolved inference/OpenAI
  * llm via activeJudgeLlm.ts).
  */
 import {

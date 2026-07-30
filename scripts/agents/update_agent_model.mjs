@@ -3,8 +3,8 @@
  * its ID + instructions + tools. Same PATCH-in-place pattern build_acs_agents.mjs
  * uses (AC2 agent_admin.mjs: Update Agent = PATCH partial body, publish is separate).
  *
- *   node update_agent_model.mjs --id <agentId> --model gemini-2.5-flash-lite
- *   node update_agent_model.mjs --model gemini-2.5-flash-lite      # defaults to ACS-generic-neural
+ *   node update_agent_model.mjs --id <agentId> --model medium
+ *   node update_agent_model.mjs --model medium      # defaults to ACS-generic-neural
  *
  * Read receipt: field name `model` from build_acs_agents.mjs:54 (create body);
  * PATCH+publish endpoints from build_acs_agents.mjs.
@@ -18,7 +18,7 @@ const A = {};
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const AGENT_ID = A.id || '95826da6-d1b6-4b81-b061-bfb52b881356'; // default ACS-generic-neural (rebuilt 2026-07-08)
 const MODEL = A.model;
-if (!MODEL || MODEL === true) { console.error('required: --model <modelId>  (e.g. gemini-2.5-flash-lite)'); process.exit(1); }
+if (!MODEL || MODEL === true) { console.error('required: --model <modelId>  (e.g. medium)'); process.exit(1); }
 
 const envPath = [process.env.ACS_ENV, join(process.cwd(), '.env.local'), join(__dirname, '..', '..', '.env.local')].filter(Boolean).find((p) => existsSync(p));
 const ENV = {}; for (const l of readFileSync(envPath, 'utf8').split('\n')) { const t = l.trim(); if (!t || t.startsWith('#') || !t.includes('=')) continue; const i = t.indexOf('='); ENV[t.slice(0, i).trim()] = t.slice(i + 1).trim(); }

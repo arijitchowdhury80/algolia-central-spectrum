@@ -5,15 +5,15 @@
  * Agent Studio panel wiring (agentModel/agentProviderId/PinnedAgentSpec, an
  * OpenAI-preferred health-probe fallback tied to AC2's specific dead-OpenAI-key
  * history) that has nothing to do with running the judge standalone in ACS.
- * Simplified per the ACS judge-service spec: default provider is GEMINI
- * (GOOGLE_API_KEY), with OpenAI (OPENAI_API_KEY) selectable via env — no
- * runtime health probe, no Agent Studio provider ids.
+ * Simplified per the ACS judge-service spec: default provider is the Algolia
+ * enablers INFERENCE server, with OpenAI (OPENAI_API_KEY) selectable via env —
+ * no runtime health probe, no Agent Studio provider ids.
  *
- * Override with JUDGE_PROVIDER=openai|gemini (falls back to LLM_PROVIDER for
- * parity with AC2's env-var naming, then defaults to "gemini").
+ * Override with JUDGE_PROVIDER=openai|inference (falls back to LLM_PROVIDER for
+ * parity with AC2's env-var naming, then defaults to "inference").
  */
 
-export type Provider = "openai" | "gemini" | "inference";
+export type Provider = "openai" | "inference";
 
 export interface ProviderSpec {
   readonly provider: Provider;
@@ -24,25 +24,20 @@ export interface ProviderSpec {
   /**
    * OpenAI-compatible API base for this provider (ends in `/v1`). Only set for
    * the `inference` provider (the Algolia enablers inference server); undefined
-   * for the native openai/gemini providers, which use their SDK default hosts.
+   * for the native openai provider, which uses its SDK default host.
    */
   readonly baseURL?: string;
 }
 
 /**
  * Fixed specs per provider. Models are overridable via JUDGE_MODEL; the
- * per-provider defaults below match AC2's validated defaults (gemini-2.5-pro /
- * gpt-5) so the ported judge behaves identically absent an override.
+ * openai default below matches AC2's validated default (gpt-5) so the ported
+ * judge behaves identically absent an override.
  */
 export function providerSpecs(
   env: Record<string, string | undefined> = process.env,
 ): Record<Provider, ProviderSpec> {
   return {
-    gemini: {
-      provider: "gemini",
-      judgeModel: env.JUDGE_MODEL || "gemini-2.5-pro",
-      keyVar: "GOOGLE_API_KEY",
-    },
     openai: {
       provider: "openai",
       judgeModel: env.JUDGE_MODEL || "gpt-5",
@@ -66,7 +61,7 @@ export interface ResolveOptions {
 }
 
 /**
- * Resolve the active provider for the judge. GEMINI is the default; pin
+ * Resolve the active provider for the judge. INFERENCE is the default; pin
  * OPENAI via JUDGE_PROVIDER=openai (or LLM_PROVIDER=openai for AC2 parity).
  */
 export function resolveActiveProvider(
@@ -78,8 +73,8 @@ export function resolveActiveProvider(
     opts.force ??
     (env.JUDGE_PROVIDER as Provider | undefined) ??
     (env.LLM_PROVIDER as Provider | undefined);
-  if (forced === "openai" || forced === "gemini" || forced === "inference") {
+  if (forced === "openai" || forced === "inference") {
     return specs[forced];
   }
-  return specs.gemini;
+  return specs.inference;
 }

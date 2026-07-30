@@ -47,8 +47,8 @@ const base = (await call('GET', `/agents/${baseId}`)).json;
 // Provider/model selection (2026-07-27). If ALGOLIA_PROVIDER_INFERENCE_ID is set
 // (registered by setup_provider_inference.mjs → the enablers inference server), run
 // the agents on it with ALGOLIA_INFERENCE_MODEL (default 'medium'). Otherwise fall
-// back to the provider cloned off the base agent (Gemini) + MAIN_MODEL. Reversible:
-// unset ALGOLIA_PROVIDER_INFERENCE_ID → back to Gemini on the next build.
+// back to the provider cloned off the base agent + MAIN_MODEL. Reversible:
+// unset ALGOLIA_PROVIDER_INFERENCE_ID → back to the cloned provider on the next build.
 const INFERENCE_PROVIDER_ID = ENV.ALGOLIA_PROVIDER_INFERENCE_ID;
 const useInference = !!INFERENCE_PROVIDER_ID;
 const providerId = useInference ? INFERENCE_PROVIDER_ID : (base.providerId ?? base.provider_id);

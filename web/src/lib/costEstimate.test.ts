@@ -9,7 +9,7 @@ describe('estimateAgentCost', () => {
     expect(est.estimatedInputTokens).toBe(10);
     expect(est.estimatedOutputTokens).toBe(20);
     expect(est.method).toBe('ESTIMATED');
-    expect(est.model).toBe('gemini-2.5-flash');
+    expect(est.model).toBe('medium');
   });
 
   it('folds sourcesText into the input side', () => {
@@ -22,7 +22,7 @@ describe('estimateAgentCost', () => {
     expect(withSources.estimatedInputTokens).toBeGreaterThan(withoutSources.estimatedInputTokens);
   });
 
-  it('prices input and output independently at the gemini-2.5-flash rate ($0.30/$2.50 per 1M)', () => {
+  it('prices input and output independently at the medium stand-in rate ($0.30/$2.50 per 1M)', () => {
     const est = estimateAgentCost({
       question: 'x'.repeat(4_000_000), // 1,000,000 input tokens
       answer: 'y'.repeat(4_000_000), // 1,000,000 output tokens

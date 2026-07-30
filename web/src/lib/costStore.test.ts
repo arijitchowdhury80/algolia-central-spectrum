@@ -8,7 +8,7 @@ function entry(overrides: Partial<CostEntry> = {}): CostEntry {
     agent: 'generic',
     kind: 'agent',
     method: 'ESTIMATED',
-    model: 'gemini-2.5-flash',
+    model: 'medium',
     inputTokens: 100,
     outputTokens: 50,
     costUsd: 0.0001,

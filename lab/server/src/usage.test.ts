@@ -5,7 +5,7 @@ import { withUsageCapture, summarizeUsage, type UsageCall } from "./usage.js";
 describe("withUsageCapture", () => {
   it("pushes the provider's onUsage call onto the sink, tagged", async () => {
     const fakeLlm: LlmComplete = async (_prompt, opts) => {
-      opts?.onUsage?.({ inputTokens: 100, outputTokens: 50, model: "gemini-2.5-flash", tag: opts.tag });
+      opts?.onUsage?.({ inputTokens: 100, outputTokens: 50, model: "gpt-4o-mini", tag: opts.tag });
       return "ok";
     };
     const calls: UsageCall[] = [];
@@ -14,7 +14,7 @@ describe("withUsageCapture", () => {
     await wrapped("hello", { tag: "judge:skeptic:round1" });
 
     expect(calls).toEqual([
-      { tag: "judge:skeptic:round1", model: "gemini-2.5-flash", inputTokens: 100, outputTokens: 50 },
+      { tag: "judge:skeptic:round1", model: "gpt-4o-mini", inputTokens: 100, outputTokens: 50 },
     ]);
   });
 
@@ -22,7 +22,7 @@ describe("withUsageCapture", () => {
     let n = 0;
     const fakeLlm: LlmComplete = async (_prompt, opts) => {
       n += 1;
-      opts?.onUsage?.({ inputTokens: n * 10, outputTokens: n * 5, model: "gemini-2.5-pro" });
+      opts?.onUsage?.({ inputTokens: n * 10, outputTokens: n * 5, model: "gpt-4o" });
       return "ok";
     };
     const calls: UsageCall[] = [];
@@ -64,14 +64,14 @@ describe("withUsageCapture", () => {
 describe("summarizeUsage", () => {
   it("sums tokens and prices known-model calls", () => {
     const calls: UsageCall[] = [
-      { model: "gemini-2.5-flash", inputTokens: 1_000_000, outputTokens: 1_000_000, tag: "judge:skeptic:round1" },
-      { model: "gemini-2.5-flash", inputTokens: 500_000, outputTokens: 0, tag: "followup-quality" },
+      { model: "gpt-4o-mini", inputTokens: 1_000_000, outputTokens: 1_000_000, tag: "judge:skeptic:round1" },
+      { model: "gpt-4o-mini", inputTokens: 500_000, outputTokens: 0, tag: "followup-quality" },
     ];
     const summary = summarizeUsage(calls);
     expect(summary.totalInputTokens).toBe(1_500_000);
     expect(summary.totalOutputTokens).toBe(1_000_000);
-    // (0.30+2.50) + 0.15 = 2.95
-    expect(summary.estimatedCostUsd).toBeCloseTo(2.95, 6);
+    // (0.15+0.60) + 0.075 = 0.825
+    expect(summary.estimatedCostUsd).toBeCloseTo(0.825, 6);
     expect(summary.hasUnpricedCalls).toBe(false);
     expect(summary.calls).toBe(calls);
   });

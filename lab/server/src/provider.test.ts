@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { providerSpecs, resolveActiveProvider } from "./provider.js";
 
 describe("provider resolution", () => {
-  it("defaults to gemini when nothing is forced", () => {
-    expect(resolveActiveProvider({}).provider).toBe("gemini");
+  it("defaults to inference when nothing is forced", () => {
+    expect(resolveActiveProvider({}).provider).toBe("inference");
   });
 
   it("resolves the inference provider (OpenAI-compatible enablers server)", () => {
@@ -24,9 +24,8 @@ describe("provider resolution", () => {
     expect(spec.judgeModel).toBe("large");
   });
 
-  it("leaves openai/gemini without a baseURL (they use SDK default hosts)", () => {
+  it("leaves openai without a baseURL (it uses the SDK default host)", () => {
     expect(providerSpecs({}).openai.baseURL).toBeUndefined();
-    expect(providerSpecs({}).gemini.baseURL).toBeUndefined();
   });
 
   it("still resolves openai when forced", () => {

@@ -365,7 +365,7 @@ you need ≥ 2 ranked items.
 
 - **Zero runtime dependencies.** `package.json` lists only dev deps (vitest, tsx,
   typescript). Nothing is imported from a vendor SDK anywhere in `src/`.
-- **One seam:** `LlmComplete`. Any model — Anthropic, OpenAI, Gemini, a local
+- **One seam:** `LlmComplete`. Any model — Anthropic, OpenAI, a local
   model, or a deterministic mock — drops in behind that single function. The
   entire scoring engine (aggregate / gate / synthesis / claimGate / calibration)
   is **pure** and unit-tested without a network by mocking `llm`.

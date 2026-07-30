@@ -2,7 +2,7 @@
 /**
  * setup_provider_inference — register the Algolia enablers INFERENCE SERVER as an
  * OpenAI-compatible provider in Agent Studio on this app, so the ACS agents can run
- * on it instead of Gemini. Ported from AC2's setup_providers.mjs (same wire contract).
+ * on it. Ported from AC2's setup_providers.mjs (same wire contract).
  *
  * Wire contract (Read receipt — AC2 setup_providers.mjs + live probe 2026-07-27):
  *   POST /agent-studio/1/providers

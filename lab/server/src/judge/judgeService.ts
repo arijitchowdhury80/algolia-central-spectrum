@@ -69,7 +69,7 @@
  * DEPLOYMENT: an always-on Node process (the judge is 30–90s and needs a
  * server-side LLM key — not a fit for Vercel serverless). The provider + key
  * are resolved from ACS's root .env.local by the shared adapters
- * (activeJudgeLlm/provider). Default provider is GEMINI (GOOGLE_API_KEY);
+ * (activeJudgeLlm/provider). Default provider is INFERENCE (ALGOLIA_INFERENCE_API_KEY);
  * set JUDGE_PROVIDER=openai to use OPENAI_API_KEY instead.
  */
 import { createServer } from "node:http";

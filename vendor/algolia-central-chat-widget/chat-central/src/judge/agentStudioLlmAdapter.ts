@@ -1,7 +1,7 @@
 /**
  * agentStudioLlmAdapter — an `LlmComplete` adapter (the confidence engine's
  * only seam to a real model) backed by an Algolia Agent Studio agent instead
- * of a direct Gemini/OpenAI call.
+ * of a direct model-provider call.
  *
  * Lets the whole provider-agnostic judge engine run IN THE BROWSER against the
  * same search-only Algolia key the chat already uses — no VPS judge service and

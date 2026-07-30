@@ -276,7 +276,6 @@ The production build refuses to produce a misconfigured site: it fails if `VITE_
 
 - **The `url` / `api-key` attributes on `<algolia-chat-confidence>` do not override the judge endpoint.** The client falls back to the `VITE_JUDGE_URL` compiled into the widget bundle. Production is correct because the build exports that variable, so the bundle carries the intended value — but changing the attribute alone has no effect.
 - **A slow answer can render as a failure.** Past a certain latency the client reports that it could not reach the agent, even though the stream is still alive. The cause is provider-side latency variance; the client-side timeout handling is unfixed.
-- **`scripts/agents/agentConfig.mjs` declares `MAIN_MODEL = 'gemini-2.5-flash'`, but every live agent runs `medium`.** Running the agent build script would change the live model. Reconcile the constant before using it.
 - **Agent calls from the browser are not rate-limited.** The application ID, search-only key and agent IDs are necessarily present in page source. They cannot modify data, but they can invoke agents, which consumes tokens.
 - **The corpus contains Adobe-internal hostnames.** Some records mention `s2.spectrum.corp.adobe.com` and `adobe.enterprise.slack.com` inside indexed body text. Agent instructions forbid emitting them; the durable fix is a re-ingest that strips them at the source.
 

@@ -45,7 +45,7 @@ export async function judgeArtifact(
     cfg.judges.map(async (judge) => {
       const prompt = buildJudgePrompt(judge, artifact, cfg.rubric);
       // Retry on unparseable output: strong models occasionally emit a stray
-      // token producing invalid JSON (observed with gemini-2.5-pro). A single
+      // token producing invalid JSON. A single
       // glitch must not fail the judgment — re-ask up to MAX_PARSE_RETRIES times.
       let parsed: ReturnType<typeof parseJudgeOutput> | undefined;
       let lastErr: unknown;

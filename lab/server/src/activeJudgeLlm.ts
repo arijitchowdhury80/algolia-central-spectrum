@@ -10,7 +10,6 @@
 import { DEFAULT_JUDGE_CONFIG, type LlmComplete } from "@lab/judge";
 import { getEnv } from "./config.js";
 import { makeOpenAIComplete } from "./openai.js";
-import { makeGeminiComplete } from "./gemini.js";
 import { makeJudgeLlm } from "./judgeLlm.js";
 import { resolveActiveProvider } from "./provider.js";
 import { withUsageCapture, type UsageCall } from "./usage.js";
@@ -30,18 +29,17 @@ export interface ActiveJudgeLlm {
 
 export interface ActiveJudgeOpts {
   /**
-   * LIVE judge mode: pick a fast model for the indicative on-screen verdict.
-   * For gemini that's gemini-2.5-flash (override via JUDGE_LIVE_MODEL) —
-   * markedly faster than pro. A future authoritative/batch path would leave
-   * this off and keep the slower, more accurate default model.
+   * LIVE judge mode: pick a fast model for the indicative on-screen verdict,
+   * overridable via JUDGE_LIVE_MODEL. A future authoritative/batch path would
+   * leave this off and keep the slower, more accurate default model.
    */
   fastLive?: boolean;
 }
 
 /** The fast model used for the live/indicative judge, per provider. */
-function liveModelFor(env: ReturnType<typeof getEnv>, provider: string, fallback: string): string {
-  if (provider === "gemini") return env.JUDGE_LIVE_MODEL ?? "gemini-2.5-flash";
-  // OpenAI: no confirmed faster judge model wired — keep the resolved default.
+function liveModelFor(env: ReturnType<typeof getEnv>, fallback: string): string {
+  // No confirmed faster judge model wired per-provider yet — keep the
+  // resolved default unless explicitly overridden.
   return env.JUDGE_LIVE_MODEL ?? fallback;
 }
 
@@ -49,16 +47,11 @@ export async function makeActiveJudgeLlm(opts: ActiveJudgeOpts = {}): Promise<Ac
   const env = getEnv();
   const spec = resolveActiveProvider(env);
   const apiKey = env[spec.keyVar] ?? "";
-  const model = opts.fastLive
-    ? liveModelFor(env, spec.provider, spec.judgeModel)
-    : spec.judgeModel;
-  // gemini → native Gemini client; openai + inference → OpenAI client (inference
-  // is OpenAI-compatible, differing only by baseURL). spec.baseURL is set only
+  const model = opts.fastLive ? liveModelFor(env, spec.judgeModel) : spec.judgeModel;
+  // openai + inference both ride the OpenAI client (inference is
+  // OpenAI-compatible, differing only by baseURL). spec.baseURL is set only
   // for inference, so openai keeps its default host.
-  const rawLlm =
-    spec.provider === "gemini"
-      ? makeGeminiComplete({ apiKey, model })
-      : makeOpenAIComplete({ apiKey, model, baseURL: spec.baseURL });
+  const rawLlm = makeOpenAIComplete({ apiKey, model, baseURL: spec.baseURL });
   const judgeLlm = makeJudgeLlm(rawLlm, DEFAULT_JUDGE_CONFIG.rubric);
   const usageCalls: UsageCall[] = [];
   const llm = withUsageCapture(judgeLlm, (u) => usageCalls.push(u));

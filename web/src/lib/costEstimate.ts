@@ -13,26 +13,28 @@
  * Heuristic: ~4 characters per token (a commonly-cited rough average for
  * English text across tokenizers — NOT a measured constant for any specific
  * model's tokenizer). Applied to: question + sources text as "input", answer
- * text as "output". Priced at gemini-2.5-flash's published rate (the model
- * ACS's live agents actually run on — see docs/... instance config), the same
- * rate lab/server/src/llmRates.ts uses for the judge's fast/live model, so an
- * agent card and a judge card in the same UI are at least priced consistently
- * even though one is exact and the other is a guess.
+ * text as "output". Priced at a stand-in rate (the Algolia enablers inference
+ * server's "medium" model, which ACS's live agents actually run on, has no
+ * published per-token price), the same stand-in lab/server/src/llmRates.ts
+ * uses for the judge's fast/live model, so an agent card and a judge card in
+ * the same UI are at least priced consistently even though one is exact and
+ * the other is a guess.
  */
 
 const CHARS_PER_TOKEN = 4;
 
-/** gemini-2.5-flash published rate, USD per 1M tokens. Mirrors
- *  lab/server/src/llmRates.ts's entry — duplicated here (not imported) because
- *  the web app and lab/server are separate deployables that only talk over
- *  HTTP, never share a package. */
-const FLASH_RATE = { inputPerMillionUsd: 0.3, outputPerMillionUsd: 2.5 };
+/** Stand-in rate, USD per 1M tokens, for the "medium" inference model (no
+ *  published per-token price exists). Mirrors lab/server/src/llmRates.ts's
+ *  approach — duplicated here (not imported) because the web app and
+ *  lab/server are separate deployables that only talk over HTTP, never share
+ *  a package. */
+const MEDIUM_RATE = { inputPerMillionUsd: 0.3, outputPerMillionUsd: 2.5 };
 
 export interface EstimatedCost {
   readonly estimatedInputTokens: number;
   readonly estimatedOutputTokens: number;
   readonly estimatedCostUsd: number;
-  readonly model: "gemini-2.5-flash";
+  readonly model: "medium";
   readonly method: "ESTIMATED";
 }
 
@@ -55,13 +57,13 @@ export function estimateAgentCost(input: AgentCostInput): EstimatedCost {
   const estimatedInputTokens = estimateTokens(input.question) + estimateTokens(sourcesJoined);
   const estimatedOutputTokens = estimateTokens(input.answer);
   const estimatedCostUsd =
-    (estimatedInputTokens / 1_000_000) * FLASH_RATE.inputPerMillionUsd +
-    (estimatedOutputTokens / 1_000_000) * FLASH_RATE.outputPerMillionUsd;
+    (estimatedInputTokens / 1_000_000) * MEDIUM_RATE.inputPerMillionUsd +
+    (estimatedOutputTokens / 1_000_000) * MEDIUM_RATE.outputPerMillionUsd;
   return {
     estimatedInputTokens,
     estimatedOutputTokens,
     estimatedCostUsd,
-    model: "gemini-2.5-flash",
+    model: "medium",
     method: "ESTIMATED",
   };
 }

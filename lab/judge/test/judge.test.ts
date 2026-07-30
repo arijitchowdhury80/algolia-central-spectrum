@@ -167,7 +167,7 @@ describe("judgeArtifact (end-to-end with a MOCKED llm — no network)", () => {
   });
 
   it("retries a judge call when the model emits unparseable JSON, then succeeds", async () => {
-    // Gemini occasionally emits a stray token producing invalid JSON; a single
+    // Some models occasionally emit a stray token producing invalid JSON; a single
     // such glitch must NOT crash judging — the call is retried.
     let skepticCalls = 0;
     const validSkeptic = JSON.stringify({

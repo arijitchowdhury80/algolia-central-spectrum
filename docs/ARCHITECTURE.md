@@ -145,7 +145,7 @@ Vite + React + TypeScript + Tailwind. An independent rendering path over the sam
 | `judge/groundHandler.ts` | `POST /api/ground` — the deterministic gate alone. No LLM calls, so no cost. |
 | `judge/liveJudge.ts` | Maps a judge run onto the wire verdict, flattening corroborated clusters and solo flags. |
 | `judge/judgeCli.ts` | Command-line entry for scoring without the HTTP layer. |
-| `provider.ts`, `openai.ts`, `gemini.ts` | Pluggable model providers. |
+| `provider.ts`, `openai.ts` | Pluggable model providers. |
 | `judgeLlm.ts`, `activeJudgeLlm.ts` | LLM-call plumbing shared across runs. |
 | `usage.ts`, `llmRates.ts` | Exact per-call token accounting and pricing. |
 | `auth.ts`, `config.ts`, `buildInfo.ts` | Shared-secret auth, env resolution, and the build SHA reported by `/health`. |

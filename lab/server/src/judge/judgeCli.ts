@@ -25,9 +25,9 @@
  * Exit code 0 on success, non-zero on any error (bad JSON, missing fields, LLM
  * failure). Progress + errors go to stderr so stdout stays parseable JSON.
  *
- * The provider LLM (Gemini/OpenAI) + key are resolved from ACS's root
+ * The provider LLM (inference/OpenAI) + key are resolved from ACS's root
  * .env.local by the shared adapters (activeJudgeLlm → provider → config).
- * REQUIREMENT: a working GOOGLE_API_KEY (or OPENAI_API_KEY, with
+ * REQUIREMENT: a working ALGOLIA_INFERENCE_API_KEY (or OPENAI_API_KEY, with
  * JUDGE_PROVIDER=openai) must be present in .env.local.
  *
  *   Usage:

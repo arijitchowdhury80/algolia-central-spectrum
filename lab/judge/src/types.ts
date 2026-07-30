@@ -20,14 +20,14 @@ export type { DeterministicGrounding };
 
 /**
  * Exact token usage for ONE LlmComplete call, as reported by the provider's
- * own response (Gemini `usageMetadata`, OpenAI `usage`). Cost tracking
+ * own response (e.g. OpenAI's `usage`). Cost tracking
  * (spike plan §6) — this is the EXACT counterpart to the web client's
  * text-length ESTIMATE for Agent Studio calls, which exposes no usage at all.
  */
 export interface LlmUsage {
   readonly inputTokens: number;
   readonly outputTokens: number;
-  /** The concrete model string the call actually ran against (e.g. "gemini-2.5-flash"). */
+  /** The concrete model string the call actually ran against (e.g. "medium"). */
   readonly model: string;
   /** Echoes the call's `tag`, if any, so a caller can attribute usage per call site. */
   readonly tag?: string;
@@ -44,7 +44,7 @@ export interface LlmCompleteOptions {
   readonly tag?: string;
   /**
    * SINK, not a return value: providers that receive exact token counts in
-   * their raw response (gemini.ts/openai.ts) invoke this synchronously before
+   * their raw response (openai.ts) invoke this synchronously before
    * resolving, when usage is present. Deliberately a callback rather than a
    * widened `LlmComplete` return type (`Promise<string>` stays unchanged
    * everywhere) — see lab/server/src/usage.ts for the accumulator that wraps

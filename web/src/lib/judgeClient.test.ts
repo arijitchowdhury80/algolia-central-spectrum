@@ -26,7 +26,7 @@ describe('judgeAnswer — usage field tolerance (cost tracking §6, Phase 3)', (
 
   it('folds request-scoped usage onto the returned verdict when the server sends it', async () => {
     const usage = {
-      calls: [{ tag: 'judge:skeptic:round1', model: 'gemini-2.5-flash', inputTokens: 100, outputTokens: 20 }],
+      calls: [{ tag: 'judge:skeptic:round1', model: 'medium', inputTokens: 100, outputTokens: 20 }],
       totalInputTokens: 100,
       totalOutputTokens: 20,
       estimatedCostUsd: 0.00008,
