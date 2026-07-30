@@ -26,7 +26,7 @@
  *
  *   node scripts/widget/build_demo_site.mjs [--out dist-widget]
  */
-import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -51,6 +51,13 @@ if (!existsSync(join(BUNDLES_SRC, 'algolia-chat.js'))) {
 }
 
 // ---------- 1. copy their site verbatim ----------
+//
+// Clear the output first. cpSync copies over what is already there but never
+// removes anything, so a file deleted from the source survived in every
+// subsequent build — a presenter deck removed from the repo was still being
+// served in production because the stale copy sat in a reused output dir.
+// A build directory that outlives its inputs is not a build directory.
+rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 cpSync(SITE_SRC, OUT, { recursive: true });
 console.log(`copied site      ${SITE_SRC.replace(ROOT + '/', '')} -> ${OUT.replace(ROOT + '/', '')}`);
