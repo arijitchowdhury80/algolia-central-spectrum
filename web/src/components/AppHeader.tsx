@@ -1,4 +1,5 @@
 import { activeInstance } from '../config/active';
+import { assetUrl } from '../lib/assetUrl';
 
 export interface AppHeaderProps {
   /** Reset the whole conversation (wired to a logo click). */
@@ -27,7 +28,7 @@ export function AppHeader({ onReset, onOpenCost }: AppHeaderProps) {
         title="Start over — clear this conversation"
         className="-mx-2 flex items-center gap-3 rounded-ac-md px-2 py-1 transition-colors duration-ac-fast ease-ac-ease hover:bg-ac-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ac-accent"
       >
-        <img src={activeInstance.logo.header} alt={`${activeInstance.brandName} logo`} className="h-8 w-8 shrink-0" />
+        <img src={assetUrl(activeInstance.logo.header)} alt={`${activeInstance.brandName} logo`} className="h-8 w-8 shrink-0" />
         <div className="flex flex-col text-left leading-tight">
           <span className="font-ac-sans text-ac-base font-ac-medium text-ac-text">{activeInstance.productTitle}</span>
           <span className="text-ac-xs text-ac-text-muted">{activeInstance.subtitle}</span>
@@ -45,7 +46,7 @@ export function AppHeader({ onReset, onOpenCost }: AppHeaderProps) {
           Cost
         </button>
         <span className="hidden text-ac-xs text-ac-text-muted sm:inline">Search by</span>
-        <img src="/brand/algolia-logo.svg" alt="Algolia" className="h-[18px] w-auto shrink-0" />
+        <img src={assetUrl('brand/algolia-logo.svg')} alt="Algolia" className="h-[18px] w-auto shrink-0" />
       </div>
     </header>
   );

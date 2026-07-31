@@ -107,6 +107,10 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
 
 const BULLET_ITEM_RE = /^[*-]\s+(.*)$/;
 const ORDERED_ITEM_RE = /^\d+[.)]\s+(.*)$/;
+/** ATX heading, 1–6 hashes. Observed on production 2026-07-30: answers routinely
+ *  emit `### Key Features`, and with no rule for it the line fell through to the
+ *  prose path and rendered the hashes literally. */
+const HEADING_RE = /^(#{1,6})\s+(.*)$/;
 
 /** A "block" is separated from its neighbors by a blank line. A block is NOT
  *  itself guaranteed to be pure prose or a pure list — a real answer
@@ -122,16 +126,24 @@ function splitBlocks(text: string): string[] {
   return text.split(/\n{2,}/).filter((b) => b.trim().length > 0);
 }
 
-type Run = { kind: 'bullet' | 'ordered' | 'prose'; lines: string[] };
+export type Run = { kind: 'bullet' | 'ordered' | 'prose' | 'heading'; lines: string[] };
 
-function groupIntoRuns(block: string): Run[] {
+export function groupIntoRuns(block: string): Run[] {
   const runs: Run[] = [];
   for (const rawLine of block.split('\n')) {
     const line = rawLine.trim();
     if (!line) continue;
-    const kind: Run['kind'] = BULLET_ITEM_RE.test(line) ? 'bullet' : ORDERED_ITEM_RE.test(line) ? 'ordered' : 'prose';
+    const kind: Run['kind'] = HEADING_RE.test(line)
+      ? 'heading'
+      : BULLET_ITEM_RE.test(line)
+        ? 'bullet'
+        : ORDERED_ITEM_RE.test(line)
+          ? 'ordered'
+          : 'prose';
     const last = runs[runs.length - 1];
-    if (last && last.kind === kind) {
+    // Headings never merge: two consecutive heading lines are two headings, not
+    // one two-line heading, unlike list items which accumulate into one list.
+    if (last && last.kind === kind && kind !== 'heading') {
       last.lines.push(line);
     } else {
       runs.push({ kind, lines: [line] });
@@ -141,6 +153,18 @@ function groupIntoRuns(block: string): Run[] {
 }
 
 function renderRun(run: Run, keyPrefix: string): ReactNode {
+  if (run.kind === 'heading') {
+    const [, hashes, content] = run.lines[0].match(HEADING_RE) as RegExpMatchArray;
+    // An answer is already inside a message bubble, so its headings are section
+    // labels — one weight down from a page heading, and flat across levels 3-6
+    // (a model's `###` and `####` mean the same thing in a chat answer).
+    const size = hashes.length <= 2 ? 'text-ac-base' : 'text-ac-sm';
+    return (
+      <p key={keyPrefix} className={`m-0 pt-1 font-ac-bold leading-ac-heading text-ac-text ${size}`}>
+        {renderInline(content, keyPrefix)}
+      </p>
+    );
+  }
   if (run.kind === 'prose') {
     return (
       <p key={keyPrefix} className="m-0 whitespace-pre-wrap break-words text-ac-sm leading-ac-body text-ac-text">
