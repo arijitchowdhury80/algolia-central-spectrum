@@ -3,12 +3,11 @@
 # build_prod_site — assemble everything Vercel serves, in one deterministic chain.
 #
 # WHAT PRODUCTION IS
-#   /            the vendored Algolia-engineering widget demo site (THE app)
-#   /app         our own React chat app, kept as the full-screen variant
+#   /            the vendored Algolia-engineering widget demo site — the whole app
 #
 # WHY A SCRIPT AND NOT A vercel.json ONE-LINER
-#   Four packages have to build in dependency order (chat-central -> algolia-chat
-#   -> our enhancement layer -> assembly), and the vendored widget's own build
+#   Three packages have to build in dependency order (chat-central -> algolia-chat
+#   -> our enhancement layer, then assembly), and the vendored widget's own build
 #   does not copy its bundles into dist. Encoding that in a shell string inside
 #   vercel.json makes it untestable locally; here it is one command I can run and
 #   verify before a deploy touches production.
@@ -16,7 +15,9 @@
 # ENVIRONMENT (set in the Vercel project, not in the repo)
 #   VITE_JUDGE_URL       e.g. https://judge.contentengagement.info/acs
 #   VITE_LAB_API_KEY     shared secret for the judge service
-#   VITE_ALGOLIA_APP_ID / VITE_ALGOLIA_SEARCH_API_KEY  for the web/ app
+#
+#   The Algolia app id and search-only key are NOT read here: the vendored site
+#   carries them as attributes on its own <algolia-chat> markup.
 #
 # A missing VITE_JUDGE_URL is a HARD FAILURE here. It has already cost two hours
 # of production reading "Grounding · unavailable" — a build that silently points
@@ -51,25 +52,19 @@ fi
 
 VENDOR="vendor/algolia-central-chat-widget"
 
-say "1/5  vendored engine (chat-central)"
+say "1/4  vendored engine (chat-central)"
 npm --prefix "$VENDOR/chat-central" install --no-audit --no-fund
 npm --prefix "$VENDOR/chat-central" run build
 
-say "2/5  vendored web components (algolia-chat)"
+say "2/4  vendored web components (algolia-chat)"
 npm --prefix "$VENDOR/algolia-chat" install --no-audit --no-fund
 npm --prefix "$VENDOR/algolia-chat" run build
 
-say "3/5  ACS enhancement layer (judge config is baked in here)"
+say "3/4  ACS enhancement layer (judge config is baked in here)"
 npm --prefix web-widget install --no-audit --no-fund
 npm --prefix web-widget run build
 
-say "4/5  full-screen variant (web/), based at /app/"
-npm --prefix web install --no-audit --no-fund
-# --base is required: served from /app, the default '/' base would emit asset
-# URLs that resolve against the widget site's root and 404.
-npm --prefix web run build -- --base=/app/
-
-say "5/5  assemble"
+say "4/4  assemble"
 node scripts/widget/build_demo_site.mjs --out dist-widget
 
 say "verify"
@@ -85,7 +80,6 @@ if ! grep -q "$VITE_JUDGE_API_KEY" dist-widget/widget-bundles/algolia-chat.js; t
 fi
 test -f dist-widget/index.html
 test -f dist-widget/widget-bundles/algolia-chat.js
-test -f dist-widget/app/index.html
 
 # Every page that hosts the widget must reach the output WITH our enhancement
 # script injected. Expectations are derived from the SOURCE, not a hardcoded list:
@@ -135,4 +129,4 @@ if [ -d "$VENDOR/website/public/context" ]; then
   done
 fi
 
-echo "ok — widget site + /app variant built, judge endpoint baked in"
+echo "ok — widget site built, judge endpoint baked in"

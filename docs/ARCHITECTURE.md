@@ -4,16 +4,15 @@ A file-level map of the repository. For the system overview and diagrams, see th
 
 ---
 
-## Four independent pieces
+## Three independent pieces
 
 | Piece | Directory | Ships to the browser? | Talks to |
 |---|---|---|---|
-| **Widget site** (primary — `/` and `/demo/`) | `vendor/algolia-central-chat-widget/` + `web-widget/` | Yes — built by `scripts/deploy/build_prod_site.sh`, hosted on Vercel | Agent Studio (search-only key) and the judge service |
-| **Full-screen app** (`/app`) | `web/` | Yes — static bundle based at `/app/` | Agent Studio directly (search-only key) |
+| **Widget site** (`/` and `/demo/`) | `vendor/algolia-central-chat-widget/` + `web-widget/` | Yes — built by `scripts/deploy/build_prod_site.sh`, hosted on Vercel | Agent Studio (search-only key) and the judge service |
 | **Grounding judge** | `lab/` | No — runs as an HTTP service on its own host | An LLM provider; called per answer, authenticated with `x-lab-key` / `x-judge-api-key` |
 | **Corpus and agent tooling** | `scripts/` | No — operator scripts | Algolia indexing and Agent Studio admin APIs |
 
-They are decoupled. Either front end runs without the judge — the confidence chip simply stays inactive. The corpus is built out of band by the scripts.
+They are decoupled. The front end runs without the judge — the confidence chip simply stays inactive. The corpus is built out of band by the scripts.
 
 `vendor/` is **read-only**. Read [`vendor/README.md`](../vendor/README.md) before touching anything in that tree.
 
@@ -68,54 +67,6 @@ Compiled to `acs-enhance.js` and injected into every widget-hosting page at buil
 |---|---|
 | `main.ts` | Sets the panel size mode per surface (docked under `/demo/`, normal elsewhere) and repoints the confidence panel at the hosted judge. Runs **synchronously**, before the widget bundles load, because the custom elements capture their configuration when they upgrade. |
 | `main.test.ts` | Pins both decisions — the judge repointing and the per-surface mode. |
-
----
-
-## `web/src/` — the full-screen app (`/app`)
-
-Vite + React + TypeScript + Tailwind. An independent rendering path over the same agents and judge, kept as a second surface.
-
-### Entry and shell
-
-| File | Role |
-|---|---|
-| `main.tsx`, `App.tsx` | Entry. Validates env at startup, renders a configuration-error card on failure. |
-| `types.ts` | Shared types: `ChatTurn`, `AnswerSegment`, `AnswerSource`, `HistoryEntry`. |
-
-### `hooks/` — orchestration
-
-| File | Role |
-|---|---|
-| `useChat.tsx` | The app's brain. Drives two `react-instantsearch` `useChat` instances (primary and specialist), runs the classifier on finish, and grafts an accepted deep-dive onto the turn as a second segment. |
-| `useJudge.ts` | Fetches the grounding verdict for an answer. |
-| `useCostRecording.ts` | Records exact judge cost and estimated agent cost per segment. |
-
-### `lib/` — plumbing
-
-| File | Role |
-|---|---|
-| `chatTurns.ts` | Pure adapter mapping engine state to the `ChatTurn[]` the UI renders. |
-| `chatMessage.ts` | Helpers over a message's parts: answer text, sources, raw hits, originating question. |
-| `offer.ts` | Deep-dive offer logic — one source of truth so the offer flags cannot disagree. |
-| `classifier.ts` | The classification call and its response parsing. |
-| `agentStudio.ts` | Agent Studio HTTP client, with a retry for the empty-completion flake. |
-| `agents.ts` | Reads and validates env, resolves per-agent completion config. |
-| `sources.ts` | Hit normalisation and facet grouping. |
-| `judgeClient.ts` | Client for the judge service. Renders whatever dimensions the backend returns. |
-| `chatCache.ts` | Per-session answer cache. |
-| `costEstimate.ts`, `costStore.ts` | Cost estimation and the session-wide cost store. |
-
-### `config/` — the instance contract
-
-| File | Role |
-|---|---|
-| `instance.ts` | The typed contract: branding, agent identities, sample questions, source facets, copy. Components read only from here. |
-| `instances/spectrum.ts` | This instance — agent IDs, the three real `source` facets, sample questions. |
-| `active.ts` | Wires the active instance to its theme. Swapping instances is a one-file change. |
-
-### `components/`
-
-`ChatApp` (shell), `ChatPanel`, `ChatMessage`, `Composer`, `SampleQuestions`, `EmptyState`, `SourcePills`, `DeepDivePrompt` (deep-dive consent), `DiscoveryCard`, `ThinkingIndicator`, `ErrorCard`, `ConfidenceChip`, `JudgeDrawer` (full verdict: gate outcome, the usefulness dimension, the three judges as accordions, flagged claims with their traceable excerpts), `CostBadge`, `CostPage`, `MessageMarkdown`, `AgentBadge`, `AppHeader`, `PoweredByAlgolia`.
 
 ---
 

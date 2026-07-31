@@ -24,8 +24,8 @@ export const MAIN_MODEL = 'medium';
 // filters:null → no source filter (sees the whole corpus — 358 records as of 2026-07-17,
 // verified directly against the index; comments elsewhere claiming ~502/4 sources are stale).
 // extraTools: neither answering agent carries a client_side tool. The Generic->Technical
-// deep-dive OFFER is decided by the classifier agent (called synchronously by the client,
-// see web/src/lib/classifier.ts) — NOT the platform-native config.suggestions mechanism,
+// deep-dive OFFER is decided by the classifier agent, which the client calls synchronously
+// (the widget's `role="classifier"` agent) — NOT the platform-native config.suggestions mechanism,
 // which is racy (see README's "Why a classifier agent" section) and is now used only for
 // Technical's own post-deep-dive follow-up suggestion.
 export const PERSONAS = [

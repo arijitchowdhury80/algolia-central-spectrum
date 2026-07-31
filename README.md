@@ -15,7 +15,6 @@ Two things make it different from a chat box over a search index:
 |---|---|
 | `/` | Marketing page for the assistant, with the widget embedded |
 | `/demo/` | A simulated Adobe Spectrum documentation site (five pages) — the surface where proactive context is demonstrated |
-| `/app` | The same assistant as a full-screen React application, independent rendering path |
 
 The grounding judge runs as a separate HTTP service, not on Vercel. See [Deployment](#deployment).
 
@@ -181,7 +180,6 @@ The visitor-facing chip is **binary** — `Grounded`, or `N unverified claims`. 
 │   └── website/                          static site: marketing page + /demo/ pages
 │
 ├── web-widget/                           host-page enhancement layer, builds acs-enhance.js
-├── web/                                  full-screen React chat app, served at /app
 │
 ├── lab/
 │   ├── judge/                            grounding gate, rubric, corroboration logic
@@ -209,20 +207,14 @@ The visitor-facing chip is **binary** — `Grounded`, or `N unverified claims`. 
 ## Quickstart
 
 ```bash
-# 1. Full-screen app (web/)
-cp web/.env.local.example web/.env.local
-#    then set:
-#      VITE_ALGOLIA_APP_ID=0EXRPAXB56
-#      VITE_ALGOLIA_SEARCH_API_KEY=...   # SEARCH-ONLY key — never an admin key.
-#                                        # Mint one: node scripts/mint_search_key.mjs
-npm --prefix web install
-npm --prefix web run dev
-
-# 2. Grounding judge, in a second terminal (optional — the chip stays dark without it)
+# 1. Grounding judge (optional — the chip stays dark without it)
 npm --prefix lab/server install
 npm --prefix lab/server run judge:serve          # binds :8788
 
-# 3. The widget site (marketing page + /demo/ pages)
+# 2. The site: marketing page + /demo/ pages, which is the whole front end.
+#    The Algolia app id and search-only key live in the page markup
+#    (<algolia-instant-search app-id api-key>), not in an env file.
+#    Mint a search-only key with: node scripts/mint_search_key.mjs
 npm --prefix vendor/algolia-central-chat-widget/chat-central install
 npm --prefix vendor/algolia-central-chat-widget/chat-central run build
 npm --prefix vendor/algolia-central-chat-widget/algolia-chat install
@@ -240,8 +232,8 @@ node scripts/widget/build_demo_site.mjs --out dist-widget
 | `ALGOLIA_APP_ID` | scripts | `0EXRPAXB56` |
 | `ALGOLIA_ADMIN_API_KEY` | scripts only | **Never** ships to a browser |
 | `ALGOLIA_SEARCH_API_KEY` | browser | Search-only. Safe to publish — that is its purpose |
-| `VITE_JUDGE_URL` | `web-widget`, `web` | Judge service base URL, baked in at build time. The only reliable way to move the endpoint — see Known issues |
-| `VITE_LAB_API_KEY` | `web-widget`, `web` | Shared secret for the judge service |
+| `VITE_JUDGE_URL` | `web-widget` | Judge service base URL, baked in at build time. The only reliable way to move the endpoint — see Known issues |
+| `VITE_LAB_API_KEY` | `web-widget` | Shared secret for the judge service |
 | `LAB_API_KEY` | `lab/server` | Judge auth. Unset means the service is open |
 | `ALGOLIA_INFERENCE_BASE_URL` | `lab/server` | Model provider endpoint |
 
@@ -251,7 +243,6 @@ node scripts/widget/build_demo_site.mjs --out dist-widget
 npm --prefix lab/judge run test      # 153 tests — gate, rubric, corroboration
 npm --prefix lab/server run test     #  65 tests — service, auth, usage, providers
 npm --prefix web-widget run test     #  10 tests — host-page configuration
-npm --prefix web run test            # client tests
 ```
 
 ---
@@ -262,7 +253,7 @@ Three deployables. None deploys automatically; each is a deliberate, manual step
 
 | Deployable | Where | How |
 |---|---|---|
-| Widget site + `/app` | Vercel | `vercel --prod` runs `scripts/deploy/build_prod_site.sh` |
+| Widget site | Vercel | `vercel --prod` runs `scripts/deploy/build_prod_site.sh` |
 | Judge service | VPS, behind Caddy | `deploy/vps-deploy-judge.sh` |
 | Agents | Agent Studio | `scripts/agents/build_acs_agents.mjs` — PATCH in place, so IDs stay stable |
 
@@ -275,8 +266,6 @@ The production build refuses to produce a misconfigured site: it fails if `VITE_
 ## Known issues
 
 - **The judge endpoint cannot be moved from page markup; rebuild with a different `VITE_JUDGE_URL` instead.** `<algolia-chat>` registers a confidence widget of its own built from the compiled `VITE_JUDGE_URL` whenever it carries no `judge-*` attribute of its own (`chat-embed.tsx` → `parseConfidenceParams`, env fallback). That widget and the declarative `<algolia-chat-confidence>` child both publish the same `chatConfidence` render-state key, and on first registration the env-derived one wins — so a `url` written into the markup survives on the element but never reaches the request. Measured on production 2026-07-30: markup `url` → requests still went to the compiled endpoint; the same `url` set *after* load re-registers the declarative widget last and does repoint both `/api/ground` and `/api/judge`. The durable fix is upstream in the widget (don't synthesise a second widget from env when a declarative one is present); nothing here works around it.
-- **`/app` sends two full judge requests per answer, and they can disagree.** Measured on production 2026-07-31: one answer produced two `POST /api/judge` calls for the same panel and no `/api/ground` call at all, so the cheap grounding-only route the widget surface uses is skipped and the LLM panel is paid for twice. The two verdicts differed — `grounded: true, termsChecked: 1` and `grounded: false` flagging `ActionButton` as an unsupported `component` — and the chip shows whichever landed last, so the same answer can read Grounded or "1 unverified claim" run to run. The widget surface (`/`, `/demo/*`) does not do this: one `/api/ground` then one `/api/judge`. Not diagnosed further.
-- **The deterministic gate can flag a component name its own sources document.** Same measurement: `ActionButton` was reported unsupported on an answer whose sources were the React Spectrum ActionButton pages. Treat a single-term "unverified claim" on `/app` as unproven rather than as evidence of a fabrication.
 - **The proactive concierge declines to engage on `/demo/get-started.html`.** It returns `{"engage": false, "greeting": "", "suggestions": []}` and the client correctly shows only the launcher — no docked panel, no suggestions. Measured 3 consecutive loads, all declined, while `button`, `combobox` and `migration` engaged every time. This is the agent's own judgement on that page's content, not a client defect; changing it means changing the concierge's instructions.
 - **Answer latency varies with the model provider.** There is no client-side timeout — a slow answer keeps streaming. A completion that fails or comes back empty is retried once; if the second attempt also fails, the answer shows a service-error card with a retry control. Long waits are provider-side, not a client defect.
 - **Agent calls from the browser are not rate-limited.** The application ID, search-only key and agent IDs are necessarily present in page source. They cannot modify data, but they can invoke agents, which consumes tokens.

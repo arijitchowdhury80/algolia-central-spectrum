@@ -4,7 +4,7 @@ Three deployables. None is automatic. Each is a deliberate step.
 
 | # | Deployable | Target |
 |---|---|---|
-| 1 | Widget site (`/`, `/demo/`) and full-screen app (`/app`) | Vercel |
+| 1 | Widget site (`/`, `/demo/`) | Vercel |
 | 2 | Grounding judge | A container behind a reverse proxy |
 | 3 | Agents | Agent Studio |
 
@@ -12,7 +12,7 @@ The corpus is not a deploy — see [Corpus](#corpus--not-a-deploy).
 
 ---
 
-## 1. Widget site and app → Vercel
+## 1. Widget site → Vercel
 
 **Production deploys are manual.** `vercel.json` sets:
 
@@ -57,7 +57,7 @@ Do not trust the deploy's own success message.
 B=https://<your-deployment>
 
 # surfaces respond
-for p in / /demo/ /demo/button.html /app; do
+for p in / /demo/ /demo/button.html; do
   echo "$p -> $(curl -s -o /dev/null -w '%{http_code}' $B$p)"
 done
 
@@ -143,7 +143,7 @@ The judge agents are rubric-agnostic by design: the rubric travels with each req
 
 `ACS_SPECTRUM_MULTI` is shared live data. Changing it takes effect immediately for every client, production included, with no deploy. Snapshot before mutating — `scripts/crawler/repair_citation_urls.mjs` writes a baseline before it touches any record, for exactly this reason.
 
-**Client-side caveat:** the chat engine persists whole answers, including their captured search results, in `sessionStorage`. A corpus change is therefore invisible in any already-rendered turn. Bump `CHAT_CACHE_EPOCH` in `web/src/lib/chatCache.ts` when a corpus change makes old turns misleading, or users keep seeing pre-fix data and report the fix as broken.
+**Client-side caveat:** an already-rendered turn keeps the sources it was answered from — a corpus change is invisible in it. The widget holds turns in memory only (no `sessionStorage`/`localStorage` persistence in `chat-central`), so a page reload is enough to pick up corrected records.
 
 ---
 

@@ -1,5 +1,8 @@
 // Mint a browser-shippable SEARCH-ONLY Algolia key scoped to ACS_SPECTRUM_MULTI.
-// Reads admin key from .env.local (never hardcode). Prints the new key + a .env line to paste into web/.
+// Reads admin key from .env.local (never hardcode). Prints the new key; put it in the
+// `api-key` attribute of <algolia-instant-search> on every page of the vendored site
+// (vendor/algolia-central-chat-widget/website/public/**.html), which is where the
+// browser reads it from — there is no build-time env var for it.
 // Usage: node scripts/mint_search_key.mjs [--index ACS_SPECTRUM_MULTI]
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -33,6 +36,6 @@ if (res.status !== 200 && res.status !== 201) { console.error('mint FAILED', res
 const key = res.json.key;
 console.log('✅ minted search-only key:', key);
 console.log('   acl=search · indexes=[' + INDEX + '] · app=' + APP);
-console.log('\nPaste into web/.env.local:');
-console.log('VITE_ALGOLIA_APP_ID=' + APP);
-console.log('VITE_ALGOLIA_SEARCH_API_KEY=' + key);
+console.log('\nPaste into <algolia-instant-search> on every page of the vendored site:');
+console.log('  app-id="' + APP + '"');
+console.log('  api-key="' + key + '"');

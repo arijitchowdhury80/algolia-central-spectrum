@@ -141,28 +141,7 @@ for (const pagePath of widgetPages) {
 }
 console.log(`injected         <script src="/acs-enhance.js"> BEFORE their widget bundles in ${injectedPages.length} page(s): ${injectedPages.join(', ')}`);
 
-// ---------- 5. our own web app, as the full-screen variant at /app ----------
-//
-// The arrangement: the vendored widget site is THE app; our `web/` React
-// app is kept as the full-screen chat variant rather than retired. Mounting it
-// under /app also means the demo has a second, independent surface — if
-// anything is wrong with the widget page during a live demo, the full-screen
-// app is one URL away and does not share a line of its rendering code.
-//
-// Optional on purpose: the widget site must still build when web/dist is absent
-// (a widget-only iteration shouldn't fail the build).
-const WEB_DIST = join(ROOT, 'web/dist');
-if (existsSync(join(WEB_DIST, 'index.html'))) {
-  const appOut = join(OUT, 'app');
-  mkdirSync(appOut, { recursive: true });
-  cpSync(WEB_DIST, appOut, { recursive: true });
-  console.log(`copied web app   web/dist -> app/            (full-screen variant)`);
-} else {
-  console.log(`skipped web app  web/dist not built — /app will 404`);
-}
-
-
-// ---------- 7. report what shipped ----------
+// ---------- 5. report what shipped ----------
 const size = (p) => `${(readFileSync(p).length / 1024).toFixed(1)}KB`;
 console.log(`\n== built ${OUT.replace(ROOT + '/', '')} ==`);
 for (const rel of injectedPages) console.log(`  ${rel.padEnd(35)}${size(join(OUT, rel))}  (enhanced)`);

@@ -3,9 +3,8 @@
  * (and, prospectively, the client's server-side calls) can be configured to
  * use. Cost tracking (spike plan §6): EXACT token counts (captured in
  * openai.ts via `onUsage`) × these PUBLISHED rates = an EXACT cost,
- * as opposed to the web client's text-length ESTIMATE for Agent Studio calls
- * (which exposes no token usage on the wire at all — see web/src/lib/
- * costEstimate.ts).
+ * as opposed to a text-length ESTIMATE, which is all a browser client can do for
+ * an Agent Studio call — that API exposes no token usage on the wire at all.
  *
  * Sources (captured 2026-07-19, subject to provider changes without notice):
  *   - gpt-4o-mini / gpt-4o: https://openai.com/api/pricing/ (published rates,

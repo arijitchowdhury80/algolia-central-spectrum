@@ -8,10 +8,10 @@
  * only ever needs the merged env map, so this file keeps just that: the
  * dependency-free `.env.local` parser + `getEnv()`.
  *
- * Env files, no external dotenv dependency:
- *   - root .env.local → GOOGLE_API_KEY / OPENAI_API_KEY (judge LLM keys)
- *   - web/.env.local  → not required by the judge; merged if present so this
- *                       stays a drop-in read of the same env AC2 used.
+ * Env files, no external dotenv dependency: root .env.local only. A second read
+ * of web/.env.local was dropped along with the web/ client it belonged to — the
+ * judge never required it, and merging a file that no longer exists is a
+ * misleading hint about where judge configuration lives.
  */
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -43,11 +43,10 @@ function parseEnvFile(path: string): Record<string, string> {
   return out;
 }
 
-/** Merged env: process.env wins, then web/.env.local, then root .env.local. */
+/** Merged env: process.env wins over root .env.local. */
 function loadEnv(): Record<string, string> {
   const root = parseEnvFile(resolve(REPO_ROOT, ".env.local"));
-  const web = parseEnvFile(resolve(REPO_ROOT, "web", ".env.local"));
-  return { ...root, ...web, ...(process.env as Record<string, string>) };
+  return { ...root, ...(process.env as Record<string, string>) };
 }
 
 const ENV = loadEnv();
