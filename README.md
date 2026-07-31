@@ -240,7 +240,7 @@ node scripts/widget/build_demo_site.mjs --out dist-widget
 | `ALGOLIA_APP_ID` | scripts | `0EXRPAXB56` |
 | `ALGOLIA_ADMIN_API_KEY` | scripts only | **Never** ships to a browser |
 | `ALGOLIA_SEARCH_API_KEY` | browser | Search-only. Safe to publish — that is its purpose |
-| `VITE_JUDGE_URL` | `web-widget`, `web` | Judge service base URL, baked in at build time. Default only — a `url` attribute on `<algolia-chat-confidence>` in page markup wins |
+| `VITE_JUDGE_URL` | `web-widget`, `web` | Judge service base URL, baked in at build time. The only reliable way to move the endpoint — see Known issues |
 | `VITE_LAB_API_KEY` | `web-widget`, `web` | Shared secret for the judge service |
 | `LAB_API_KEY` | `lab/server` | Judge auth. Unset means the service is open |
 | `ALGOLIA_INFERENCE_BASE_URL` | `lab/server` | Model provider endpoint |
@@ -274,6 +274,7 @@ The production build refuses to produce a misconfigured site: it fails if `VITE_
 
 ## Known issues
 
+- **The judge endpoint cannot be moved from page markup; rebuild with a different `VITE_JUDGE_URL` instead.** `<algolia-chat>` registers a confidence widget of its own built from the compiled `VITE_JUDGE_URL` whenever it carries no `judge-*` attribute of its own (`chat-embed.tsx` → `parseConfidenceParams`, env fallback). That widget and the declarative `<algolia-chat-confidence>` child both publish the same `chatConfidence` render-state key, and on first registration the env-derived one wins — so a `url` written into the markup survives on the element but never reaches the request. Measured on production 2026-07-30: markup `url` → requests still went to the compiled endpoint; the same `url` set *after* load re-registers the declarative widget last and does repoint both `/api/ground` and `/api/judge`. The durable fix is upstream in the widget (don't synthesise a second widget from env when a declarative one is present); nothing here works around it.
 - **Answer latency varies with the model provider.** There is no client-side timeout — a slow answer keeps streaming. A completion that fails or comes back empty is retried once; if the second attempt also fails, the answer shows a service-error card with a retry control. Long waits are provider-side, not a client defect.
 - **Agent calls from the browser are not rate-limited.** The application ID, search-only key and agent IDs are necessarily present in page source. They cannot modify data, but they can invoke agents, which consumes tokens.
 - **The corpus contains Adobe-internal hostnames.** Some records mention `s2.spectrum.corp.adobe.com` and `adobe.enterprise.slack.com` inside indexed body text. Agent instructions forbid emitting them; the durable fix is a re-ingest that strips them at the source.
