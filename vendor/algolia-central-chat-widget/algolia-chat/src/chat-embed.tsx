@@ -537,24 +537,30 @@ interface Credentials {
 }
 
 /**
- * Resolve credentials from attributes, then build-time env as a dev-harness
- * fallback.
+ * Resolve credentials from attributes only.
  *
  * `api-key` is accepted as an alias of `search-api-key`: the root
  * `<algolia-instant-search>` element names the same value `api-key`, and having
  * to remember which element wants which spelling is a needless trap. Both
  * elements now take either.
  *
- * One resolver for every caller — `tryAutoWrapInRoot` used to read the key from
- * the attribute only, so an embed relying on `VITE_ALGOLIA_SEARCH_API_KEY`
- * silently generated a root element with an empty key.
+ * Deliberately does NOT fall back to `import.meta.env.VITE_ALGOLIA_*`. A
+ * build-time env fallback here means Vite bakes whatever value is present in
+ * the build environment into the shipped bundle as plaintext, unconditionally,
+ * whether or not this fallback branch is ever exercised at runtime -- found
+ * 2026-08-04: a stale, unrelated Vercel env var (left over from a retired
+ * app, never intentionally wired to this embed) put a real, currently-active
+ * Algolia search key into the compiled JS. Removing that Vercel var fixed the
+ * immediate leak, but the fallback itself was the latent cause -- any env var
+ * named this way, added for any reason, silently reopens it. An embed with no
+ * `app-id`/`api-key` attributes now gets an empty credential and fails loudly
+ * (an empty search key 401s against Algolia) rather than fail silently by
+ * picking up an unrelated env var's value.
  */
 function readCredentials(el: Element): Credentials {
-  const env: Record<string, string | undefined> = import.meta.env ?? {};
   return {
-    appId: attr(el, 'app-id') ?? env.VITE_ALGOLIA_APP_ID ?? '',
-    searchKey:
-      attr(el, 'search-api-key') ?? attr(el, 'api-key') ?? env.VITE_ALGOLIA_SEARCH_API_KEY ?? '',
+    appId: attr(el, 'app-id') ?? '',
+    searchKey: attr(el, 'search-api-key') ?? attr(el, 'api-key') ?? '',
     indexName: attr(el, 'index-name') ?? '',
   };
 }
