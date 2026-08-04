@@ -19,7 +19,7 @@
  *
  * The factory that wires this connector into a ready-to-register widget lives
  * in `chatConfidenceWidget.ts` (mirrors the connectChat.ts / chatWidget.ts
- * split and the connectChatAgent.ts / chatAgentWidget.ts split).
+ * split and the connectAgent.ts / agentWidget.ts split).
  */
 
 import type { JudgeAgentDescriptor } from './judge/types';

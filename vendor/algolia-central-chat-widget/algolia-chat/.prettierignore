@@ -1,5 +1,14 @@
-dist
-node_modules
+# Formatting options live in the repo-root .prettierrc.json; Prettier resolves
+# it by walking up from each file. Ignore patterns do not work that way — they
+# are read relative to the directory Prettier runs in, so they live here too.
+node_modules/
+dist/
+public/
+.vite/
 *.tsbuildinfo
 package-lock.json
-public
+
+# Markup and prose are not formatted yet — see the repo-root .prettierignore.
+*.html
+*.css
+*.md

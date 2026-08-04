@@ -106,6 +106,9 @@ export type { ProactiveState } from './config/proactive';
 export { visitorContextStore, composeVisitorMessage } from './config/visitorContext';
 export type { VisitorContextProvider } from './config/visitorContext';
 
+// ── Agent config helpers ───────────────────────────────────────────────────────
+export { getAgentConfig, getEnvConfig } from './shared/agents';
+
 // ── Style helpers ──────────────────────────────────────────────────────────────
 export {
   buildWidgetStyles,

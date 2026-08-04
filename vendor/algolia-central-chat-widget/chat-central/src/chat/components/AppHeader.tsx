@@ -90,11 +90,23 @@ function HeaderIconButton({
 /** New-conversation icon: uses the site-supplied asset or the built-in glyph. */
 function NewChatIcon() {
   if (activeInstance.newChatIcon) {
-    return <img src={activeInstance.newChatIcon} alt="" aria-hidden className="h-[17px] w-[17px] shrink-0" />;
+    return (
+      <img
+        src={activeInstance.newChatIcon}
+        alt=""
+        aria-hidden
+        className="h-[17px] w-[17px] shrink-0"
+      />
+    );
   }
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="M21 11.5a8.5 8.5 0 0 1-12.28 7.6L3 21l1.9-5.72A8.5 8.5 0 1 1 21 11.5z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path
+        d="M21 11.5a8.5 8.5 0 0 1-12.28 7.6L3 21l1.9-5.72A8.5 8.5 0 1 1 21 11.5z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
       <path d="M12 8.5v5M9.5 11h5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   );
@@ -129,7 +141,12 @@ function AutoEngageToggle() {
           strokeLinejoin="round"
           fill={autoEngage ? 'currentColor' : 'none'}
         />
-        <path d="M12.2 11.2v2.6M10.9 12.5h2.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        <path
+          d="M12.2 11.2v2.6M10.9 12.5h2.6"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
         {!autoEngage && (
           <path d="M2 14L14 2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
         )}
@@ -157,16 +174,40 @@ function HeaderSizeControls({ sizeMode, onToggleSize, onRestore }: HeaderSizeCon
         >
           {sizeMode === 'docked' ? (
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
-              <path d="M1 6V1h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M1 6V1h5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
               <path d="M1 1l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M15 10v5h-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M15 10v5h-5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
               <path d="M15 15l-5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           ) : (
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
-              <path d="M6 1V6H1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M6 1V6H1"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
               <path d="M6 6L1 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M10 15v-5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M10 15v-5h5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
               <path d="M10 10l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           )}
@@ -175,8 +216,21 @@ function HeaderSizeControls({ sizeMode, onToggleSize, onRestore }: HeaderSizeCon
       {sizeMode === 'maximized' && onRestore && (
         <HeaderIconButton onClick={onRestore} label={strings.header.restore}>
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
-            <rect x="4" y="1" width="11" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-            <path d="M1 5v9a1 1 0 0 0 1 1h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            <rect
+              x="4"
+              y="1"
+              width="11"
+              height="10"
+              rx="1.5"
+              stroke="currentColor"
+              strokeWidth="1.4"
+            />
+            <path
+              d="M1 5v9a1 1 0 0 0 1 1h10"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+            />
           </svg>
         </HeaderIconButton>
       )}
@@ -193,7 +247,13 @@ interface HeaderControlsProps {
 }
 
 /** All header icon buttons to the right of the title area. */
-function HeaderControls({ onReset, onClose, sizeMode, onToggleSize, onRestore }: HeaderControlsProps) {
+function HeaderControls({
+  onReset,
+  onClose,
+  sizeMode,
+  onToggleSize,
+  onRestore,
+}: HeaderControlsProps) {
   const { strings } = activeInstance;
   return (
     <div className="flex shrink-0 items-center gap-1">
@@ -215,7 +275,12 @@ function HeaderControls({ onReset, onClose, sizeMode, onToggleSize, onRestore }:
       {onClose && (
         <HeaderIconButton onClick={onClose} label={strings.header.close}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-            <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <path
+              d="M12 4L4 12M4 4l8 8"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
           </svg>
         </HeaderIconButton>
       )}
@@ -234,14 +299,18 @@ export function AppHeader({ onReset, onClose, sizeMode, onToggleSize, onRestore 
       <button
         type="button"
         onClick={onReset}
-        aria-label={interpolate(activeInstance.strings.header.resetAria, { brand: activeInstance.brandName })}
+        aria-label={interpolate(activeInstance.strings.header.resetAria, {
+          brand: activeInstance.brandName,
+        })}
         title={activeInstance.strings.header.resetTitle}
         className="-mx-2 flex min-w-0 flex-1 items-center gap-3 rounded-algolia-md px-2 py-1 transition-colors duration-algolia-fast ease-algolia-ease hover:bg-algolia-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-algolia-accent"
       >
         {activeInstance.logo.header && (
           <img
             src={activeInstance.logo.header}
-            alt={interpolate(activeInstance.strings.header.logoAlt, { brand: activeInstance.brandName })}
+            alt={interpolate(activeInstance.strings.header.logoAlt, {
+              brand: activeInstance.brandName,
+            })}
             className="h-8 w-8 shrink-0"
           />
         )}

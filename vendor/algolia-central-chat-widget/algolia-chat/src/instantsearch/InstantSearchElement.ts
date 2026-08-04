@@ -76,8 +76,7 @@ export class AlgoliaInstantSearchElement extends HTMLElement {
 
   connectedCallback(): void {
     const appId = this.getAttribute(ATTR_APP_ID) ?? '';
-    const apiKey =
-      this.getAttribute(ATTR_API_KEY) ?? this.getAttribute(ATTR_SEARCH_API_KEY) ?? '';
+    const apiKey = this.getAttribute(ATTR_API_KEY) ?? this.getAttribute(ATTR_SEARCH_API_KEY) ?? '';
     const indexName = this.getAttribute(ATTR_INDEX_NAME) ?? '';
 
     applyRootConfig({ appId, searchKey: apiKey, indexName });

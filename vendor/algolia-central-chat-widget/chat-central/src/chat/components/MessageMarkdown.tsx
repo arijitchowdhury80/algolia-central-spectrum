@@ -111,37 +111,40 @@ type Run =
   | { kind: 'heading'; lines: string[]; level: number }
   | { kind: 'table'; lines: string[] };
 
+/** Kinds whose consecutive lines merge into a single run. */
+type MergeableKind = 'bullet' | 'ordered' | 'prose' | 'table';
+
+/** Classify a line that is neither a heading nor a table row. */
+function lineKind(line: string): 'bullet' | 'ordered' | 'prose' {
+  if (BULLET_ITEM_RE.test(line)) return 'bullet';
+  if (ORDERED_ITEM_RE.test(line)) return 'ordered';
+  return 'prose';
+}
+
+/** Extend the trailing run when it is the same kind, otherwise start a new one. */
+function appendLine(runs: Run[], kind: MergeableKind, line: string): void {
+  const last = runs[runs.length - 1];
+  if (last && last.kind === kind) {
+    last.lines.push(line);
+    return;
+  }
+  runs.push(kind === 'table' ? { kind, lines: [line] } : { kind, lines: [line] });
+}
+
 function groupIntoRuns(block: string): Run[] {
   const runs: Run[] = [];
   for (const rawLine of block.split('\n')) {
     const line = rawLine.trim();
     if (!line) continue;
+
     const headingMatch = HEADING_RE.exec(line);
     if (headingMatch) {
       // Each heading is always its own run — never merged.
       runs.push({ kind: 'heading', lines: [line], level: headingMatch[1].length });
       continue;
     }
-    if (TABLE_ROW_RE.test(line)) {
-      const last = runs[runs.length - 1];
-      if (last && last.kind === 'table') {
-        last.lines.push(line);
-      } else {
-        runs.push({ kind: 'table', lines: [line] });
-      }
-      continue;
-    }
-    const kind: 'bullet' | 'ordered' | 'prose' = BULLET_ITEM_RE.test(line)
-      ? 'bullet'
-      : ORDERED_ITEM_RE.test(line)
-        ? 'ordered'
-        : 'prose';
-    const last = runs[runs.length - 1];
-    if (last && last.kind === kind) {
-      last.lines.push(line);
-    } else {
-      runs.push({ kind, lines: [line] });
-    }
+
+    appendLine(runs, TABLE_ROW_RE.test(line) ? 'table' : lineKind(line), line);
   }
   return runs;
 }
@@ -156,77 +159,88 @@ const HEADING_SIZE_CLASS: Record<number, string> = {
 };
 
 function renderRun(run: Run, keyPrefix: string): ReactNode {
-  if (run.kind === 'table') {
-    const rows = run.lines.map(parseTableRow);
-    const headerRow = rows[0] ?? [];
-    // Skip the separator row if present (typically the second line).
-    const bodyStart = rows.length > 1 && isTableSeparator(run.lines[1]) ? 2 : 1;
-    const bodyRows = rows.slice(bodyStart);
-    return (
-      <div key={keyPrefix} className="overflow-x-auto">
-        <table className="w-full border-collapse text-algolia-sm text-algolia-text">
-          <thead>
-            <tr>
-              {headerRow.map((cell, ci) => (
-                <th
-                  key={ci}
-                  className="border border-algolia-border bg-algolia-surface-2 px-3 py-2 text-left font-algolia-bold"
-                >
-                  {renderInline(cell, `${keyPrefix}-h${ci}`)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          {bodyRows.length > 0 && (
-            <tbody>
-              {bodyRows.map((row, ri) => (
-                <tr key={ri}>
-                  {row.map((cell, ci) => (
-                    <td key={ci} className="border border-algolia-border px-3 py-2">
-                      {renderInline(cell, `${keyPrefix}-r${ri}c${ci}`)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          )}
-        </table>
-      </div>
-    );
-  }
-  if (run.kind === 'heading') {
-    const headingMatch = HEADING_RE.exec(run.lines[0]);
-    const headingText = headingMatch ? headingMatch[2] : run.lines[0];
-    const sizeClass = HEADING_SIZE_CLASS[run.level] ?? 'text-algolia-sm';
-    return (
-      <p
-        key={keyPrefix}
-        className={`m-0 break-words font-algolia-bold leading-ac-body text-algolia-text ${sizeClass}`}
-      >
-        {renderInline(headingText, keyPrefix)}
-      </p>
-    );
-  }
-  if (run.kind === 'prose') {
-    return (
-      <p
-        key={keyPrefix}
-        className="m-0 whitespace-pre-wrap break-words text-algolia-sm leading-ac-body text-algolia-text"
-      >
-        {renderInline(run.lines.join('\n'), keyPrefix)}
-      </p>
-    );
-  }
-  const itemRe = run.kind === 'bullet' ? BULLET_ITEM_RE : ORDERED_ITEM_RE;
-  const ListTag = run.kind === 'bullet' ? 'ul' : 'ol';
+  if (run.kind === 'table') return renderTable(run.lines, keyPrefix);
+  if (run.kind === 'heading') return renderHeading(run.lines[0], run.level, keyPrefix);
+  if (run.kind === 'prose') return renderProse(run.lines, keyPrefix);
+  return renderList(run.kind, run.lines, keyPrefix);
+}
+
+function renderTable(lines: string[], keyPrefix: string): ReactNode {
+  const rows = lines.map(parseTableRow);
+  const headerRow = rows[0] ?? [];
+  // Skip the separator row if present (typically the second line).
+  const bodyStart = rows.length > 1 && isTableSeparator(lines[1]) ? 2 : 1;
+  const bodyRows = rows.slice(bodyStart);
+  return (
+    <div key={keyPrefix} className="overflow-x-auto">
+      <table className="w-full border-collapse text-algolia-sm text-algolia-text">
+        <thead>
+          <tr>
+            {headerRow.map((cell, ci) => (
+              <th
+                key={ci}
+                className="border border-algolia-border bg-algolia-surface-2 px-3 py-2 text-left font-algolia-bold"
+              >
+                {renderInline(cell, `${keyPrefix}-h${ci}`)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        {bodyRows.length > 0 && (
+          <tbody>
+            {bodyRows.map((row, ri) => (
+              <tr key={ri}>
+                {row.map((cell, ci) => (
+                  <td key={ci} className="border border-algolia-border px-3 py-2">
+                    {renderInline(cell, `${keyPrefix}-r${ri}c${ci}`)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        )}
+      </table>
+    </div>
+  );
+}
+
+function renderHeading(line: string, level: number, keyPrefix: string): ReactNode {
+  const headingMatch = HEADING_RE.exec(line);
+  const headingText = headingMatch ? headingMatch[2] : line;
+  const sizeClass = HEADING_SIZE_CLASS[level] ?? 'text-algolia-sm';
+  return (
+    <p
+      key={keyPrefix}
+      className={`m-0 break-words font-algolia-bold leading-ac-body text-algolia-text ${sizeClass}`}
+    >
+      {renderInline(headingText, keyPrefix)}
+    </p>
+  );
+}
+
+function renderProse(lines: string[], keyPrefix: string): ReactNode {
+  return (
+    <p
+      key={keyPrefix}
+      className="m-0 whitespace-pre-wrap break-words text-algolia-sm leading-ac-body text-algolia-text"
+    >
+      {renderInline(lines.join('\n'), keyPrefix)}
+    </p>
+  );
+}
+
+function renderList(kind: 'bullet' | 'ordered', lines: string[], keyPrefix: string): ReactNode {
+  const isBullet = kind === 'bullet';
+  const itemRe = isBullet ? BULLET_ITEM_RE : ORDERED_ITEM_RE;
+  const ListTag = isBullet ? 'ul' : 'ol';
   return (
     <ListTag
       key={keyPrefix}
       className={`m-0 space-y-3 py-1 pl-6 marker:font-algolia-bold marker:text-algolia-accent text-algolia-sm leading-ac-body text-algolia-text ${
-        run.kind === 'bullet' ? 'list-disc' : 'list-decimal'
+        isBullet ? 'list-disc' : 'list-decimal'
       }`}
     >
-      {run.lines.map((line, li) => {
+      {lines.map((line, li) => {
         const itemText = line.replace(itemRe, '$1');
         return <li key={`${keyPrefix}-${li}`}>{renderInline(itemText, `${keyPrefix}-${li}`)}</li>;
       })}

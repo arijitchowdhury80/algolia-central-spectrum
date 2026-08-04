@@ -51,7 +51,7 @@
       Two-tier layout:
         <algolia-instant-search>  ← root: owns instantsearch() + searchClient
           <algolia-chat>          ← main widget: React UI + Shadow DOM
-            <algolia-agent>  ← leaf sub-widgets: agent config carriers
+            <algolia-agent>       ← leaf sub-widgets: agent config carriers
     -->
     <algolia-instant-search
       app-id="0EXRPAXB56"
@@ -67,23 +67,21 @@
         corpus-name="Adobe Spectrum design + React code"
         disclaimer="Grounded in Adobe Spectrum docs — every answer cites its source."
       >
-        <!-- Agents: one primary, any number of specialists, optional classifier -->
+        <!-- Agents: one primary orchestrator, any number of specialists nested under it -->
         <algolia-agent
           role="primary"
           agent-id="95826da6-d1b6-4b81-b061-bfb52b881356"
           label="Assistant"
-        ></algolia-agent>
-        <algolia-agent
-          role="specialist"
-          key="technical"
-          agent-id="ae127977-c728-4b7c-bc15-6502a77873d1"
-          label="Code specialist"
-          accent-token="--algolia-agent-specialist"
-        ></algolia-agent>
-        <algolia-agent
-          role="classifier"
-          agent-id="dbb4faa9-e917-4be9-b8ee-6dfd9a81daef"
-        ></algolia-agent>
+        >
+          <!-- Specialist agents — only reachable through the orchestrator's ask_specialist tool -->
+          <algolia-agent
+            role="specialist"
+            key="technical"
+            agent-id="ae127977-c728-4b7c-bc15-6502a77873d1"
+            label="Code specialist"
+            accent-token="--algolia-agent-specialist"
+          ></algolia-agent>
+        </algolia-agent>
 
         <!-- Judge agent — nested inside the confidence widget -->
         <algolia-chat-confidence mode="algolia">

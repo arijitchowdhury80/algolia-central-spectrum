@@ -284,9 +284,7 @@ If engage is false: {"engage":false,"persona":"developer","greeting":"","suggest
 `,
     // hitsPerPage capped — the concierge blocks the proactive greeting, so the
     // tool round-trip is kept small (3 hits ≈ 7 s vs ~15 s unbounded).
-    tools: [
-      buildIndexTool('ACS_SPECTRUM_MULTI — full Spectrum corpus (all sources).', null, 3),
-    ],
+    tools: [buildIndexTool('ACS_SPECTRUM_MULTI — full Spectrum corpus (all sources).', null, 3)],
   },
 ];
 
@@ -415,14 +413,54 @@ function writeBackup(backup) {
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 
+function printDryRun() {
+  for (const agent of AGENTS) {
+    console.log(`\n${'═'.repeat(78)}\n${agent.name}  (${agent.instructions.length} chars)`);
+    console.log(`filters: ${JSON.stringify(agent.tools[0].indices[0].searchParameters)}`);
+    console.log(`${'═'.repeat(78)}\n${agent.instructions}`);
+  }
+  console.log(`\n(--dry-run: nothing was created, updated, or published.)\n`);
+}
+
+/**
+ * Create the agent when it is missing, otherwise resync its instructions.
+ * Either way the agent comes back published.
+ *
+ * @returns {Promise<{ id: string, name: string }>}
+ */
+async function upsertPersonaAgent(agentDef, existingAgent, backup) {
+  if (!existingAgent) {
+    console.log(`  +  Creating ${agentDef.name}…`);
+    const created = await createAgent(agentDef);
+    console.log(`     Created  →  ${created.id}`);
+    await publishAgent(created.id, agentDef.name);
+    console.log(`     Published`);
+    return { id: created.id, name: agentDef.name };
+  }
+
+  const { id, status } = existingAgent;
+  console.log(`  ✓  ${agentDef.name} already exists  →  ${id}  (status: ${status})`);
+  await syncInstructions(existingAgent, agentDef, backup);
+  // Ensure it's published even if it existed before
+  if (status !== 'published') {
+    await publishAgent(id, agentDef.name);
+    console.log(`     Published`);
+  }
+  return { id, name: agentDef.name };
+}
+
+function writeAgentManifest(result) {
+  const outDir = resolve(__dirname, '../website/public/context');
+  mkdirSync(outDir, { recursive: true });
+  const outPath = resolve(outDir, 'agents.generated.json');
+  writeFileSync(outPath, JSON.stringify(result, null, 2));
+  console.log(`\n✅  Done. Agent IDs written to:\n   ${outPath}\n`);
+  console.log(JSON.stringify(result, null, 2));
+}
+
 async function main() {
   if (DRY_RUN) {
-    for (const agent of AGENTS) {
-      console.log(`\n${'═'.repeat(78)}\n${agent.name}  (${agent.instructions.length} chars)`);
-      console.log(`filters: ${JSON.stringify(agent.tools[0].indices[0].searchParameters)}`);
-      console.log(`${'═'.repeat(78)}\n${agent.instructions}`);
-    }
-    console.log(`\n(--dry-run: nothing was created, updated, or published.)\n`);
+    printDryRun();
     return;
   }
 
@@ -441,25 +479,11 @@ async function main() {
   const backup = { appId: APP_ID, capturedAt: new Date().toISOString(), agents: {} };
 
   for (const agentDef of AGENTS) {
-    if (existingByName[agentDef.name]) {
-      const existing = existingByName[agentDef.name];
-      const id = existing.id;
-      console.log(`  ✓  ${agentDef.name} already exists  →  ${id}  (status: ${existing.status})`);
-      await syncInstructions(existing, agentDef, backup);
-      // Ensure it's published even if it existed before
-      if (existing.status !== 'published') {
-        await publishAgent(id, agentDef.name);
-        console.log(`     Published`);
-      }
-      result.agents[agentDef.name] = { id, name: agentDef.name };
-    } else {
-      console.log(`  +  Creating ${agentDef.name}…`);
-      const created = await createAgent(agentDef);
-      console.log(`     Created  →  ${created.id}`);
-      await publishAgent(created.id, agentDef.name);
-      console.log(`     Published`);
-      result.agents[agentDef.name] = { id: created.id, name: agentDef.name };
-    }
+    result.agents[agentDef.name] = await upsertPersonaAgent(
+      agentDef,
+      existingByName[agentDef.name],
+      backup,
+    );
   }
 
   // Handy aliases the context engine reads directly
@@ -471,13 +495,7 @@ async function main() {
   result.conciergeAgentId = result.agents['ACS-concierge-neural']?.id;
 
   writeBackup(backup);
-
-  const outDir = resolve(__dirname, '../website/public/context');
-  mkdirSync(outDir, { recursive: true });
-  const outPath = resolve(outDir, 'agents.generated.json');
-  writeFileSync(outPath, JSON.stringify(result, null, 2));
-  console.log(`\n✅  Done. Agent IDs written to:\n   ${outPath}\n`);
-  console.log(JSON.stringify(result, null, 2));
+  writeAgentManifest(result);
 }
 
 main().catch((err) => {

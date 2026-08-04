@@ -1,5 +1,6 @@
 import { activeInstance, getAgentByKey } from '../../config/active';
 import { interpolate } from '../../config/strings';
+import { useWidgetState } from '../widgetContext';
 import type { AgentKind } from '../types';
 
 export interface ErrorCardProps {
@@ -11,7 +12,8 @@ export interface ErrorCardProps {
  *  agent). Visually distinct from a valid grounded refusal. Never shows a
  *  raw stack trace — a fixed, friendly message plus a Retry button. */
 export function ErrorCard({ agent, onRetry }: ErrorCardProps) {
-  const label = (getAgentByKey(agent) ?? activeInstance.agents.primary).label;
+  const { agents } = useWidgetState();
+  const label = (agents[agent] ?? getAgentByKey(agent) ?? activeInstance.agents.primary).label;
   return (
     <div
       role="alert"

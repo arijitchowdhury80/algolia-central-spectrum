@@ -43,7 +43,7 @@ for (const file of readdirSync(widgetDist)) {
 
 if (copiedBundles === 0) {
   console.warn(
-      '\n[sync-widget] WARNING: No *.js files found in algolia-chat/dist/.\n' +
+    '\n[sync-widget] WARNING: No *.js files found in algolia-chat/dist/.\n' +
       '  Build the widget first: cd ../algolia-chat && npm run build\n',
   );
 }
@@ -64,4 +64,6 @@ try {
   // algolia-chat/public/brand may not exist in all configurations — not fatal.
 }
 
-console.log(`\n[sync-widget] Done. ${copiedBundles} bundle(s), ${copiedBrand} brand asset(s) synced.\n`);
+console.log(
+  `\n[sync-widget] Done. ${copiedBundles} bundle(s), ${copiedBrand} brand asset(s) synced.\n`,
+);

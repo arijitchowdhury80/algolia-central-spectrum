@@ -3,9 +3,11 @@
  * both chat agents and judge agents.
  *
  * A single element replaces the previous `<algolia-chat-agent>` /
- * `<algolia-judge-agent>` pair. Context is determined automatically from DOM
- * position: an element nested inside `<algolia-chat-confidence>` is treated as
- * a judge agent; anywhere else it is treated as a chat agent.
+ * `<algolia-judge-agent>` / `<algolia-person-agent>` elements. Context is
+ * determined automatically from DOM position:
+ *   - inside `<algolia-chat-confidence>` → judge agent
+ *   - inside `<algolia-chat-person>`     → person sub-agent (read directly by parent; no IS widget)
+ *   - anywhere else                      → chat agent
  *
  * When connected, the element creates an `agentWidget` with the appropriate
  * context and dispatches `algolia-widget-added` (bubbling). The event propagates
@@ -17,10 +19,17 @@
  * widget is cleanly removed from the IS instance.
  *
  * ── Chat agent (inside <algolia-chat>):
- *   <algolia-agent role="primary"    agent-id="…" label="Assistant"></algolia-agent>
- *   <algolia-agent role="specialist" key="code" agent-id="…" label="Code expert"
- *                  accent-token="--algolia-agent-specialist"></algolia-agent>
- *   <algolia-agent role="classifier" agent-id="…"></algolia-agent>
+ *   <algolia-agent role="primary" agent-id="…" label="Assistant">
+ *     <algolia-agent role="specialist" key="code" agent-id="…" label="Code expert"
+ *                    accent-token="--algolia-agent-specialist"></algolia-agent>
+ *   </algolia-agent>
+ *
+ *   Specialists are written inside the primary because they are only reachable
+ *   through its ask_specialist tool. Nesting is convention, not a rule enforced
+ *   here: every chat agent publishes into the same flat renderState.chatAgents
+ *   map regardless of depth, so a specialist declared as a sibling behaves the
+ *   same. What nesting does buy is lifecycle coupling — removing the primary
+ *   disconnects its specialists too.
  *
  * ── Judge agent (inside <algolia-chat-confidence>):
  *   <algolia-chat-confidence mode="algolia">
@@ -33,6 +42,13 @@
  *   <algolia-chat-confidence mode="algolia">
  *     <algolia-agent agent-id="…"></algolia-agent>
  *   </algolia-chat-confidence>
+ *
+ * ── Person sub-agent (inside <algolia-chat-person>):
+ *   <algolia-chat-person agent-id="…">
+ *     <algolia-agent role="profile" agent-id="…"></algolia-agent>
+ *     <algolia-agent role="events"  agent-id="…"></algolia-agent>
+ *     <algolia-agent role="session" agent-id="…"></algolia-agent>
+ *   </algolia-chat-person>
  *
  * ── Attributes (all contexts) ────────────────────────────────────────────────
  *   agent-id      Algolia Agent Studio agent UUID  (required)
@@ -68,11 +84,14 @@ export class AlgoliaAgentElement extends HTMLElement {
   // ── Context detection ──────────────────────────────────────────────────────
 
   /**
-   * Detect whether this element is a judge agent (inside a confidence element)
-   * or a chat agent (anywhere else). Uses the live DOM position at connection time.
+   * Detect this element's role from its live DOM position at connection time:
+   * a judge agent inside a confidence element, a person sub-agent inside a
+   * person element, or a chat agent anywhere else.
    */
   private get agentContext(): AgentContext {
-    return this.closest('algolia-chat-confidence') ? 'judge' : 'chat';
+    if (this.closest('algolia-chat-confidence')) return 'judge';
+    if (this.closest('algolia-chat-person')) return 'person';
+    return 'chat';
   }
 
   // ── Shared accessors ───────────────────────────────────────────────────────
@@ -178,6 +197,19 @@ export class AlgoliaAgentElement extends HTMLElement {
         key: agentKey,
         label: this.chatLabel(agentKey),
         accentToken: this.accentToken(),
+      });
+    } else if (this.agentContext === 'person') {
+      // Person sub-agents are keyed by role — that is what selects which data
+      // slice they interpret, so one without a role has nothing to bind to.
+      const agentKey = this.roleAttr;
+      if (!agentKey) return;
+
+      this.widget = agentWidget({
+        context: 'person',
+        agentKey,
+        id,
+        role: agentKey,
+        label: this.labelAttr,
       });
     } else {
       const agentKey = this.judgeAgentKey();

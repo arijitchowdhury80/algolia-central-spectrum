@@ -25,7 +25,7 @@ const SEARCH_KEY = 'REDACTED';
 
 // These are loaded from agents.generated.json (written by create-proactive-agents.mjs).
 // We fetch the JSON at init so the IDs are always up-to-date without hard-coding.
-let PERSONA_AGENTS = {};   // { designer, developer, pm }  → agentId strings
+let PERSONA_AGENTS = {}; // { designer, developer, pm }  → agentId strings
 let CONCIERGE_AGENT_ID = null;
 
 // Greeting cache key — stores a pending proactive greeting across navigations so
@@ -33,6 +33,10 @@ let CONCIERGE_AGENT_ID = null;
 // the greeting is shown on the next page they land on.
 const GREETING_CACHE_KEY = 'acs_pending_greeting';
 const GREETING_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+// How long init() waits for <algolia-chat> to be defined before giving up, so a
+// widget script that never loads cannot deadlock the rest of the page.
+const WIDGET_DEFINITION_TIMEOUT_MS = 5000;
 
 /**
  * Whether a greeting has already been surfaced during THIS page load.
@@ -48,13 +52,19 @@ let engagedThisPageLoad = false;
 // ── Storage helpers ───────────────────────────────────────────────────────────
 
 function storageGet(key) {
-  try { return JSON.parse(localStorage.getItem(key)); }
-  catch { return null; }
+  try {
+    return JSON.parse(localStorage.getItem(key));
+  } catch {
+    return null;
+  }
 }
 
 function storageSet(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)); }
-  catch { /* storage unavailable */ }
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* storage unavailable */
+  }
 }
 
 // ── Profile ───────────────────────────────────────────────────────────────────
@@ -184,15 +194,14 @@ function buildVisitorContext() {
 
 // ── Page tracking ─────────────────────────────────────────────────────────────
 
-let pageEnteredAt = Date.now();
+const pageEnteredAt = Date.now();
 let pageReadFired = false;
-let dwellTimer = null;
 
 function trackPageView() {
   pushEvent('page_view', { title: document.title });
 
   // Dwell-based page_read: fire after 30 seconds of dwell
-  dwellTimer = setTimeout(() => {
+  setTimeout(() => {
     if (!pageReadFired) {
       pageReadFired = true;
       pushEvent('page_read', { title: document.title, trigger: 'dwell' });
@@ -227,7 +236,12 @@ function recordPageDwell() {
   // signal checks even before the user leaves the page.
   const session = loadSession();
   const existing = session.pages.findIndex((p) => p.path === location.pathname);
-  const entry = { path: location.pathname, title: document.title, enteredAt: pageEnteredAt, dwellMs: 0 };
+  const entry = {
+    path: location.pathname,
+    title: document.title,
+    enteredAt: pageEnteredAt,
+    dwellMs: 0,
+  };
   if (existing >= 0) session.pages[existing] = entry;
   else session.pages.push(entry);
   saveSession(session);
@@ -236,12 +250,19 @@ function recordPageDwell() {
     const dwell = Date.now() - pageEnteredAt;
     const s = loadSession();
     const idx = s.pages.findIndex((p) => p.path === location.pathname);
-    const updated = { path: location.pathname, title: document.title, enteredAt: pageEnteredAt, dwellMs: dwell };
+    const updated = {
+      path: location.pathname,
+      title: document.title,
+      enteredAt: pageEnteredAt,
+      dwellMs: dwell,
+    };
     if (idx >= 0) s.pages[idx] = updated;
     else s.pages.push(updated);
     saveSession(s);
   }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) flush();
+  });
   window.addEventListener('beforeunload', flush);
 }
 
@@ -303,21 +324,30 @@ function watchChatOpenState() {
 
 // ── Agent Studio completions (non-streaming fetch) ────────────────────────────
 
-async function callAgentJson(agentId, userMessage) {
-  const url = `https://${APP_ID}.algolia.net/agent-studio/1/agents/${agentId}/completions?compatibilityMode=ai-sdk-4`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Algolia-Application-Id': APP_ID,
-      'X-Algolia-API-Key': SEARCH_KEY,
-    },
-    body: JSON.stringify({ messages: [{ role: 'user', content: userMessage }] }),
-  });
-  if (!res.ok) throw new Error(`Agent call failed: ${res.status}`);
+/**
+ * callAgentJson — non-streaming completions call using ai-sdk-5 format.
+ *
+ * Collects all text-delta events into a single string and returns the full
+ * assistant response. Suitable for the concierge and other non-interactive
+ * agent calls in the context engine.
+ */
+/** The text carried by one SSE line, or '' for anything that isn't a delta. */
+function textDeltaFrom(line) {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('data:')) return '';
+  const payload = trimmed.slice('data:'.length).trim();
+  if (!payload) return '';
+  try {
+    const ev = JSON.parse(payload);
+    return ev.type === 'text-delta' && typeof ev.delta === 'string' ? ev.delta : '';
+  } catch {
+    return ''; // skip malformed lines
+  }
+}
 
-  // Read the AI-SDK-v4 stream: collect prefix-0 text deltas into a full string
-  const reader = res.body.getReader();
+/** Concatenate every text-delta in an ai-sdk-5 SSE stream. */
+async function readTextDeltaStream(body) {
+  const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
   let text = '';
@@ -327,20 +357,29 @@ async function callAgentJson(agentId, userMessage) {
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split('\n');
+    // The trailing fragment may be half a line; hold it back for the next chunk.
     buffer = lines.pop() ?? '';
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      const colonIdx = trimmed.indexOf(':');
-      if (colonIdx === -1) continue;
-      const prefix = trimmed.slice(0, colonIdx);
-      const payload = trimmed.slice(colonIdx + 1);
-      if (prefix === '0') {
-        try { text += JSON.parse(payload); } catch { /* skip */ }
-      }
-    }
+    for (const line of lines) text += textDeltaFrom(line);
   }
   return text;
+}
+
+async function callAgentJson(agentId, userMessage) {
+  const url = `https://${APP_ID}.algolia.net/agent-studio/1/agents/${agentId}/completions?compatibilityMode=ai-sdk-5`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Algolia-Application-Id': APP_ID,
+      'X-Algolia-API-Key': SEARCH_KEY,
+    },
+    body: JSON.stringify({
+      messages: [{ role: 'user', parts: [{ type: 'text', text: userMessage }] }],
+    }),
+  });
+  if (!res.ok) throw new Error(`Agent call failed: ${res.status}`);
+
+  return readTextDeltaStream(res.body);
 }
 
 // Extract the first JSON object from a text response (the concierge returns JSON)
@@ -348,8 +387,11 @@ function extractJson(text) {
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}');
   if (start === -1 || end === -1) return null;
-  try { return JSON.parse(text.slice(start, end + 1)); }
-  catch { return null; }
+  try {
+    return JSON.parse(text.slice(start, end + 1));
+  } catch {
+    return null;
+  }
 }
 
 // ── Proactive analysis ────────────────────────────────────────────────────────
@@ -358,7 +400,9 @@ function hasEnoughSignal(profile, session, events) {
   // Any page view is enough to pre-warm the concierge. The concierge itself
   // decides whether to engage based on what it finds in the index.
   const enough = session.pages.length >= 1 || profile.visits >= 1;
-  console.log(`[context-engine] signal check → ${enough ? 'ENOUGH' : 'not enough'} | visits=${profile.visits} pages=${session.pages.length} events=${events.length}`);
+  console.log(
+    `[context-engine] signal check → ${enough ? 'ENOUGH' : 'not enough'} | visits=${profile.visits} pages=${session.pages.length} events=${events.length}`,
+  );
   return enough;
 }
 
@@ -390,39 +434,78 @@ function showCachedGreeting() {
   return true;
 }
 
-async function runProactiveAnalysis(profile, session, events) {
-  console.log('[context-engine] runProactiveAnalysis start', { conciergeId: CONCIERGE_AGENT_ID });
-
+/**
+ * Every reason to skip the concierge, cheapest check first. Each one logs why,
+ * because "the chat didn't greet me" is otherwise very hard to diagnose.
+ */
+function shouldCallConcierge(profile, session, events) {
   if (!CONCIERGE_AGENT_ID) {
     console.warn('[context-engine] No CONCIERGE_AGENT_ID — agents.generated.json not loaded yet?');
-    return;
+    return false;
   }
 
   // Skip if a greeting is already pending or was already shown on this page load
   const existingCache = storageGet(GREETING_CACHE_KEY);
   if (existingCache && Date.now() - existingCache.ts < GREETING_CACHE_TTL_MS) {
     console.log('[context-engine] Cached greeting already pending, skipping concierge call');
-    return;
+    return false;
   }
   if (engagedThisPageLoad) {
     console.log('[context-engine] Already engaged on this page, skipping concierge call');
-    return;
+    return false;
   }
 
   const widget = getWidget();
   if (!widget) {
     console.warn('[context-engine] No <algolia-chat> element found');
-    return;
+    return false;
   }
 
   // The visitor can switch auto-suggestions off in the chat header. The widget
   // enforces this itself, but checking here avoids a pointless agent call.
   if (widget.autoEngage === false) {
     console.log('[context-engine] Auto-suggestions are off — skipping concierge call');
+    return false;
+  }
+
+  return hasEnoughSignal(profile, session, events);
+}
+
+/** The greeting the concierge settled on, or '' when it chose not to engage. */
+function greetingFrom(decision) {
+  if (!decision?.engage) return '';
+  return (decision.greeting ?? '').trim();
+}
+
+/** Engage now, or cache the greeting for the page the visitor is heading to. */
+function applyConciergeDecision(decision) {
+  const greeting = greetingFrom(decision);
+  if (!greeting) {
+    console.log('[context-engine] Concierge decided not to engage');
+    setWidgetAnalyzing(false);
     return;
   }
 
-  if (!hasEnoughSignal(profile, session, events)) return;
+  const suggestions = Array.isArray(decision.suggestions) ? decision.suggestions : [];
+  console.log('[context-engine] Engaging! greeting:', greeting);
+
+  if (document.hidden) {
+    // Visitor navigated away — cache so the next page shows it instantly
+    console.log('[context-engine] Page hidden — caching greeting for next page load');
+    storageSet(GREETING_CACHE_KEY, { greeting, suggestions, ts: Date.now() });
+    setWidgetAnalyzing(false);
+    return;
+  }
+
+  // Visitor is still here — engage now. engage() clears the spinner itself,
+  // and returns false if they switched auto-suggestions off mid-call.
+  engagedThisPageLoad = getWidget()?.engage({ greeting, suggestions }) ?? false;
+}
+
+async function runProactiveAnalysis(profile, session, events) {
+  console.log('[context-engine] runProactiveAnalysis start', { conciergeId: CONCIERGE_AGENT_ID });
+
+  if (!shouldCallConcierge(profile, session, events)) return;
 
   const context = buildVisitorContext();
 
@@ -438,27 +521,7 @@ async function runProactiveAnalysis(profile, session, events) {
     console.log('[context-engine] Concierge raw response:', rawText.slice(0, 500));
     const decision = extractJson(rawText);
     console.log('[context-engine] Parsed decision:', decision);
-
-    const greeting = decision?.engage ? (decision.greeting ?? '').trim() : '';
-    if (!greeting) {
-      console.log('[context-engine] Concierge decided not to engage');
-      setWidgetAnalyzing(false);
-      return;
-    }
-
-    const suggestions = Array.isArray(decision.suggestions) ? decision.suggestions : [];
-    console.log('[context-engine] Engaging! greeting:', greeting);
-
-    if (document.hidden) {
-      // Visitor navigated away — cache so the next page shows it instantly
-      console.log('[context-engine] Page hidden — caching greeting for next page load');
-      storageSet(GREETING_CACHE_KEY, { greeting, suggestions, ts: Date.now() });
-      setWidgetAnalyzing(false);
-    } else {
-      // Visitor is still here — engage now. engage() clears the spinner itself,
-      // and returns false if they switched auto-suggestions off mid-call.
-      engagedThisPageLoad = getWidget()?.engage({ greeting, suggestions }) ?? false;
-    }
+    applyConciergeDecision(decision);
   } catch (err) {
     console.warn('[context-engine] Proactive analysis failed:', err.message);
     setWidgetAnalyzing(false);
@@ -497,7 +560,8 @@ function buildPersonaDropdown(currentPersona) {
   ].join(';');
 
   const label = document.createElement('span');
-  label.style.cssText = 'color:#555;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;';
+  label.style.cssText =
+    'color:#555;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;';
   label.textContent = 'Persona';
   wrapper.appendChild(label);
 
@@ -566,7 +630,12 @@ async function onPersonaChange(personaKey) {
 
   // Re-seed the session with the current page so the concierge has context
   const freshSession = { pages: [], startedAt: Date.now() };
-  const entry = { path: location.pathname, title: document.title, enteredAt: Date.now(), dwellMs: 0 };
+  const entry = {
+    path: location.pathname,
+    title: document.title,
+    enteredAt: Date.now(),
+    dwellMs: 0,
+  };
   freshSession.pages.push(entry);
   saveSession(freshSession);
 
@@ -578,8 +647,8 @@ async function onPersonaChange(personaKey) {
 
 // ── Initialise ────────────────────────────────────────────────────────────────
 
-async function init() {
-  // 1. Load agent config
+/** Populate PERSONA_AGENTS / CONCIERGE_AGENT_ID from the generated manifest. */
+async function loadAgentConfig() {
   try {
     const configRes = await fetch('/context/agents.generated.json');
     const config = await configRes.json();
@@ -588,63 +657,89 @@ async function init() {
   } catch (err) {
     console.warn('[context-engine] Could not load agents.generated.json:', err.message);
   }
+}
 
-  // 2. Update profile (increment visit count on first load each session)
-  let profile = loadProfile();
+/**
+ * Count the visit once per session, then materialise the persona profile now
+ * rather than on the first question, so the stored record is complete and
+ * inspectable from the moment the page loads.
+ */
+function initVisitorProfile() {
+  const profile = loadProfile();
   const session = loadSession();
   const isNewSession = session.pages.length === 0 && session.startedAt > Date.now() - 5000;
   if (isNewSession) {
     profile.visits = (profile.visits ?? 0) + 1;
     saveProfile(profile);
   }
+  return ensurePersonaProfile(profile);
+}
 
-  // Materialise the persona profile now rather than on the first question, so
-  // the record is complete and inspectable from the moment the page loads.
-  profile = ensurePersonaProfile(profile);
-
-  // 3. Start tracking
+function startTracking() {
   trackPageView();
   trackScrollDepth();
   trackCTAClicks();
   recordPageDwell();
+}
 
-  // 4. Inject persona dropdown, and keep it clear of the docked chat panel
+/**
+ * Once the element is defined it buffers calls internally, so there's no need
+ * to wait for its React tree to mount. Bounded so a failed widget script can't
+ * deadlock init.
+ */
+function waitForWidgetDefinition() {
+  return Promise.race([
+    customElements.whenDefined('algolia-chat'),
+    new Promise((r) => setTimeout(r, WIDGET_DEFINITION_TIMEOUT_MS)),
+  ]);
+}
+
+/** Re-apply the persona saved from a previous page. */
+function restoreSavedPersona(profile) {
+  if (!profile.persona || profile.persona === 'auto') return;
+  const opt = PERSONA_OPTIONS.find((o) => o.key === profile.persona);
+  getWidget()?.setPersona(PERSONA_AGENTS[profile.persona] ?? null, opt?.label ?? profile.persona);
+}
+
+async function init() {
+  await loadAgentConfig();
+
+  const profile = initVisitorProfile();
+
+  startTracking();
+
+  // Inject the persona dropdown, and keep it clear of the docked chat panel
   buildPersonaDropdown(profile.persona ?? 'auto');
   watchChatOpenState();
 
-  // 5. Wait for the custom element definition to load, then drive it. Once
-  //    defined, the element buffers calls internally, so there's no need to
-  //    wait for its React tree to mount. Bounded so a failed widget script
-  //    can't deadlock init.
-  await Promise.race([
-    customElements.whenDefined('algolia-chat'),
-    new Promise((r) => setTimeout(r, 5000)),
-  ]);
+  await waitForWidgetDefinition();
 
-  // 5a. Hand the tracked profile / pages / events to the widget, so the agent
-  //     answering the visitor's questions works from the same context the
-  //     concierge uses to greet them.
+  // Hand the tracked profile / pages / events to the widget, so the agent
+  // answering the visitor's questions works from the same context the
+  // concierge uses to greet them.
   shareVisitorContextWithWidget();
+  restoreSavedPersona(profile);
 
-  // 5b. Re-apply the persona saved from a previous page.
-  if (profile.persona && profile.persona !== 'auto') {
-    const opt = PERSONA_OPTIONS.find((o) => o.key === profile.persona);
-    getWidget()?.setPersona(PERSONA_AGENTS[profile.persona] ?? null, opt?.label ?? profile.persona);
-  }
-
-  // 5c. Fast path — if a previous page's concierge call left a greeting in the
-  //     cache, show it immediately and skip the API call entirely.
+  // Fast path — if a previous page's concierge call left a greeting in the
+  // cache, show it immediately and skip the API call entirely.
   if (showCachedGreeting()) {
     console.log('[context-engine] Engaged from cache — skipping concierge call');
     return;
   }
 
-  // 6. Otherwise run the analysis immediately. The FAB shows a spinner for the
-  //    duration; if the visitor navigates before it resolves, the greeting is
-  //    cached and shown instantly on the next page (step 5b).
+  // Otherwise run the analysis immediately. The FAB shows a spinner for the
+  // duration; if the visitor navigates before it resolves, the greeting is
+  // cached and shown instantly on the next page.
   const freshSession = loadSession();
   const freshEvents = loadEvents();
-  console.log('[context-engine] Starting proactive analysis. profile:', profile, 'session pages:', freshSession.pages.length, 'events:', freshEvents.length);
+  console.log(
+    '[context-engine] Starting proactive analysis. profile:',
+    profile,
+    'session pages:',
+    freshSession.pages.length,
+    'events:',
+    freshEvents.length,
+  );
   void runProactiveAnalysis(profile, freshSession, freshEvents);
 }
 

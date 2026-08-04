@@ -9,7 +9,7 @@
  * render updates the reactive store, dispose unmounts.
  *
  * Agent sub-widgets register their config into `renderState.chatAgents` via
- * connectChatAgent, and confidence sub-widgets register their config into
+ * connectAgent, and confidence sub-widgets register their config into
  * `renderState.chatConfidence` via connectChatConfidence. The chat connector
  * reads both aggregated states in getWidgetRenderState (called during render,
  * after all widget getRenderState passes have completed) and passes them to
@@ -19,6 +19,10 @@
 import type { InstantSearch, InitOptions, RenderOptions } from 'instantsearch.js/es/types';
 import type { ChatAgentDescriptor, JudgeAgentDescriptor } from './connectAgent';
 import type { ChatConfidenceDescriptor } from './connectChatConfidence';
+import type { PersonConfig, PersonAgentRole, PersonSubAgentDescriptor } from './connectChatPerson';
+
+/** Roles a person sub-agent may claim; anything else is ignored on merge. */
+const PERSON_ROLES = new Set<PersonAgentRole>(['profile', 'events', 'session']);
 
 // ── Internal IS shape needed to read accumulated renderState ──────────────────
 
@@ -33,29 +37,79 @@ type ISWithRenderState = InstantSearch & {
  * which fires after all widgets have run `getRenderState` (phase 1), so leaf
  * widget data is always present.
  *
- * When `<algolia-judge-agent>` children are registered they publish into
+ * When `<algolia-agent>` judge children are registered they publish into
  * `renderState.judgeAgents`. This function merges those into
  * `chatConfidence.agents`, so the child elements are the authoritative source
- * of judge agent config when present. If no judge-agent children exist the
+ * of judge agent config when present. If no judge children exist the
  * static `agents` declared on `<algolia-chat-confidence>` itself are used.
  */
 function readChildRenderState(is: ISWithRenderState): {
   agents: Record<string, ChatAgentDescriptor>;
   confidence: ChatConfidenceDescriptor | null;
+  person: PersonConfig | null;
 } {
   const indexState = (is.renderState ?? {})[is.indexName] ?? {};
-  const agents = (indexState.chatAgents ?? {}) as Record<string, ChatAgentDescriptor>;
-  let confidence = (indexState.chatConfidence ?? null) as ChatConfidenceDescriptor | null;
 
-  // Merge child <algolia-judge-agent> descriptors into confidence.agents.
-  // Child elements take precedence over the static `agents` array declared
-  // on the <algolia-chat-confidence> element itself.
-  const judgeAgentsMap = indexState.judgeAgents as Record<string, JudgeAgentDescriptor> | undefined;
-  if (judgeAgentsMap && Object.keys(judgeAgentsMap).length > 0 && confidence) {
-    confidence = { ...confidence, agents: Object.values(judgeAgentsMap) };
-  }
+  return {
+    agents: (indexState.chatAgents ?? {}) as Record<string, ChatAgentDescriptor>,
+    confidence: mergeJudgeAgents(
+      (indexState.chatConfidence ?? null) as ChatConfidenceDescriptor | null,
+      indexState.judgeAgents as Record<string, JudgeAgentDescriptor> | undefined,
+    ),
+    person: mergePersonAgents(
+      (indexState.chatPerson ?? null) as PersonConfig | null,
+      indexState.personAgents as Record<string, PersonSubAgentDescriptor> | undefined,
+    ),
+  };
+}
 
-  return { agents, confidence };
+/**
+ * Merge child `<algolia-agent>` judge descriptors into `confidence.agents`.
+ *
+ * The `<algolia-chat-confidence agent-id="CHIEF_UUID">` shorthand sets
+ * confidence.agents to `[{ id: CHIEF_UUID }]` (role-less = chief). Child
+ * `<algolia-agent role="skeptic/…">` elements publish into judgeAgentsMap. When
+ * both are present the chief from the element's own agent-id must be preserved —
+ * a plain replace would silently discard it.
+ */
+function mergeJudgeAgents(
+  confidence: ChatConfidenceDescriptor | null,
+  judgeAgentsMap: Record<string, JudgeAgentDescriptor> | undefined,
+): ChatConfidenceDescriptor | null {
+  if (!confidence || !judgeAgentsMap) return confidence;
+
+  const childAgents = Object.values(judgeAgentsMap);
+  if (childAgents.length === 0) return confidence;
+
+  // Prepend the element's own chief agent when it is not already in the child map.
+  const childIds = new Set(childAgents.map((a) => a.id));
+  const chiefFromElement = confidence.agents?.find((a) => !a.role && !childIds.has(a.id));
+
+  return {
+    ...confidence,
+    agents: chiefFromElement ? [chiefFromElement, ...childAgents] : childAgents,
+  };
+}
+
+/**
+ * Merge child `<algolia-agent role="profile|events|session">` descriptors into
+ * `person.agents`.
+ *
+ * The children publish themselves into renderState.personAgents rather than
+ * being read off the DOM, because `<algolia-chat-person>` upgrades before its
+ * children are parsed and would otherwise see none of them.
+ */
+function mergePersonAgents(
+  person: PersonConfig | null,
+  personAgentsMap: Record<string, PersonSubAgentDescriptor> | undefined,
+): PersonConfig | null {
+  if (!person || !personAgentsMap) return person;
+
+  const subAgents = Object.values(personAgentsMap).filter(
+    (a): a is PersonSubAgentDescriptor => Boolean(a?.id) && PERSON_ROLES.has(a?.role),
+  );
+
+  return subAgents.length > 0 ? { ...person, agents: subAgents } : person;
 }
 
 // ── Public types ─────────────────────────────────────────────────────────────
@@ -72,11 +126,13 @@ export interface ChatConnectorWidgetParams {
 export interface ChatRenderState {
   api: ChatWidgetApi | null;
   /** Aggregated agent descriptors from all registered chatAgent leaf widgets.
-   *  Keyed by agentKey (e.g. 'primary', 'classifier', or a specialist slug). */
+   *  Keyed by agentKey (e.g. 'primary', or a specialist slug). */
   agents: Record<string, ChatAgentDescriptor>;
   /** Confidence/judge descriptor from the registered chatConfidence leaf
    *  widget, or null when none is registered. */
   confidence: ChatConfidenceDescriptor | null;
+  /** Person agent config from the registered chatPerson leaf widget, or null. */
+  person: PersonConfig | null;
   instantSearchInstance: InstantSearch;
   widgetParams: ChatConnectorWidgetParams;
 }
@@ -116,11 +172,12 @@ export function connectChat(renderFn: ChatRenderer, unmountFn: ChatUnmounter = n
 
     const getWidgetRenderState = (options: InitOptions | RenderOptions): ChatRenderState => {
       const is = options.instantSearchInstance as ISWithRenderState;
-      const { agents, confidence } = readChildRenderState(is);
+      const { agents, confidence, person } = readChildRenderState(is);
       return {
         api: connectorState.api,
         agents,
         confidence,
+        person,
         instantSearchInstance: options.instantSearchInstance,
         widgetParams,
       };

@@ -109,8 +109,8 @@ The sync script logs each copied file and warns when no bundles are found.
 1. Open the browser console — `[algolia-chat]` logs are the first place to look.
 2. Check that `algolia-confidence-badge.js` loads **before** `algolia-chat.js` (script tag order in `index.html` matters).
 3. Verify the `app-id`, `search-api-key`, and `index-name` attributes on `<algolia-chat>` are correct.
-4. Ensure at least one `<algolia-chat-agent role="primary">` child element is present.
-5. If using `<algolia-chat-confidence>` with `<algolia-judge-agent>` children, make sure the confidence element is a direct child of `<algolia-chat>` — judge-agent events bubble through it to the sub-orchestrator.
+4. Ensure at least one `<algolia-agent role="primary">` child element is present.
+5. If using `<algolia-chat-confidence>` or `<algolia-chat-person>` with `<algolia-agent>` children, make sure the container is a direct child of `<algolia-chat>` — child events bubble through it to the sub-orchestrator.
 
 ### Stale widget after source changes
 

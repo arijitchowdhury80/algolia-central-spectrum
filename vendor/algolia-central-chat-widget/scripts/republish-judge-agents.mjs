@@ -197,8 +197,15 @@ async function publishAgent(id, name) {
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 
+// Sequential provisioning script (fetch/compare/report/write per agent).
+// Adopted this lint config from the 2026-08 upstream merge — splitting this
+// pre-existing script is a real refactor, not something to do incidentally
+// under a vendor sync.
+// eslint-disable-next-line max-statements, complexity
 async function main() {
-  console.log(`\n⚖️   Republishing judge agents on app ${APP_ID}${DRY_RUN ? '  (dry run)' : ''}…\n`);
+  console.log(
+    `\n⚖️   Republishing judge agents on app ${APP_ID}${DRY_RUN ? '  (dry run)' : ''}…\n`,
+  );
 
   const existing = await listAgents();
   const byName = Object.fromEntries(existing.map((a) => [a.name, a]));

@@ -331,13 +331,11 @@ export class ConfidenceBadgeElement extends HTMLElement {
       // Presence of the attribute means true; null means removed (false).
       this._scoring = next !== null;
       this._render();
-    } else if (name === 'labels') {
-      if (next) {
-        try {
-          this.labels = JSON.parse(next) as Partial<BadgeLabels>;
-        } catch {
-          /* ignore malformed JSON */
-        }
+    } else if (name === 'labels' && next) {
+      try {
+        this.labels = JSON.parse(next) as Partial<BadgeLabels>;
+      } catch {
+        /* ignore malformed JSON */
       }
     }
   }

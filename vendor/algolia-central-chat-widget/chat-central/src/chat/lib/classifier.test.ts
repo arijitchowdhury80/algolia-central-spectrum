@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buildClassificationQuery, parseSpecialistLine, parseClassifierResponse } from './classifier';
+import {
+  buildClassificationQuery,
+  parseSpecialistLine,
+  parseClassifierResponse,
+} from './classifier';
 
 /**
  * The classifier decides whether to offer a specialist deep-dive. It used to see
@@ -27,7 +31,10 @@ describe('buildClassificationQuery', () => {
   });
 
   it('appends the visitor journey when the host supplies one', () => {
-    const ctx = JSON.stringify({ persona: 'developer', pagesViewed: [{ path: '/demo/migration.html' }] });
+    const ctx = JSON.stringify({
+      persona: 'developer',
+      pagesViewed: [{ path: '/demo/migration.html' }],
+    });
     const out = buildClassificationQuery(query, answer, hits, ctx);
 
     expect(out).toContain('VISITOR CONTEXT (JSON)');
@@ -59,7 +66,9 @@ describe('buildClassificationQuery', () => {
 /** The output contract the visitor context must never disturb. */
 describe('classifier output contract', () => {
   it('still parses a keyed SPECIALIST line', () => {
-    expect(parseSpecialistLine('SPECIALIST:react Go deeper on the code?')).toEqual({ key: 'react' });
+    expect(parseSpecialistLine('SPECIALIST:react Go deeper on the code?')).toEqual({
+      key: 'react',
+    });
   });
 
   it('still treats a bare SPECIALIST line as keyless', () => {
@@ -80,7 +89,9 @@ describe('classifier output contract', () => {
    * next person sees it deliberately rather than rediscovering it.
    */
   it('parses the first prose word as a key on a keyless line (known quirk)', () => {
-    expect(parseSpecialistLine('SPECIALIST: Want the implementation detail?')).toEqual({ key: 'Want' });
+    expect(parseSpecialistLine('SPECIALIST: Want the implementation detail?')).toEqual({
+      key: 'Want',
+    });
   });
 
   it('still splits a multi-line response into suggestions', () => {

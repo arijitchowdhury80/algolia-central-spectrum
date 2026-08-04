@@ -10,10 +10,33 @@
     "dev:website": "npm run dev --prefix website",
     "agents:create": "node scripts/create-proactive-agents.mjs",
     "test": "playwright test",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:all": "npm run lint && npm run lint --prefix chat-central && npm run lint --prefix algolia-chat && npm run lint --prefix website",
+    "lint:all:fix": "npm run lint:fix && npm run lint:fix --prefix chat-central && npm run lint:fix --prefix algolia-chat && npm run lint:fix --prefix website",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "typecheck:all": "npm run typecheck && npm run typecheck --prefix chat-central && npm run typecheck --prefix algolia-chat && npm run typecheck --prefix website",
+    "verify": "npm run format:check && npm run lint:all && npm run typecheck:all",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.62.0",
-    "@types/node": "^26.1.2"
+    "@types/node": "^26.1.2",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "eslint-plugin-sonarjs": "^3.0.5",
+    "globals": "^17.7.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.1.0",
+    "prettier": "^3.9.5",
+    "typescript": "~5.6.3",
+    "typescript-eslint": "^8.65.0"
   }
 }

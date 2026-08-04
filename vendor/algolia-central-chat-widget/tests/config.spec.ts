@@ -7,7 +7,7 @@
  * Each test serves its own minimal host page (no context-engine, no demo chrome)
  * so the widget is exercised as a standalone embeddable component.
  */
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 const APP_ID = '0EXRPAXB56';
 const API_KEY = 'REDACTED';
@@ -106,7 +106,7 @@ test.describe('Slot config is read after parsing', () => {
   <algolia-chat app-id="${APP_ID}" search-api-key="${API_KEY}" index-name="${INDEX}" auto-engage-toggle>
     <algolia-agent role="primary" agent-id="${PRIMARY_AGENT}"></algolia-agent>
     <img slot="launcher-icon" src="/brand/from-slot.svg" alt="">
-    <script type="application/json" slot="strings">{"widget":{"autoEngageOn":"From slot"}}<\/script>
+    <script type="application/json" slot="strings">{"widget":{"autoEngageOn":"From slot"}}</script>
   </algolia-chat>
 </algolia-instant-search>
 </body></html>`,
@@ -119,9 +119,9 @@ test.describe('Slot config is read after parsing', () => {
     await expect(fab.locator('img')).toHaveAttribute('src', '/brand/from-slot.svg');
 
     await fab.click();
-    await expect(page.locator('algolia-chat').locator('button[aria-label="From slot"]')).toHaveCount(
-      1,
-    );
+    await expect(
+      page.locator('algolia-chat').locator('button[aria-label="From slot"]'),
+    ).toHaveCount(1);
   });
 });
 

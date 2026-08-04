@@ -1,0 +1,30 @@
+# Build output and dependencies
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Generated / vendored assets
+website/public/vendor/
+website/public/widget-bundles/
+website/public/context/*.generated.json
+package-lock.json
+
+# Test artifacts
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# Local recovery snapshots written by the agent scripts
+scripts/agent-backups/
+scripts/judge-agent-backups/
+
+# Markup and prose are not formatted yet: adopting Prettier here would rewrite
+# every demo page and README in a single commit. Delete these three lines to
+# take that diff — nothing else needs to change. The same block is repeated in
+# each sub-project's .prettierignore, since Prettier reads ignore patterns
+# relative to the directory it runs in.
+*.html
+*.css
+*.md

@@ -372,6 +372,10 @@ const SPECIALIST_ACCENT_TOKEN = '--algolia-agent-specialist';
  * fields from `defaultInstance` so fallback copy stays in one place. Returns
  * null when there is no usable agent id.
  */
+function trimmedOr(value: string | undefined, fallback: string): string {
+  return value?.trim() || fallback;
+}
+
 function toAgentDescriptor(
   src: AgentJson | undefined,
   key: string,
@@ -383,8 +387,8 @@ function toAgentDescriptor(
   return {
     id,
     key,
-    label: src?.label?.trim() || fallbackLabel,
-    accentToken: src?.accentToken?.trim() || accentToken,
+    label: trimmedOr(src?.label, fallbackLabel),
+    accentToken: trimmedOr(src?.accentToken, accentToken),
   };
 }
 
@@ -417,17 +421,25 @@ function toSpecialistDescriptors(list: AgentJson[] | undefined): InstanceAgentDe
  * (they participate in the IS lifecycle); this covers hosts that would rather
  * configure everything in one place, e.g. from a CMS-rendered attribute.
  */
+function parseAgentsJson(raw: string): AgentsJson | null {
+  try {
+    return JSON.parse(raw) as AgentsJson;
+  } catch {
+    console.warn('[algolia-chat] Could not parse the `agents` attribute as JSON — ignoring it.');
+    return null;
+  }
+}
+
+function classifierFallbackLabel(): string {
+  return defaultInstance.agents.classifier?.label ?? 'Classifier';
+}
+
 function parseAgents(el: Element): Partial<AgentsConfig> | undefined {
   const raw = attr(el, 'agents');
   if (!raw) return undefined;
 
-  let parsed: AgentsJson;
-  try {
-    parsed = JSON.parse(raw) as AgentsJson;
-  } catch {
-    console.warn('[algolia-chat] Could not parse the `agents` attribute as JSON — ignoring it.');
-    return undefined;
-  }
+  const parsed = parseAgentsJson(raw);
+  if (!parsed) return undefined;
 
   const out: Partial<AgentsConfig> = {};
   const primary = toAgentDescriptor(
@@ -441,7 +453,7 @@ function parseAgents(el: Element): Partial<AgentsConfig> | undefined {
   const classifier = toAgentDescriptor(
     parsed.classifier,
     'classifier',
-    defaultInstance.agents.classifier?.label ?? 'Classifier',
+    classifierFallbackLabel(),
     defaultInstance.agents.primary.accentToken,
   );
   if (classifier) out.classifier = classifier;
@@ -873,21 +885,35 @@ class AlgoliaChatElement extends HTMLElement {
    */
   attributeChangedCallback(name: string, previous: string | null, next: string | null): void {
     if (!this.configured || previous === next) return;
+    if (this.handleNonIncrementalAttr(name)) return;
+    this.applyPresentationAttr(name);
+  }
 
+  /**
+   * Handle the attributes that cannot simply be re-applied: credentials are
+   * baked into the client at mount, and judge config needs a widget swap.
+   * Returns true when the change was fully dealt with.
+   */
+  private handleNonIncrementalAttr(name: string): boolean {
     if ((CREDENTIAL_ATTRS as readonly string[]).includes(name)) {
       console.warn(
         `[algolia-chat] ${name} changed after mount, but credentials are read once — ` +
           `the search client and agent transport are already built. Remove and re-insert ` +
           `<algolia-chat> (or reload) to switch application.`,
       );
-      return;
+      return true;
     }
 
     if ((JUDGE_ATTRS as readonly string[]).includes(name)) {
       this.reconfigureConfidence();
-      return;
+      return true;
     }
 
+    return false;
+  }
+
+  /** Re-apply styling, font, and display config for an attribute that changed. */
+  private applyPresentationAttr(name: string): void {
     if ((STYLE_ATTRS as readonly string[]).includes(name) && this.styleEl) {
       this.styleEl.textContent = this.buildStyleText();
     }

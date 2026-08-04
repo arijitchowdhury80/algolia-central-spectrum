@@ -56,6 +56,22 @@ const QUERY_LABEL = "VISITOR'S MESSAGE — this is the question to answer:";
 let provider: VisitorContextProvider | null = null;
 let warnedAboutSize = false;
 
+/** undefined/function/symbol stringify to undefined; `{}` and `[]` carry nothing. */
+function carriesNothing(json: string): boolean {
+  return !json || json === '{}' || json === '[]';
+}
+
+/** Warn once per session when the context is large enough to crowd out retrieval. */
+function warnIfOversized(json: string): void {
+  if (json.length <= SIZE_WARN_CHARS || warnedAboutSize) return;
+  warnedAboutSize = true;
+  console.warn(
+    `[algolia-chat] Visitor context is ${json.length} chars — it is sent with every ` +
+      `message, so it competes with retrieved documentation for the agent's context ` +
+      `window. Send a summary (recent pages and events) rather than a full history.`,
+  );
+}
+
 /** Serialise a provider result, or null when there is nothing worth sending. */
 function serialize(value: unknown): string | null {
   if (value === null || value === undefined) return null;
@@ -66,16 +82,8 @@ function serialize(value: unknown): string | null {
     console.warn('[algolia-chat] Visitor context is not JSON-serialisable — ignoring it.', err);
     return null;
   }
-  // undefined/function/symbol stringify to undefined; `{}` and `[]` carry nothing.
-  if (!json || json === '{}' || json === '[]') return null;
-  if (json.length > SIZE_WARN_CHARS && !warnedAboutSize) {
-    warnedAboutSize = true;
-    console.warn(
-      `[algolia-chat] Visitor context is ${json.length} chars — it is sent with every ` +
-        `message, so it competes with retrieved documentation for the agent's context ` +
-        `window. Send a summary (recent pages and events) rather than a full history.`,
-    );
-  }
+  if (carriesNothing(json)) return null;
+  warnIfOversized(json);
   return json;
 }
 

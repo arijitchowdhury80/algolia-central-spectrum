@@ -51,8 +51,8 @@ export interface AnswerSegment {
 /** One full user turn: the question plus the assistant answer, and — only if
  *  the user opts into a deeper dive — a second specialist segment.
  *
- *  Deep-dive is HUMAN-GATED: the classifier agent offers a specialist deep-dive
- *  when its response is `SPECIALIST:`-prefixed, but the specialist NEVER runs
+ *  Deep-dive is HUMAN-GATED: the orchestrator proposes a specialist by calling
+ *  the ask_specialist tool, but that call blocks and the specialist NEVER runs
  *  until the user clicks "yes". State machine:
  *    deepDiveOffered=false                        → no offer (nothing to do)
  *    deepDiveOffered=true,  handoff=false          → offer shown, awaiting user
@@ -73,6 +73,6 @@ export interface ChatTurn {
   followUp?: string;
   /** Query to send the specialist when the user accepts the deep-dive. */
   deepDiveQuery?: string;
-  /** The key of the specialist the classifier routed to. */
+  /** The key of the specialist the orchestrator asked for. */
   deepDiveSpecialist?: string;
 }

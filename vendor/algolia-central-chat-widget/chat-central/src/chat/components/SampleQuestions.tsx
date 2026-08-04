@@ -79,7 +79,8 @@ export function SampleQuestions({ onPick, disabled }: SampleQuestionsProps) {
                     className="flex flex-col gap-2 rounded-algolia-lg px-4 py-1 first:pl-1"
                     style={{
                       background: `linear-gradient(180deg, color-mix(in srgb, ${accent} 7%, transparent) 0%, transparent 65%)`,
-                      borderLeft: i === 0 ? undefined : '1px solid color-mix(in srgb, #000 8%, transparent)',
+                      borderLeft:
+                        i === 0 ? undefined : '1px solid color-mix(in srgb, #000 8%, transparent)',
                       boxShadow: i === 0 ? undefined : '-6px 0 10px -8px rgba(0,0,0,0.18)',
                     }}
                   >

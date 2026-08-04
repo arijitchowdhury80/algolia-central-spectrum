@@ -10,12 +10,12 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        main:          resolve(__dirname, 'public/index.html'),
-        demoIndex:     resolve(__dirname, 'public/demo/index.html'),
-        demoButton:    resolve(__dirname, 'public/demo/button.html'),
-        demoCombobox:  resolve(__dirname, 'public/demo/combobox.html'),
+        main: resolve(__dirname, 'public/index.html'),
+        demoIndex: resolve(__dirname, 'public/demo/index.html'),
+        demoButton: resolve(__dirname, 'public/demo/button.html'),
+        demoCombobox: resolve(__dirname, 'public/demo/combobox.html'),
         demoMigration: resolve(__dirname, 'public/demo/migration.html'),
-        demoGetStarted:resolve(__dirname, 'public/demo/get-started.html'),
+        demoGetStarted: resolve(__dirname, 'public/demo/get-started.html'),
       },
     },
   },

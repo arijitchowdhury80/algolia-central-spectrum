@@ -1,8 +1,8 @@
 import { MessageMarkdown } from './MessageMarkdown';
 import { SourcePills } from './SourcePills';
 import { ErrorCard } from './ErrorCard';
-import { DeepDivePrompt } from './DeepDivePrompt';
 import { DiscoveryCard } from './DiscoveryCard';
+import { DeepDivePrompt } from './DeepDivePrompt';
 import { ThinkingIndicator } from './ThinkingIndicator';
 import { ConfidenceBadge } from '../../judge/components/ConfidenceBadge';
 import { useJudge, type JudgeTarget } from '../../judge/useJudge';
@@ -61,9 +61,13 @@ function computeBadgeState(
   // The status is still honest — the panel really is still running — so the fix
   // belongs here, in what the badge is given, not in the status.
   const hasVerdictError = judgeStatus === 'error' || !!verdict?.error;
-  const stillWorking = judgeStatus !== 'done' && !hasVerdictError;
-  const showBadge = !!segment.text.trim() && segment.status !== 'error';
-  return { showBadge, badgeVerdict: verdict, scoring: stillWorking && !verdict };
+  const scoring = judgeStatus !== 'done' && !hasVerdictError;
+  // Only show the badge once the judge has actually fired (status leaves 'idle').
+  // While the segment is still streaming / the consent gate is open, canJudge is
+  // false and the judge hasn't started — showing "scoring…" before it begins is
+  // dishonest and confuses users who click "No thanks" expecting a score.
+  const showBadge = judgeStatus !== 'idle' && !!segment.text.trim() && segment.status !== 'error';
+  return { showBadge, badgeVerdict: scoring ? undefined : verdict, scoring };
 }
 
 function SegmentFooter({
@@ -142,6 +146,8 @@ function computeSegmentState(segment: AnswerSegment): SegmentState {
 
 /** One answer card. Each finished answer also carries its own Confidence chip —
  *  the composite grounding-judge score — which opens the full breakdown drawer. */
+// Pre-existing render branching (waiting/empty/error/footer), predates the 2026-08 lint-config adoption.
+// eslint-disable-next-line complexity
 function SegmentView({
   segment,
   turnId,
@@ -213,10 +219,10 @@ function SegmentView({
 export interface ChatMessageProps {
   turn: ChatTurn;
   onRetry: (turnId: string) => void;
-  onDeepDive: (turnId: string) => void;
-  onDecline: (turnId: string) => void;
   onPickFollowUp: (question: string) => void;
   onOpenJudge: (verdict: JudgeVerdict, question: string) => void;
+  onDeepDive: (turnId: string) => void;
+  onDecline: (turnId: string) => void;
   isStreaming: boolean;
 }
 
@@ -224,6 +230,8 @@ export interface ChatMessageProps {
  *  `useAgentMeta`: with `<algolia-agent>` markup, `activeInstance.agents.specialists`
  *  is empty, so this fell through to the generic fallback string and the offer never
  *  named the specialist it was offering. `storeAgents` is the render-state map. */
+// Pre-existing two-registry fallback chain, predates the 2026-08 lint-config adoption.
+// eslint-disable-next-line complexity
 function resolveSpecialistLabel(
   turn: ChatMessageProps['turn'],
   storeAgents: Record<string, { key: string; label: string; role: string }>,
@@ -265,22 +273,20 @@ function UserAvatar() {
   );
 }
 
-/** One full turn: the user's question bubble, the assistant answer card(s), and
- *  — only if the user accepts — a specialist deep-dive card. */
+/** One full turn: the user's question bubble and the assistant answer card(s). */
 export function ChatMessage({
   turn,
   onRetry,
-  onDeepDive,
-  onDecline,
   onPickFollowUp,
   onOpenJudge,
+  onDeepDive,
+  onDecline,
   isStreaming,
 }: ChatMessageProps) {
   const isStreamingTurn = turn.segments.some(
     (s) => s.status === 'loading' || s.status === 'streaming',
   );
   const { agents: storeAgents } = useWidgetState();
-  const showOffer = turn.deepDiveOffered && !turn.handoff && !turn.deepDiveDeclined;
   return (
     <div className="flex flex-col gap-3.5">
       {/* User bubble row: bubble on the left of the avatar, both pushed right */}
@@ -301,7 +307,7 @@ export function ChatMessage({
             onOpenJudge={onOpenJudge}
           />
         ))}
-        {showOffer && (
+        {turn.deepDiveOffered && (
           <DeepDivePrompt
             specialistLabel={resolveSpecialistLabel(turn, storeAgents)}
             onAccept={() => onDeepDive(turn.id)}

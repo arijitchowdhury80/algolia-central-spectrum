@@ -6,11 +6,13 @@
 
 | Layer                    | Contents                                                                                                                                                 |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **IS plumbing**          | `connectChat`, `connectAgent`, `connectChatConfidence` connectors; `chatWidget`, `agentWidget`, `chatConfidenceWidget` factories; React renderer harness |
+| **IS plumbing**          | `connectChat`, `connectAgent`, `connectChatConfidence`, `connectChatPerson` connectors; matching widget factories; React renderer harness |
 | **React UI**             | `ChatWidget` + all components (`AppHeader`, `ChatPanel`, `ChatMessage`, `Composer`, `SourcePills`, `JudgeDrawer`, …)                                     |
 | **Configuration system** | `InstanceConfig`, `RuntimeConfig`, `WidgetStrings`, `defaultInstance`, `applyRootConfig`, `applyRuntimeConfig`, `mergeStrings`                           |
-| **Judge engine**         | Vendored `@confidence-engine` (multi-judge, grounding gate, synthesis); `hostedJudgeClient`, `inBrowserJudge`, `agentStudioLlmAdapter`, `useJudge`       |
-| **Shared transports**    | Agent Studio completions client (`agentStudio.ts`) + env plumbing (`agents.ts`)                                                                          |
+| **Tool loop**            | `runToolLoop` (ai-sdk-5 streaming + client-side tool round-trip), `ToolRegistry`, `ToolHandler`; canonical `client_side` tool configs in `tools/schemas.js` |
+| **Chief judge**          | `chiefJudge.ts` — runs `consult_skeptic/referee/advocate` tools against the chief judge orchestrator; `hostedJudgeClient`; `useJudge`                    |
+| **Person agent**         | Pluggable `VisitorDataSource` interface, `localStorageSource` adapter, `personAgent.ts` (resolves holistic profile via sub-agent tools)                  |
+| **Shared transports**    | Agent Studio completions client (`agentStudio.ts`, ai-sdk-5 SSE parser) + env plumbing (`agents.ts`)                                                    |
 | **Style helpers**        | `buildWidgetStyles(opts?)`, `ensureWidgetFont(fontHref?)`, CSS tokens + theme                                                                            |
 
 The `<algolia-chat>` custom element (algolia-chat package) reads HTML attributes, calls the config helpers, and passes no `component` to `chatWidget` — it defaults to the built-in `ChatWidget` exported from here.
@@ -23,14 +25,34 @@ The `<algolia-chat>` custom element (algolia-chat package) reads HTML attributes
 
 | Export                                          | Purpose                                                                                                                                                      |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `connectChat`                                   | Chat lifecycle connector. Aggregates `chatAgents` + `chatConfidence` + `judgeAgents` from IS `renderState` and pushes updates to the reactive `WidgetStore`. |
+| `connectChat`                                   | Chat lifecycle connector. Aggregates `chatAgents` + `chatConfidence` + `judgeAgents` + `chatPerson` from IS `renderState` and pushes updates to the reactive `WidgetStore`. |
 | `chatWidget({ container, apiRef, component? })` | Wires `connectChat` + React renderer. `component` defaults to the built-in `ChatWidget`.                                                                     |
 | `createChatRenderer`                            | UI-agnostic React mount/unmount harness.                                                                                                                     |
-| `connectAgent`                                  | Unified connector for chat agents and judge agents. Publishes into `renderState.chatAgents` (chat context) or `renderState.judgeAgents` (judge context).     |
+| `connectAgent`                                  | Unified connector for all three agent contexts. Publishes into `renderState.chatAgents`, `renderState.judgeAgents`, or `renderState.personAgents` per the `context` param. |
 | `agentWidget`                                   | Ready-to-register agent widget.                                                                                                                              |
 | `connectChatConfidence`                         | Config-only carrier. Publishes `{ mode, agents, url, apiKey }` into `renderState.chatConfidence`.                                                            |
 | `chatConfidenceWidget`                          | Confidence widget factory. Accepts an optional `container` — mounts `<algolia-confidence-badge>` and keeps it live via `algolia-verdict` events.             |
+| `connectChatPerson`                             | Person orchestrator connector. Publishes `PersonConfig` into `renderState.chatPerson`.                                                                       |
+| `chatPersonWidget`                              | Person orchestrator widget factory. Wire as a child of `chatWidget`.                                                                                         |
 | `ALGOLIA_VERDICT_EVENT`                         | `'algolia-verdict'` — `CustomEvent` name dispatched on `document` by `useJudge`.                                                                             |
+
+### Tool loop + registry
+
+| Export                                               | Purpose                                                                                  |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `runToolLoop(config, request, registry, opts?)`      | Stream-and-tool-loop against an Agent Studio agent (ai-sdk-5). Handles up to `maxSteps` tool calls; per-tool `toolTimeoutMs` safety guard. Returns `ParsedCompletion`. |
+| `ToolRegistry`                                       | `Record<string, ToolHandler>` — map of tool name → async handler function.               |
+| `ToolHandler`                                        | `(input: Record<string, unknown>) => Promise<unknown>` — single tool handler signature.  |
+| `RunToolLoopOptions`                                 | `{ maxSteps?, toolTimeoutMs? }` — loop safety parameters.                                |
+
+### Person agent
+
+| Export                                               | Purpose                                                                                  |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `setVisitorDataSource(source)`                       | Swap in a custom `VisitorDataSource` (e.g. CDP, session endpoint) to replace the default `localStorage` adapter. |
+| `getVisitorDataSource()`                             | Resolve the current data source (falls back to `localStorageSource`).                    |
+| `VisitorDataSource`                                  | Interface: `{ getProfile(), getEvents(), getSessionPages() }`.                           |
+| `buildPersonToolRegistry(config, subAgents)`         | Build the `ToolRegistry` for `get_profile_information`, `get_user_events`, `get_session_pages` handlers. Used internally by `personAgent.ts`. |
 
 ### Built-in React UI
 
@@ -86,11 +108,43 @@ algolia-chat (custom element layer)
   ▼
 chat-central (widget engine)
   ├── connectChat → WidgetStore → ChatWidget (React tree)
-  │                               ├── useChat  ── agentStudio ── Agent Studio
-  │                               └── useJudge ── hostedJudgeClient / inBrowserJudge
-  ├── connectAgent → renderState.chatAgents / judgeAgents
-  └── connectChatConfidence → renderState.chatConfidence
+  │                               ├── useChat
+  │                               │     └── runToolLoop ── Agent Studio (ai-sdk-5)
+  │                               │           ├── ask_specialist → specialist agent
+  │                               │           └── get_visitor_profile → personAgent
+  │                               │                 └── runToolLoop → person orchestrator
+  │                               │                       ├── get_profile_information
+  │                               │                       ├── get_user_events
+  │                               │                       └── get_session_pages
+  │                               └── useJudge ── hostedJudgeClient / chiefJudge
+  │                                                 └── runToolLoop → chief judge agent
+  │                                                       ├── consult_skeptic
+  │                                                       ├── consult_referee
+  │                                                       └── consult_advocate
+  ├── connectAgent → renderState.chatAgents / judgeAgents / personAgents
+  ├── connectChatConfidence → renderState.chatConfidence
+  └── connectChatPerson → renderState.chatPerson
 ```
+
+`connectChat` merges the leaf agent buckets into their parent descriptors during the
+render phase: `judgeAgents` → `chatConfidence.agents` and `personAgents` → `chatPerson.agents`.
+Leaves publish themselves rather than parents reading the DOM, because the HTML parser
+upgrades a custom element at its start tag — a parent inspecting its children from
+`connectedCallback` would find an empty list.
+
+### ai-sdk-5 transport
+
+All Agent Studio calls use `compatibilityMode=ai-sdk-5` SSE events:
+
+```
+data: {"type":"text-delta","delta":"..."}
+data: {"type":"tool-input-available","toolCallId":"call_1","toolName":"ask_specialist","input":{...}}
+data: {"type":"finish-step"}
+```
+
+`runToolLoop` handles the parse–execute–append–re-POST cycle automatically. Tool results are sent back as an assistant message with ai-sdk-5 tool parts — ``type: `tool-${toolName}` ``, `toolCallId`, `state: "output-available"`, `input`, `output`. The ai-sdk-4 spelling (`type: "tool-invocation"`, `toolInvocationId`, `state: "result"`, `args`/`result`) is rejected by the API with a 422. Set `maxSteps` (default 4) and `toolTimeoutMs` (default 30 000 ms) per invocation.
+
+Handlers registered in the tool registry never break the loop: a throw or a timeout is converted into a `{ success: false, error: { code, message } }` result and handed to the agent, so it can recover or explain rather than the turn dying. Streaming callbacks are rebased on each step, so `onText` always reports the whole answer so far rather than just the current step's fragment.
 
 ---
 

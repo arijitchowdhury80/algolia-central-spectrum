@@ -7,7 +7,7 @@
  * Shadow DOM: Playwright automatically pierces open Shadow DOM so normal
  * locators work inside <algolia-chat>'s shadow root.
  */
-import { test, expect, Page, Route } from '@playwright/test';
+import { test, expect, type Page, type Route } from '@playwright/test';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -74,7 +74,6 @@ async function clearStorage(page: Page) {
  * The close button [aria-label="Close chat"] is the simplest open-state indicator.
  */
 const CLOSE_BUTTON = '[aria-label="Close chat"]';
-const TEXTAREA = 'textarea#acs-composer-input';
 /** FAB in its analyzing state — aria-label comes from strings.widget.analyzing. */
 const FAB_ANALYZING = 'button[aria-busy="true"]';
 
@@ -123,7 +122,9 @@ test.describe('Proactive Chat', () => {
     await page.goto('/demo/button.html');
 
     // context-engine fires immediately; mock responds instantly → greeting appears
-    const greeting = page.locator('algolia-chat').getByText('I see you are exploring the Button component!');
+    const greeting = page
+      .locator('algolia-chat')
+      .getByText('I see you are exploring the Button component!');
     await expect(greeting).toBeVisible({ timeout: 5000 });
   });
 
@@ -143,7 +144,9 @@ test.describe('Proactive Chat', () => {
     });
 
     // Click the first suggestion chip — it should populate and send the message
-    const chip = page.locator('algolia-chat').getByRole('button', { name: 'How do I use isPending?' });
+    const chip = page
+      .locator('algolia-chat')
+      .getByRole('button', { name: 'How do I use isPending?' });
     await chip.click();
 
     // The suggestion text should appear as a user message in the conversation
@@ -162,19 +165,22 @@ test.describe('Proactive Chat', () => {
     // Pre-populate the cache (as if the concierge finished on the previous page)
     await page.goto('/demo/');
     await page.evaluate(() => {
-      localStorage.setItem('acs_pending_greeting', JSON.stringify({
-        greeting: 'Welcome back! I noticed you were checking out Button.',
-        suggestions: ['Button variants?', 'isPending prop?', 'ButtonGroup usage?'],
-        ts: Date.now(),
-      }));
+      localStorage.setItem(
+        'acs_pending_greeting',
+        JSON.stringify({
+          greeting: 'Welcome back! I noticed you were checking out Button.',
+          suggestions: ['Button variants?', 'isPending prop?', 'ButtonGroup usage?'],
+          ts: Date.now(),
+        }),
+      );
     });
 
     // Navigate to the next page — showCachedGreeting() fires at ~800 ms
     await page.goto('/demo/button.html');
 
-    const greeting = page.locator('algolia-chat').getByText(
-      'Welcome back! I noticed you were checking out Button.',
-    );
+    const greeting = page
+      .locator('algolia-chat')
+      .getByText('Welcome back! I noticed you were checking out Button.');
     await expect(greeting).toBeVisible({ timeout: 5000 });
 
     // Cache should be cleared after showing (only shows once)
@@ -204,19 +210,31 @@ test.describe('Proactive Chat', () => {
 
     // Seed storage to verify it gets cleared
     await page.evaluate(() => {
-      localStorage.setItem('acs_session', JSON.stringify({
-        pages: [{ path: '/demo/button.html', title: 'Button' }, { path: '/demo/', title: 'Overview' }],
-        startedAt: Date.now(),
-      }));
-      localStorage.setItem('acs_events', JSON.stringify([
-        { type: 'page_view', page: '/demo/button.html', ts: Date.now() },
-        { type: 'cta_click', page: '/demo/button.html', ts: Date.now() },
-      ]));
-      localStorage.setItem('acs_pending_greeting', JSON.stringify({
-        greeting: 'old greeting',
-        suggestions: [],
-        ts: Date.now(),
-      }));
+      localStorage.setItem(
+        'acs_session',
+        JSON.stringify({
+          pages: [
+            { path: '/demo/button.html', title: 'Button' },
+            { path: '/demo/', title: 'Overview' },
+          ],
+          startedAt: Date.now(),
+        }),
+      );
+      localStorage.setItem(
+        'acs_events',
+        JSON.stringify([
+          { type: 'page_view', page: '/demo/button.html', ts: Date.now() },
+          { type: 'cta_click', page: '/demo/button.html', ts: Date.now() },
+        ]),
+      );
+      localStorage.setItem(
+        'acs_pending_greeting',
+        JSON.stringify({
+          greeting: 'old greeting',
+          suggestions: [],
+          ts: Date.now(),
+        }),
+      );
     });
 
     // Switch persona via the dropdown
@@ -305,17 +323,20 @@ test.describe('Proactive Chat', () => {
     // Pre-populate a fresh cache
     await page.goto('/demo/');
     await page.evaluate(() => {
-      localStorage.setItem('acs_pending_greeting', JSON.stringify({
-        greeting: 'Cached greeting already here',
-        suggestions: [],
-        ts: Date.now(),
-      }));
+      localStorage.setItem(
+        'acs_pending_greeting',
+        JSON.stringify({
+          greeting: 'Cached greeting already here',
+          suggestions: [],
+          ts: Date.now(),
+        }),
+      );
     });
 
     let conciergeCallCount = 0;
-    await page.route(CONCIERGE_URL, (route) => {
+    await page.route(CONCIERGE_URL, async (route) => {
       conciergeCallCount++;
-      route.fulfill({
+      await route.fulfill({
         status: 200,
         body: mockConciergeSSE({ engage: true, greeting: 'Should not appear' }),
       });
@@ -519,7 +540,9 @@ test.describe('Persona direction attributes', () => {
       profile.personaProfile.focus = 'Whatever the profile service says it is.';
       localStorage.setItem('acs_profile', JSON.stringify(profile));
     });
-    await page.evaluate(() => document.querySelector('algolia-chat')?.ask('how do I disable this?'));
+    await page.evaluate(() =>
+      document.querySelector('algolia-chat')?.ask('how do I disable this?'),
+    );
 
     await expect.poll(() => bodies.length).toBeGreaterThan(0);
     const sent = lastUserMessage(bodies);
@@ -580,7 +603,9 @@ test.describe('Stored persona profile', () => {
   test('a hand-tuned profile survives page loads instead of being re-seeded', async ({ page }) => {
     await page.goto('/demo/button.html');
     await page.locator('#acs-persona-dropdown select').selectOption('developer');
-    await expect.poll(async () => (await storedProfile(page))?.personaProfile?.key).toBe('developer');
+    await expect
+      .poll(async () => (await storedProfile(page))?.personaProfile?.key)
+      .toBe('developer');
 
     await page.evaluate(() => {
       const profile = JSON.parse(localStorage.getItem('acs_profile') ?? '{}');
@@ -598,7 +623,9 @@ test.describe('Stored persona profile', () => {
   test('renaming the persona alone refetches the matching profile body', async ({ page }) => {
     await page.goto('/demo/button.html');
     await page.locator('#acs-persona-dropdown select').selectOption('developer');
-    await expect.poll(async () => (await storedProfile(page))?.personaProfile?.key).toBe('developer');
+    await expect
+      .poll(async () => (await storedProfile(page))?.personaProfile?.key)
+      .toBe('developer');
 
     // Changing only the name would otherwise send the developer body under the
     // designer's label, and pick the designer's agent to receive it.
@@ -609,7 +636,9 @@ test.describe('Stored persona profile', () => {
     });
     await page.reload();
 
-    await expect.poll(async () => (await storedProfile(page))?.personaProfile?.key).toBe('designer');
+    await expect
+      .poll(async () => (await storedProfile(page))?.personaProfile?.key)
+      .toBe('designer');
     expect((await storedProfile(page)).personaProfile.detail.code).toBe('none');
   });
 
@@ -673,9 +702,7 @@ test.describe('Element API (host integration contract)', () => {
     await page.addInitScript(() => {
       (window as unknown as { __engaged: unknown[] }).__engaged = [];
       document.addEventListener('algolia-chat-engaged', (e) => {
-        (window as unknown as { __engaged: unknown[] }).__engaged.push(
-          (e as CustomEvent).detail,
-        );
+        (window as unknown as { __engaged: unknown[] }).__engaged.push((e as CustomEvent).detail);
       });
     });
 
@@ -701,9 +728,7 @@ test.describe('Element API (host integration contract)', () => {
     await page.addInitScript(() => {
       (window as unknown as { __persona: unknown[] }).__persona = [];
       document.addEventListener('algolia-chat-persona-change', (e) => {
-        (window as unknown as { __persona: unknown[] }).__persona.push(
-          (e as CustomEvent).detail,
-        );
+        (window as unknown as { __persona: unknown[] }).__persona.push((e as CustomEvent).detail);
       });
     });
 
@@ -782,7 +807,9 @@ test.describe('Auto-engage toggle', () => {
     await expect(chat.locator(TOGGLE_ON)).toBeVisible({ timeout: 5000 });
   });
 
-  test('turning it off persists the preference and blocks proactive greetings', async ({ page }) => {
+  test('turning it off persists the preference and blocks proactive greetings', async ({
+    page,
+  }) => {
     await page.goto('/demo/button.html');
     const chat = page.locator('algolia-chat');
 
@@ -805,9 +832,9 @@ test.describe('Auto-engage toggle', () => {
     await page.evaluate(() => localStorage.setItem('algolia-chat:auto-engage', 'off'));
 
     let conciergeCalls = 0;
-    await page.route(CONCIERGE_URL, (route) => {
+    await page.route(CONCIERGE_URL, async (route) => {
       conciergeCalls++;
-      route.fulfill({
+      await route.fulfill({
         status: 200,
         body: mockConciergeSSE({ engage: true, greeting: 'Should never appear' }),
       });

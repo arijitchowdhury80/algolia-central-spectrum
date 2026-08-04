@@ -1,20 +1,26 @@
 /**
- * connectAgent — unified custom InstantSearch.js connector for both chat
- * agents and judge agents.
+ * connectAgent — unified custom InstantSearch.js connector for chat agents,
+ * judge agents, and person sub-agents.
  *
  * A single connector replaces the previous `connectChatAgent` /
- * `connectJudgeAgent` pair. The only structural difference between a chat
- * agent and a judge agent is which `renderState` key they publish into:
+ * `connectJudgeAgent` pair. The only structural difference between the three
+ * is which `renderState` key they publish into:
  *
- *   context === 'chat'  → renderState.chatAgents[agentKey]
- *   context === 'judge' → renderState.judgeAgents[agentKey]
+ *   context === 'chat'   → renderState.chatAgents[agentKey]
+ *   context === 'judge'  → renderState.judgeAgents[agentKey]
+ *   context === 'person' → renderState.personAgents[agentKey]
  *
- * Both contexts publish into an object keyed by `agentKey` so the central
+ * All contexts publish into an object keyed by `agentKey` so the central
  * `connectChat` connector can aggregate them during its render phase.
  *
- * Web-component layer: the single `<algolia-agent>` element uses
- * `this.closest('algolia-chat-confidence')` to determine context automatically
- * — no explicit `context` attribute needed in HTML.
+ * Publishing through IS rather than reading the DOM matters for timing: the
+ * parser upgrades a custom element at its start tag, so a parent that queries
+ * its own children in `connectedCallback` sees none of them. Leaf agents
+ * announce themselves instead, and the parent picks them up from renderState.
+ *
+ * Web-component layer: the single `<algolia-agent>` element uses `closest()`
+ * to determine context automatically — no explicit `context` attribute needed
+ * in HTML.
  */
 
 import type { JudgeAgentDescriptor } from './judge/types';
@@ -27,10 +33,11 @@ const noop = (): void => {};
 
 /**
  * Which IS renderState bucket this agent publishes into.
- *   'chat'  → renderState.chatAgents  (read by connectChat → useChat)
- *   'judge' → renderState.judgeAgents (merged into chatConfidence.agents → useJudge)
+ *   'chat'   → renderState.chatAgents   (read by connectChat → useChat)
+ *   'judge'  → renderState.judgeAgents  (merged into chatConfidence.agents → useJudge)
+ *   'person' → renderState.personAgents (merged into chatPerson.agents → personAgent)
  */
-export type AgentContext = 'chat' | 'judge';
+export type AgentContext = 'chat' | 'judge' | 'person';
 
 /** Chat-agent roles. */
 export type AgentRole = 'primary' | 'specialist' | 'classifier';
@@ -91,11 +98,19 @@ export interface AgentWidget {
 
 // ── Connector ─────────────────────────────────────────────────────────────────
 
+/** renderState bucket each context publishes into. */
+const PUBLISH_KEY: Record<AgentContext, string> = {
+  chat: 'chatAgents',
+  judge: 'judgeAgents',
+  person: 'personAgents',
+};
+
 export function connectAgent(renderFn: () => void = noop, unmountFn: () => void = noop) {
   return function agent(widgetParams: AgentWidgetParams): AgentWidget {
     const { agentKey, id, role, label, key, accentToken, context } = widgetParams;
 
-    // Chat agents publish a richer descriptor; judge agents publish a minimal one.
+    // Chat agents publish a richer descriptor; judge and person agents publish
+    // the minimal { id, role, label } shape their consumers expect.
     const descriptor: AgentDescriptor =
       context === 'chat'
         ? {
@@ -107,7 +122,7 @@ export function connectAgent(renderFn: () => void = noop, unmountFn: () => void 
           }
         : { id, role, label };
 
-    const publishKey = context === 'chat' ? 'chatAgents' : 'judgeAgents';
+    const publishKey = PUBLISH_KEY[context];
 
     return {
       $$type: `algolia.${context}Agent`,

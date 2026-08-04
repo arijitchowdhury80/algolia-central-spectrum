@@ -112,9 +112,12 @@ export function judgeApiKey(): string | undefined {
   return k && k.trim() ? k : undefined;
 }
 
-/** Which judge backend the chip uses. `hosted` (default) = the VPS judge HTTP
- *  service (this file). `algolia` = the @confidence-engine engine run in-browser against
- *  an Agent Studio agent (inBrowserJudge.ts) — no VPS, no lab key. */
+/** Which judge backend the chip uses. `hosted` (default, and the only mode ACS
+ *  supports) = the VPS judge HTTP service (this file). `algolia` (in-browser judge,
+ *  vendored upstream) is intentionally NOT wired up — ACS's deterministic grounding
+ *  gate lives in code (`@lab/judge`), not inside an Agent Studio agent's own
+ *  synthesis, so `judgeAnswer` returns an error verdict for that mode instead of
+ *  importing the vendored engine. See vendor/README.md. */
 export function judgeMode(): 'hosted' | 'algolia' {
   const mode = getRuntimeEnv()?.judgeMode ?? import.meta.env?.VITE_JUDGE_MODE;
   return mode === 'algolia' ? 'algolia' : 'hosted';
@@ -177,8 +180,25 @@ export function mapHitToJudgeSource(hit: Record<string, unknown>): JudgeSourceIn
   return { id, title, url, text: pickHitText(hit) };
 }
 
+/**
+ * Map raw hits into judge sources, collapsing repeats of the same record.
+ *
+ * A turn can run several searches, and `rawHits` accumulates them all, so the
+ * same page routinely arrives more than once. Duplicates add no evidence but
+ * still consume the per-source excerpt budget, which starves the judges of the
+ * text they score grounding against. Keeping the first occurrence preserves
+ * retrieval order; the longest text wins so a fuller copy is never dropped in
+ * favour of a thin one.
+ */
 export function mapHitsToJudgeSources(hits: Record<string, unknown>[]): JudgeSourceInput[] {
-  return hits.map(mapHitToJudgeSource);
+  const byId = new Map<string, JudgeSourceInput>();
+  for (const hit of hits) {
+    const source = mapHitToJudgeSource(hit);
+    const seen = byId.get(source.id);
+    if (!seen) byId.set(source.id, source);
+    else if (source.text.length > seen.text.length) byId.set(source.id, source);
+  }
+  return [...byId.values()];
 }
 
 // ---------------------------------------------------------------------------
@@ -396,7 +416,7 @@ export async function groundAnswer(
  *
  * Mode dispatch:
  *   `off`     — returns a silent skip verdict (no network call)
- *   `algolia` — runs the @confidence-engine in-browser via Agent Studio LLM
+ *   `algolia` — not supported by ACS; returns an error verdict (see judgeMode() above)
  *   `hosted`  — POSTs to the VPS judge service (default)
  */
 export async function judgeAnswer(
@@ -412,11 +432,12 @@ export async function judgeAnswer(
   }
 
   if (effectiveMode === 'algolia') {
-    const { judgeAnswerViaInBrowser } = await import('./inBrowserJudge');
-    // Pass ALL configured judge agents through. The in-browser judge pins each
-    // role-tagged agent (skeptic / referee / advocate) to its temperament and
-    // falls back to the default agent for any role left unconfigured.
-    return judgeAnswerViaInBrowser(input, config?.agents);
+    return errorVerdict(
+      panelId,
+      'mode="algolia" (in-browser judge) is not supported by this deployment — the ' +
+        'deterministic grounding gate runs server-side. Set VITE_JUDGE_MODE to "hosted".',
+      'server',
+    );
   }
 
   return postToHostedJudge(input, panelId, config, fetchImpl);

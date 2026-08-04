@@ -1,5 +1,4 @@
-import { useEffect, useRef } from 'react';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { ChatMessage } from './ChatMessage';
 import { EmptyState } from './EmptyState';
 import type { JudgeVerdict } from '../../judge/types';
@@ -124,9 +123,7 @@ export function ChatPanel({
     return (
       <div className="flex flex-1 flex-col items-center overflow-y-auto px-4 pb-8 pt-6 sm:px-6 sm:pt-10">
         <EmptyState onPick={onPickSample} hideHero={hasGreeting} />
-        {emptyStateFooter && (
-          <div className="w-full max-w-algolia-measure">{emptyStateFooter}</div>
-        )}
+        {emptyStateFooter && <div className="w-full max-w-algolia-measure">{emptyStateFooter}</div>}
       </div>
     );
   }

@@ -36,7 +36,7 @@ import { useChat } from './useChat';
 import { getRuntimeEnv } from '../config/runtime';
 import { activeInstance, useActiveConfig } from '../config/active';
 import { proactiveStore, useProactive } from '../config/proactive';
-import { WidgetStoreProvider } from './widgetContext';
+import { WidgetStoreProvider } from './WidgetStoreProvider';
 import type { JudgeVerdict } from '../judge/types';
 import type { WidgetApi, WidgetStore } from '../chatRenderer';
 
@@ -196,7 +196,10 @@ function ChatContent({
       />
 
       <AppHeader
-        onReset={() => { proactiveStore.reset(); reset(); }}
+        onReset={() => {
+          proactiveStore.reset();
+          reset();
+        }}
         onClose={onClose}
         sizeMode={sizeMode}
         onToggleSize={onToggleSize}
@@ -295,7 +298,9 @@ function ChatFab({ onClick }: { onClick: () => void }) {
       type="button"
       onClick={onClick}
       aria-label={
-        isAnalyzing ? activeInstance.strings.widget.analyzing : activeInstance.strings.widget.openChat
+        isAnalyzing
+          ? activeInstance.strings.widget.analyzing
+          : activeInstance.strings.widget.openChat
       }
       aria-busy={isAnalyzing || undefined}
       className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-algolia-full bg-algolia-accent text-algolia-text-on-accent shadow-algolia-3 transition-all duration-algolia-base ease-algolia-ease hover:-translate-y-1 hover:bg-algolia-accent-hover hover:shadow-algolia-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-algolia-accent focus-visible:ring-offset-2"

@@ -23,15 +23,18 @@ import type { ComponentType } from 'react';
 import type { ChatRenderState } from './connectChat';
 import type { ChatAgentDescriptor } from './connectAgent';
 import type { ChatConfidenceDescriptor } from './connectChatConfidence';
+import type { PersonConfig } from './connectChatPerson';
 
 // ── Reactive external store ───────────────────────────────────────────────────
 
 /** The slice of IS render state that React components subscribe to. */
 export interface WidgetState {
-  /** Aggregated agent descriptors keyed by agentKey (e.g. 'primary', 'classifier', specialist slug). */
+  /** Aggregated agent descriptors keyed by agentKey (e.g. 'primary', specialist slug). */
   agents: Record<string, ChatAgentDescriptor>;
   /** Confidence/judge descriptor, or null when no chatConfidence widget is registered. */
   confidence: ChatConfidenceDescriptor | null;
+  /** Person agent config, or null when no chatPerson widget is registered. */
+  person: PersonConfig | null;
 }
 
 /**
@@ -62,7 +65,12 @@ function createWidgetStore(initial: WidgetState): WidgetStore {
     },
     update(next) {
       // Shallow-compare to avoid unnecessary React re-renders
-      if (next.agents === state.agents && next.confidence === state.confidence) return;
+      if (
+        next.agents === state.agents &&
+        next.confidence === state.confidence &&
+        next.person === state.person
+      )
+        return;
       state = next;
       subscribers.forEach((cb) => cb());
     },
@@ -134,14 +142,15 @@ export function createChatRenderer({
   dispose: () => void;
 } {
   let root: Root | null = null;
-  const store = createWidgetStore({ agents: {}, confidence: null });
+  const store = createWidgetStore({ agents: {}, confidence: null, person: null });
 
   return {
     render(renderState, isFirstRender) {
-      // Push the latest agents + confidence into the store on every IS render
-      // pass. React components subscribed via useSyncExternalStore will
-      // re-render only when the reference actually changes.
-      store.update({ agents: renderState.agents, confidence: renderState.confidence });
+      store.update({
+        agents: renderState.agents,
+        confidence: renderState.confidence,
+        person: renderState.person,
+      });
 
       if (isFirstRender) {
         root = createRoot(container);
