@@ -127,6 +127,15 @@ export function configureOpenMode(root: ParentNode, pathname: string): boolean {
 const JUDGE_URL = import.meta.env?.VITE_JUDGE_URL as string | undefined;
 const JUDGE_KEY = import.meta.env?.VITE_LAB_API_KEY as string | undefined;
 
+/** Read by website/public/context/context-engine.js's callAgentJson (a second,
+ *  independent call site to Agent Studio that the widget's own agentStudio.ts
+ *  patch does not cover — found while fixing the 2026-08-04 key-exposure
+ *  directive). Set as a global rather than an attribute because that script
+ *  is a plain ES module, not a custom element reading its own markup. Read
+ *  lazily inside that file's functions, so it does not matter whether this
+ *  script or that one runs first. */
+const AGENT_PROXY_URL = import.meta.env?.VITE_AGENT_PROXY_URL as string | undefined;
+
 export function configureHostedJudge(
   root: ParentNode,
   url: string | undefined,
@@ -156,6 +165,11 @@ function init(): boolean {
   const sawChat = configureOpenMode(document, window.location.pathname);
   const sawJudgePanel = document.querySelector('algolia-chat-confidence') !== null;
   configureHostedJudge(document, JUDGE_URL, JUDGE_KEY);
+  if (AGENT_PROXY_URL) {
+    (window as unknown as { __ACS_AGENT_PROXY_URL__?: string }).__ACS_AGENT_PROXY_URL__ = AGENT_PROXY_URL;
+  } else {
+    console.warn('[acs-enhance] no VITE_AGENT_PROXY_URL at build time — context-engine.js will call Algolia directly.');
+  }
   return sawChat || sawJudgePanel;
 }
 

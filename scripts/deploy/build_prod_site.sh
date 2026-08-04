@@ -13,15 +13,28 @@
 #   verify before a deploy touches production.
 #
 # ENVIRONMENT (set in the Vercel project, not in the repo)
-#   VITE_JUDGE_URL       e.g. https://judge.contentengagement.info/acs
-#   VITE_LAB_API_KEY     shared secret for the judge service
+#   VITE_JUDGE_URL         e.g. https://judge.contentengagement.info/acs
+#   VITE_LAB_API_KEY       shared secret for the judge service
+#   VITE_AGENT_PROXY_URL   origin of lab/server's search proxy, e.g. same host as
+#                          VITE_JUDGE_URL minus the /acs path — Agent Studio
+#                          completions (every chat message) route through here so
+#                          the real ALGOLIA_SEARCH_API_KEY never reaches a browser.
+#   VITE_SEARCH_PROXY_URL  same origin, used by the InstantSearch lifecycle ping.
+#                          Usually identical to VITE_AGENT_PROXY_URL; kept as a
+#                          separate var because the two client packages read it
+#                          independently (chat-central vs algolia-chat builds).
 #
-#   The Algolia app id and search-only key are NOT read here: the vendored site
-#   carries them as attributes on its own <algolia-chat> markup.
+#   The Algolia app-id is NOT read here (non-secret, stays in markup as-is). The
+#   search-only key used to be an <algolia-chat>/<algolia-instant-search>
+#   markup attribute — as of the 2026-08-04 fix it is retired from markup
+#   entirely and lives only in lab/server's own env, forwarded by the proxy.
 #
 # A missing VITE_JUDGE_URL is a HARD FAILURE here. It has already cost two hours
 # of production reading "Grounding · unavailable" — a build that silently points
-# the judge at localhost must never reach production again.
+# the judge at localhost must never reach production again. Missing
+# VITE_AGENT_PROXY_URL / VITE_SEARCH_PROXY_URL are HARD FAILURES for the same
+# reason: silently falling back would mean the browser calls Algolia directly
+# with a placeholder key, i.e. a broken chat, not a security fallback.
 
 set -euo pipefail
 
@@ -36,6 +49,14 @@ if [ -z "${VITE_JUDGE_URL:-}" ]; then
   exit 1
 fi
 echo "judge endpoint: $VITE_JUDGE_URL"
+
+if [ -z "${VITE_AGENT_PROXY_URL:-}" ] || [ -z "${VITE_SEARCH_PROXY_URL:-}" ]; then
+  echo "build_prod_site: VITE_AGENT_PROXY_URL / VITE_SEARCH_PROXY_URL must both be set —" >&2
+  echo "                 refusing to build a client that would call Algolia directly" >&2
+  echo "                 with the real search key (2026-08-04 fix)." >&2
+  exit 1
+fi
+echo "search proxy: $VITE_AGENT_PROXY_URL (agent-studio) / $VITE_SEARCH_PROXY_URL (instantsearch)"
 
 # The vendored client reads the judge secret as VITE_JUDGE_API_KEY; this project
 # has always called it VITE_LAB_API_KEY. Vite inlines the whole import.meta.env
@@ -80,6 +101,27 @@ if ! grep -q "$VITE_JUDGE_API_KEY" dist-widget/widget-bundles/algolia-chat.js; t
 fi
 test -f dist-widget/index.html
 test -f dist-widget/widget-bundles/algolia-chat.js
+
+# Positive checks only — the real ALGOLIA_SEARCH_API_KEY value is deliberately
+# never referenced in this script, so it can't become a third place the key
+# lives in cleartext. Confirming the PROXY URL made it into both bundles is
+# the same-shape check as the judge one above, and proves the real key path
+# (agentStudio.ts / InstantSearchElement.ts) took effect.
+if ! grep -q "$VITE_AGENT_PROXY_URL" dist-widget/widget-bundles/algolia-chat.js; then
+  echo "build_prod_site: VITE_AGENT_PROXY_URL is not baked into the widget bundle —" >&2
+  echo "                 Agent Studio calls would go straight to Algolia with the real key." >&2
+  exit 1
+fi
+if ! grep -q "$VITE_SEARCH_PROXY_URL" dist-widget/widget-bundles/algolia-chat.js; then
+  echo "build_prod_site: VITE_SEARCH_PROXY_URL is not baked into the widget bundle." >&2
+  exit 1
+fi
+if ! grep -q "$VITE_AGENT_PROXY_URL" dist-widget/acs-enhance.js; then
+  echo "build_prod_site: VITE_AGENT_PROXY_URL is not baked into acs-enhance.js —" >&2
+  echo "                 context-engine.js (the proactive-chat feature) would call" >&2
+  echo "                 Algolia directly with no key and fail, or worse, with one." >&2
+  exit 1
+fi
 
 # Every page that hosts the widget must reach the output WITH our enhancement
 # script injected. Expectations are derived from the SOURCE, not a hardcoded list:

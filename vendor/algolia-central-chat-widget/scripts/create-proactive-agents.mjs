@@ -36,7 +36,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // ── Config ──────────────────────────────────────────────────────────────────
 
 const APP_ID = '0EXRPAXB56';
-const SEARCH_KEY = 'REDACTED'; // public search-only key used by the browser
+// Read, not hardcoded — this value gets written into the generated JSON the
+// browser used to fetch directly (see agents.generated.json), which is
+// exactly the exposure Arijit's 2026-08-04 directive closed. Never put the
+// real key back in this file as a literal.
+const SEARCH_KEY = process.env.ALGOLIA_SEARCH_API_KEY;
+if (!SEARCH_KEY) {
+  console.error('create-proactive-agents: ALGOLIA_SEARCH_API_KEY must be set in the environment.');
+  process.exit(1);
+}
 
 /**
  * `--dry-run` prints what would be published and exits before any API call.
@@ -47,11 +55,14 @@ const DRY_RUN = process.argv.includes('--dry-run');
 
 const positionalArgs = process.argv.slice(2).filter((arg) => !arg.startsWith('--'));
 
+// No literal fallback — a hardcoded admin key sitting in a committed file is
+// exactly the exposure this whole fix exists to close (found 2026-08-04,
+// alongside the same pattern in republish-judge-agents.mjs; both came in with
+// the proactive-chat feature branch). Env var or CLI arg only.
 const ADMIN_KEY =
   process.env.ALGOLIA_ADMIN_KEY ??
   // Allow passing as first CLI arg for convenience (don't commit this invocation)
-  positionalArgs[0] ??
-  'REDACTED';
+  positionalArgs[0];
 
 if (!ADMIN_KEY) {
   console.error('ERROR: Set ALGOLIA_ADMIN_KEY env var or pass the admin key as first arg.');

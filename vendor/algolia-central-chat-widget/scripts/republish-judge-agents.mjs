@@ -52,10 +52,15 @@ const APP_ID = '0EXRPAXB56';
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
+// No literal fallback — see create-proactive-agents.mjs for why. Env var or
+// a 32-char CLI arg only.
 const ADMIN_KEY =
-  process.env.ALGOLIA_ADMIN_KEY ??
-  process.argv.find((a) => !a.startsWith('-') && a.length === 32) ??
-  'REDACTED';
+  process.env.ALGOLIA_ADMIN_KEY ?? process.argv.find((a) => !a.startsWith('-') && a.length === 32);
+
+if (!ADMIN_KEY) {
+  console.error('ERROR: Set ALGOLIA_ADMIN_KEY env var or pass the admin key as a CLI arg.');
+  process.exit(1);
+}
 
 const BASE_URL = `https://${APP_ID}.algolia.net/agent-studio/1/agents`;
 

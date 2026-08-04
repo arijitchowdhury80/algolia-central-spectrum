@@ -1,6 +1,6 @@
 {
   "appId": "0EXRPAXB56",
-  "searchKey": "REDACTED",
+  "searchKey": "unused-see-search-proxy-VITE_AGENT_PROXY_URL",
   "agents": {
     "ACS-persona-designer": {
       "id": "6b716c73-0072-4ce7-b915-c4dc00f8b74d",

@@ -75,6 +75,7 @@
 import { createServer } from "node:http";
 import { handleJudge } from "./judgeHandler.js";
 import { handleGround } from "./groundHandler.js";
+import { handleAgentStudioProxy, handleInstantSearchProxy } from "../searchProxy.js";
 import {
   API_KEY_HEADER,
   API_KEY_HEADER_ALT,
@@ -113,20 +114,79 @@ const limiter = new RateLimiter(RATE_LIMIT, RATE_WINDOW_MS);
 const GROUND_RATE_LIMIT = Number(process.env.GROUND_RATE_LIMIT ?? 600);
 const groundLimiter = new RateLimiter(GROUND_RATE_LIMIT, RATE_WINDOW_MS);
 
+/**
+ * The search-proxy routes forward with a real Algolia key attached — unlike
+ * /api/judge and /api/ground, a wildcard CORS origin here would let any site
+ * on the internet ride our key. Explicit allow-list, no `*` fallback.
+ */
+const SEARCH_PROXY_ALLOWED_ORIGINS = (
+  process.env.SEARCH_PROXY_ALLOWED_ORIGINS ??
+  "https://algolia-central-spectrum.vercel.app,http://localhost:4173,http://localhost:5173"
+)
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+/** Same cost-abuse reasoning as `limiter` above (LLM spend = money), but the
+ *  agent-studio route is real chat traffic a legitimate user hits repeatedly
+ *  in one session, so the default is higher than the judge's 30/min. */
+const SEARCH_PROXY_RATE_LIMIT = Number(process.env.SEARCH_PROXY_RATE_LIMIT ?? 60);
+const searchProxyLimiter = new RateLimiter(SEARCH_PROXY_RATE_LIMIT, RATE_WINDOW_MS);
+
+/** The InstantSearch ping spends no LLM tokens, same reasoning as groundLimiter. */
+const INSTANT_SEARCH_PROXY_RATE_LIMIT = Number(process.env.INSTANT_SEARCH_PROXY_RATE_LIMIT ?? 300);
+const instantSearchProxyLimiter = new RateLimiter(INSTANT_SEARCH_PROXY_RATE_LIMIT, RATE_WINDOW_MS);
+
+const AGENT_STUDIO_PROXY_PATH = /^\/agent-studio\/1\/agents\/([^/]+)\/completions/;
+const INSTANT_SEARCH_PROXY_PATH = "/1/indexes/*/queries";
+
 const server = createServer(async (req, res) => {
-  // Permissive CORS — search-only data, local dev tool.
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  // Both accepted key headers must be allow-listed here, or the browser blocks
-  // the preflight before the request ever reaches the auth check above.
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    `Content-Type, ${API_KEY_HEADER}, ${API_KEY_HEADER_ALT}`,
-  );
+  const url = req.url ?? "";
+  const isSearchProxyRoute = AGENT_STUDIO_PROXY_PATH.test(url) || url.startsWith(INSTANT_SEARCH_PROXY_PATH);
+
+  if (isSearchProxyRoute) {
+    const origin = req.headers.origin;
+    if (origin && SEARCH_PROXY_ALLOWED_ORIGINS.includes(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    }
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  } else {
+    // Permissive CORS — search-only data, local dev tool.
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    // Both accepted key headers must be allow-listed here, or the browser blocks
+    // the preflight before the request ever reaches the auth check above.
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      `Content-Type, ${API_KEY_HEADER}, ${API_KEY_HEADER_ALT}`,
+    );
+  }
 
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     res.end();
+    return;
+  }
+
+  if (req.method === "POST" && isSearchProxyRoute) {
+    const ip = clientIp(req.headers, req.socket.remoteAddress ?? undefined);
+    const agentMatch = AGENT_STUDIO_PROXY_PATH.exec(url);
+    if (agentMatch) {
+      if (!searchProxyLimiter.check(ip)) {
+        res.writeHead(429, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "rate limit exceeded — slow down" }));
+        return;
+      }
+      await handleAgentStudioProxy(req, res, agentMatch[1]);
+      return;
+    }
+    if (!instantSearchProxyLimiter.check(ip)) {
+      res.writeHead(429, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "rate limit exceeded — slow down" }));
+      return;
+    }
+    await handleInstantSearchProxy(req, res);
     return;
   }
 
@@ -186,7 +246,9 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`[judge-service-acs] listening on :${PORT}  (POST /api/judge · GET /health)`);
+  console.log(
+    `[judge-service-acs] listening on :${PORT}  (POST /api/judge · POST /agent-studio/1/agents/:id/completions · POST /1/indexes/*/queries · GET /health)`,
+  );
   console.log(
     `[judge-service-acs] auth ${LAB_API_KEY ? "ENABLED (x-lab-key required)" : "OPEN (no LAB_API_KEY set)"} · rate-limit ${
       RATE_LIMIT > 0 ? `${RATE_LIMIT}/${RATE_WINDOW_MS}ms per IP` : "disabled"

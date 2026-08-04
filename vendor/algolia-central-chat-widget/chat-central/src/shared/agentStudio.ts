@@ -68,7 +68,23 @@ export interface ParsedCompletion {
 
 // ── URL builder ───────────────────────────────────────────────────────────────
 
+/**
+ * Build-time proxy override (mirrors the judge's VITE_JUDGE_URL pattern —
+ * see judge/hostedJudgeClient.ts). When set, Agent Studio calls route through
+ * our own backend instead of straight to Algolia, so the real search key
+ * never has to leave the server. Unset in a build (e.g. an unrelated
+ * embedder of this widget) falls back to calling Algolia directly, unchanged
+ * from before this patch.
+ */
+function getAgentProxyBase(): string | undefined {
+  return (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_AGENT_PROXY_URL;
+}
+
 export function getAgentStudioUrl(appId: string, agentId: string): string {
+  const proxyBase = getAgentProxyBase();
+  if (proxyBase) {
+    return `${proxyBase}/agent-studio/1/agents/${agentId}/completions?compatibilityMode=ai-sdk-5`;
+  }
   return `https://${appId}.algolia.net/agent-studio/1/agents/${agentId}/completions?compatibilityMode=ai-sdk-5`;
 }
 
@@ -362,11 +378,16 @@ export async function callCompletions(
   const { callbacks, fetchImpl = fetch, stepMessages = [] } = opts;
   const messages = buildMessages(req.history ?? [], req.query, stepMessages);
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'X-Algolia-Application-Id': config.appId,
-    'X-Algolia-API-Key': config.searchKey,
-  };
+  // When a proxy is configured the real key is added server-side — sending it
+  // here too would defeat the point (it would still cross the network from
+  // the browser). See getAgentStudioUrl's doc comment.
+  const headers: Record<string, string> = getAgentProxyBase()
+    ? { 'Content-Type': 'application/json' }
+    : {
+        'Content-Type': 'application/json',
+        'X-Algolia-Application-Id': config.appId,
+        'X-Algolia-API-Key': config.searchKey,
+      };
 
   const res = await fetchImpl(getAgentStudioUrl(config.appId, config.agentId), {
     method: 'POST',

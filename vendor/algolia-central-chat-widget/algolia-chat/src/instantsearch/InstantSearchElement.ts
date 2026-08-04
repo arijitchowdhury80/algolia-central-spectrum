@@ -47,6 +47,32 @@ type ISInstance = ReturnType<typeof instantsearch>;
 type ISAddWidgetParam = Parameters<ISInstance['addWidgets']>[0][number];
 type ISRemoveWidgetParam = Parameters<ISInstance['removeWidgets']>[0][number];
 
+/**
+ * Build-time proxy override, same VITE_SEARCH_PROXY_URL pattern as the
+ * judge's VITE_JUDGE_URL. When set, the lifecycle client (a hitsPerPage:0
+ * configure query, no results consumed — see file header) is redirected to
+ * our own backend instead of Algolia directly, so the real key never reaches
+ * the browser. `apiKey` is a placeholder in that case; liteClient requires a
+ * non-empty string but never uses it, since the transporter config below
+ * replaces the default hosts entirely. Extracted to its own function (rather
+ * than inlined in connectedCallback) to keep that method's complexity under
+ * the project's lint threshold.
+ */
+function buildSearchClient(appId: string, apiKey: string): ReturnType<typeof liteClient> {
+  const proxyUrl = (import.meta as unknown as { env?: Record<string, string> }).env
+    ?.VITE_SEARCH_PROXY_URL;
+  if (!proxyUrl) return liteClient(appId, apiKey);
+  return liteClient(appId, apiKey || 'proxied', {
+    hosts: [
+      {
+        url: proxyUrl.replace(/^https?:\/\//, ''),
+        protocol: proxyUrl.startsWith('http://') ? 'http' : 'https',
+        accept: 'read',
+      },
+    ],
+  });
+}
+
 export class AlgoliaInstantSearchElement extends HTMLElement {
   private search: ISInstance | null = null;
   private addWidgetListener: ((e: Event) => void) | null = null;
@@ -81,7 +107,7 @@ export class AlgoliaInstantSearchElement extends HTMLElement {
 
     applyRootConfig({ appId, searchKey: apiKey, indexName });
 
-    const searchClient = liteClient(appId, apiKey);
+    const searchClient = buildSearchClient(appId, apiKey);
 
     this.search = instantsearch({
       indexName: indexName || '_',

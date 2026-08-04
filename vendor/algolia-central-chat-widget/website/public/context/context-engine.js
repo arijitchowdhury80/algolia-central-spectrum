@@ -21,7 +21,11 @@ import { PERSONA_OPTIONS, personaProfileSeed, renderPersonaProfile } from './per
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const APP_ID = '0EXRPAXB56';
-const SEARCH_KEY = 'REDACTED';
+// No real key here — see getAgentProxyBase(). Arijit directive 2026-08-04: no
+// Algolia credential reaches the browser. window.__ACS_AGENT_PROXY_URL__ is
+// set by our own acs-enhance.js (web-widget/src/main.ts) before this module's
+// functions are called (read lazily inside callAgentJson, not at module top
+// level, so load order between the two scripts doesn't matter).
 
 // These are loaded from agents.generated.json (written by create-proactive-agents.mjs).
 // We fetch the JSON at init so the IDs are always up-to-date without hard-coding.
@@ -364,15 +368,26 @@ async function readTextDeltaStream(body) {
   return text;
 }
 
+function getAgentProxyBase() {
+  return typeof window !== 'undefined' ? window.__ACS_AGENT_PROXY_URL__ : undefined;
+}
+
 async function callAgentJson(agentId, userMessage) {
-  const url = `https://${APP_ID}.algolia.net/agent-studio/1/agents/${agentId}/completions?compatibilityMode=ai-sdk-5`;
+  const proxyBase = getAgentProxyBase();
+  const url = proxyBase
+    ? `${proxyBase}/agent-studio/1/agents/${agentId}/completions?compatibilityMode=ai-sdk-5`
+    : `https://${APP_ID}.algolia.net/agent-studio/1/agents/${agentId}/completions?compatibilityMode=ai-sdk-5`;
+  // When proxied, the real key is added server-side — never attach it here too.
+  const headers = proxyBase
+    ? { 'Content-Type': 'application/json' }
+    : {
+        'Content-Type': 'application/json',
+        'X-Algolia-Application-Id': APP_ID,
+        'X-Algolia-API-Key': '',
+      };
   const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Algolia-Application-Id': APP_ID,
-      'X-Algolia-API-Key': SEARCH_KEY,
-    },
+    headers,
     body: JSON.stringify({
       messages: [{ role: 'user', parts: [{ type: 'text', text: userMessage }] }],
     }),
